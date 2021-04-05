@@ -1,8 +1,15 @@
 package org.cognitionmodel.datasets;
 
+import org.cognitionmodel.Relation;
+
 import java.nio.charset.Charset;
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
+
+/**
+ * Parses text data in csv format to inner representation
+ */
 
 public class CSVParser implements Parser {
 
@@ -34,11 +41,15 @@ public class CSVParser implements Parser {
 
         String[] lines = in.split(endofline);
 
-        LinkedList<String[]> r = new LinkedList<>();
+        LinkedList<Tuples> r = new LinkedList<>();
 
-        for (String s: lines)
-            r.add(s.split(delimiter));
-
+        for (String s: lines) {
+            ArrayList<Tuple> t = new ArrayList<>();
+            for (String ss : s.split(delimiter)) {
+                t.add(new Tuple(ss));
+            }
+            r.add(new Tuples(t));
+        }
         return r;
     }
 }

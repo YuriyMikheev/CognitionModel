@@ -17,11 +17,20 @@ import java.util.stream.Stream;
  *
  */
 
-public abstract class DataSet implements Iterable<Relation> {
+public abstract class DataSet implements Iterable<Tuple> {
 
     private InputStream inputStream;
-    private ArrayList<Relation> records = new ArrayList<>();
+    private ArrayList<Tuple> records = new ArrayList<>();
     private Parser parser;
+
+    /**
+     * Creates data set and reads data from input stream.
+     * Store parsed data from input stream.
+     *
+     * @param inputStream
+     * @param parser
+     * @throws IOException
+     */
 
     public DataSet(InputStream inputStream, Parser parser) throws IOException {
         this.inputStream = inputStream;
@@ -34,8 +43,12 @@ public abstract class DataSet implements Iterable<Relation> {
 
     }
 
+    public ArrayList<Tuple> getRecords(){
+        return records;
+    }
+
     @Override
-    public Iterator<Relation> iterator() {
+    public Iterator<Tuple> iterator() {
         return records.iterator();
     }
 }
