@@ -1,7 +1,10 @@
 package org.cognitionmodel;
 
+import org.cognitionmodel.datasets.Tuple;
 import org.cognitionmodel.datasets.Tuples;
 
+import java.io.Serializable;
+import java.nio.ByteBuffer;
 import java.util.LinkedList;
 
 /**
@@ -10,7 +13,7 @@ import java.util.LinkedList;
  *
  */
 
-public class Relation {
+public class Relation implements Serializable {
 
     private int patternIndex;
     private LinkedList<Integer> tuples = new LinkedList<>();
@@ -30,7 +33,29 @@ public class Relation {
         return patternIndex;
     }
 
-    public LinkedList<Integer>  getTupleIndex() {
+    public LinkedList<Integer>  getTuples() {
         return tuples;
     }
+
+    public byte[] serialize(){
+
+        ByteBuffer r = ByteBuffer.allocate(Integer.BYTES + tuples.size() * Integer.BYTES).putInt(patternIndex);
+
+        for (int t: tuples)
+            r.putInt(t);
+
+        return r.array();
+    }
+
+    public void deserialize(byte[] serializedRelation){
+
+        ByteBuffer r = ByteBuffer.allocate(serializedRelation.length).put(serializedRelation);
+
+        patternIndex = r.getInt();
+
+        while (r.position() < serializedRelation.length)
+            tuples.add(r.getInt());
+
+    }
+
 }

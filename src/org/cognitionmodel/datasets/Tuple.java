@@ -4,7 +4,7 @@ import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 
 /**
- * Saves data and data type
+ * Saves data and data type. The basic element of inner data representation
  */
 
 
