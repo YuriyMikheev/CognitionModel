@@ -1,38 +1,39 @@
-package test.java;
+package cognitionmodel.patterns;
 
-import main.cognitionmodel.patterns.FullGridPatterns;
-import main.cognitionmodel.patterns.Pattern;
-import org.junit.Assert;
+import static org.junit.Assert.*;
+
 import org.junit.Test;
 import org.junit.runner.JUnitCore;
 import org.junit.runner.Result;
 
-class FullGridPatternsTest extends Assert {
+
+class FullGridPatternsTest {
 
     private FullGridPatterns patterns;
 
-/*    @Before
-    public void init() { patterns = new FullGridPatterns(10,4); }
+    /*    @Before
+        public void init() { patterns = new FullGridPatterns(10,4); }
 
-    @After
-    public void tearDown() { patterns = null; }
-*/
+        @After
+        public void tearDown() { patterns = null; }
+    */
+
     @Test
-    public void generate() {
+    private void generate() {
 
-        patterns = new FullGridPatterns(5,5);
-      //  System.out.println(patterns.getPatterns().size());
+        patterns = new FullGridPatterns(5, 5);
+        //  System.out.println(patterns.getPatterns().size());
         assertTrue(patterns.getPatterns().size() == 31);
 
-        patterns = new FullGridPatterns(4,4);
-      //  System.out.println(patterns.getPatterns().size());
+        patterns = new FullGridPatterns(4, 4);
+        //  System.out.println(patterns.getPatterns().size());
         assertTrue(patterns.getPatterns().size() == 15);
 
-        patterns = new FullGridPatterns(5,3);
-      //  System.out.println(patterns.getPatterns().size());
+        patterns = new FullGridPatterns(5, 3);
+        //  System.out.println(patterns.getPatterns().size());
         assertTrue(patterns.getPatterns().size() == 16);
 
-        patterns = new FullGridPatterns(10,7);
+        patterns = new FullGridPatterns(10, 7);
         //System.out.println(patterns.getPatterns().size());
         assertTrue(patterns.getPatterns().size() == 848);
 
@@ -61,6 +62,5 @@ class FullGridPatternsTest extends Assert {
         System.out.println("ignored tests: " + result.getIgnoreCount());
         System.out.println("success: " + result.wasSuccessful());
     }
-
-
 }
+

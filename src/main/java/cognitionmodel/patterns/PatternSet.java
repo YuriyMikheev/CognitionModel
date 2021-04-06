@@ -1,4 +1,4 @@
-package main.cognitionmodel.patterns;
+package cognitionmodel.patterns;
 
 import java.util.ArrayList;
 import java.util.Iterator;

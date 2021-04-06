@@ -1,4 +1,4 @@
-package main.cognitionmodel.patterns;
+package cognitionmodel.patterns;
 
 /**
  * Set of patterns for table data processing consists from
