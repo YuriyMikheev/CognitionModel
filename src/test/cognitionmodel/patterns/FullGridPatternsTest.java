@@ -1,26 +1,16 @@
 package cognitionmodel.patterns;
 
-import static org.junit.Assert.*;
-
+import cognitionmodel.datasets.Tuple;
 import org.junit.Test;
-import org.junit.runner.JUnitCore;
-import org.junit.runner.Result;
 
+import static org.junit.Assert.assertTrue;
 
-class FullGridPatternsTest {
+public class FullGridPatternsTest {
 
     private FullGridPatterns patterns;
 
-    /*    @Before
-        public void init() { patterns = new FullGridPatterns(10,4); }
-
-        @After
-        public void tearDown() { patterns = null; }
-    */
-
     @Test
-    private void generate() {
-
+    public void  generateTest(){
         patterns = new FullGridPatterns(5, 5);
         //  System.out.println(patterns.getPatterns().size());
         assertTrue(patterns.getPatterns().size() == 31);
@@ -36,31 +26,5 @@ class FullGridPatternsTest {
         patterns = new FullGridPatterns(10, 7);
         //System.out.println(patterns.getPatterns().size());
         assertTrue(patterns.getPatterns().size() == 848);
-
-
-/*        patterns = new FullGridPatterns(10,7);
-
-        for (Pattern p: patterns){
-            for (byte i: p.get()){
-                System.out.print(i+",");
-            }
-            System.out.println();
-        }
-
-        System.out.println(patterns.getPatterns().size());*/
-
-    }
-
-    public static void main(String[] args) {
-/*        FullGridPatternsTest ft = new FullGridPatternsTest();
-
-        ft.generate();*/
-        JUnitCore runner = new JUnitCore();
-        Result result = runner.run(FullGridPatternsTest.class);
-        System.out.println("run tests: " + result.getRunCount());
-        System.out.println("failed tests: " + result.getFailureCount());
-        System.out.println("ignored tests: " + result.getIgnoreCount());
-        System.out.println("success: " + result.wasSuccessful());
     }
 }
-
