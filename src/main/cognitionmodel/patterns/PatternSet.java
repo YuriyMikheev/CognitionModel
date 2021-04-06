@@ -1,8 +1,9 @@
-package org.cognitionmodel.patterns;
+package main.cognitionmodel.patterns;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 
-public abstract class PatternSet {
+public abstract class PatternSet implements Iterable<Pattern>{
     ArrayList<Pattern> patterns = new ArrayList<Pattern>();
 
     public PatternSet() {
@@ -19,5 +20,8 @@ public abstract class PatternSet {
     public void generate(){
 
     }
-
+    @Override
+    public Iterator<Pattern> iterator() {
+        return patterns.iterator();
+    }
 }

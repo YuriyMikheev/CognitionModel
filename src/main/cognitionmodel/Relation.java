@@ -1,7 +1,4 @@
-package org.cognitionmodel;
-
-import org.cognitionmodel.datasets.Tuple;
-import org.cognitionmodel.datasets.Tuples;
+package main.cognitionmodel;
 
 import java.io.Serializable;
 import java.nio.ByteBuffer;

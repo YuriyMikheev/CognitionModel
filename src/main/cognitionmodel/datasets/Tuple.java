@@ -1,4 +1,4 @@
-package org.cognitionmodel.datasets;
+package main.cognitionmodel.datasets;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;

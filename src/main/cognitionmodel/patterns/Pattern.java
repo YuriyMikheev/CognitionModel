@@ -1,4 +1,4 @@
-package org.cognitionmodel.patterns;
+package main.cognitionmodel.patterns;
 
 public class Pattern {
     private byte[] pattern;

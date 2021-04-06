@@ -1,4 +1,4 @@
-package org.cognitionmodel.datasets;
+package main.cognitionmodel.datasets;
 
 import java.util.ArrayList;
 

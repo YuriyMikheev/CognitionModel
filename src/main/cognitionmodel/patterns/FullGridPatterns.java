@@ -1,4 +1,4 @@
-package org.cognitionmodel.patterns;
+package main.cognitionmodel.patterns;
 
 /**
  * Set of patterns for table data processing consists from
@@ -17,7 +17,7 @@ public class FullGridPatterns extends PatternSet {
 
     public FullGridPatterns(int length, int maxDepth){
         int d = 0;
-        generate(length, 0, new byte[length], maxDepth, d);
+        generate(length, -1, new byte[length], maxDepth, d);
     }
 
     private void generate(int length, int start, byte[] actual, int maxDepth,  int depth) {
@@ -31,5 +31,6 @@ public class FullGridPatterns extends PatternSet {
                 actual[i] = 0;
             }
     }
+
 
 }

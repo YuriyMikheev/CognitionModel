@@ -1,6 +1,4 @@
-package org.cognitionmodel.datasets;
-
-import org.cognitionmodel.Relation;
+package main.cognitionmodel.datasets;
 
 import java.nio.charset.Charset;
 import java.util.ArrayList;
