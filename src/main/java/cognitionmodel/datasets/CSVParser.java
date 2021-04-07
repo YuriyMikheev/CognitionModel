@@ -14,6 +14,8 @@ public class CSVParser implements Parser {
     private String delimiter = "\t";
     private String endofline = "\r\n";
 
+    public CSVParser() {
+    }
     public CSVParser(String delimiter, String endofline) {
         this.delimiter = delimiter;
         this.endofline = endofline;

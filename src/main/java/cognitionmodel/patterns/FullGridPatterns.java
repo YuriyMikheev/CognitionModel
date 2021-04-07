@@ -9,9 +9,10 @@ public class FullGridPatterns extends PatternSet {
 
 
     /**
-     * Generates pattern set
+     * Generates brute force pattern set that consists enumerating of all possible combinations values of all variables.
+     * Length of the combination restricted by @param maxDepth
      *
-     * @param length - number of values
+     * @param length - amount of values
      * @param maxDepth - max number of variables in relation
      */
 
@@ -22,7 +23,7 @@ public class FullGridPatterns extends PatternSet {
 
     private void generate(int length, int start, byte[] actual, int maxDepth,  int depth) {
         depth++;
-        patterns.add(new Pattern(actual));
+        if (start != -1) patterns.add(new Pattern(actual));
 
         if (depth < maxDepth)
             for (int i = start + 1; i < length ; i++) {

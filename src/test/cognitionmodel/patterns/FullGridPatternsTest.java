@@ -13,18 +13,18 @@ public class FullGridPatternsTest {
     public void  generateTest(){
         patterns = new FullGridPatterns(5, 5);
         //  System.out.println(patterns.getPatterns().size());
-        assertTrue(patterns.getPatterns().size() == 31);
+        assertTrue(patterns.getPatterns().size() == 30);
 
         patterns = new FullGridPatterns(4, 4);
         //  System.out.println(patterns.getPatterns().size());
-        assertTrue(patterns.getPatterns().size() == 15);
+        assertTrue(patterns.getPatterns().size() == 14);
 
         patterns = new FullGridPatterns(5, 3);
         //  System.out.println(patterns.getPatterns().size());
-        assertTrue(patterns.getPatterns().size() == 16);
+        assertTrue(patterns.getPatterns().size() == 15);
 
         patterns = new FullGridPatterns(10, 7);
         //System.out.println(patterns.getPatterns().size());
-        assertTrue(patterns.getPatterns().size() == 848);
+        assertTrue(patterns.getPatterns().size() == 847);
     }
 }
