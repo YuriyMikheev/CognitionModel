@@ -51,7 +51,7 @@ public class Tuple {
             }
             data = value.getBytes(Charset.defaultCharset());
             type = Type.String;
-
+            return;
         }
 
         data = new byte[0];

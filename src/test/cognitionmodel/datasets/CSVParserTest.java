@@ -21,11 +21,11 @@ public class CSVParserTest {
         assertTrue(ByteBuffer.allocate(Integer.BYTES).put(tp.getFirst().getTuples().get(1).data).position(0).getInt() == 41);
 
 
-        for(Tuples ts: tp) {
+/*        for(Tuples ts: tp) {
             for (Tuple tuple: ts.getTuples())
                 System.out.print(tuple+"\t");
             System.out.println();
-        }
+        }*/
 
 
     }
