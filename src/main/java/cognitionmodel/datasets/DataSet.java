@@ -14,10 +14,10 @@ import java.util.Iterator;
  *
  */
 
-public abstract class DataSet implements Iterable<Tuple> {
+public abstract class DataSet implements Iterable<Tuples> {
 
     private InputStream inputStream;
-    private ArrayList<Tuple> records = new ArrayList<>();
+    private ArrayList<Tuples> records = new ArrayList<>();
     private Parser parser;
 
     /**
@@ -40,12 +40,12 @@ public abstract class DataSet implements Iterable<Tuple> {
 
     }
 
-    public ArrayList<Tuple> getRecords(){
+    public ArrayList<Tuples> getRecords(){
         return records;
     }
 
     @Override
-    public Iterator<Tuple> iterator() {
+    public Iterator<Tuples> iterator() {
         return records.iterator();
     }
 }
