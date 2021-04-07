@@ -5,9 +5,7 @@ import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 
-/**
- * Parses text data in csv format to inner representation
- */
+
 
 public class CSVParser implements Parser {
 
@@ -16,6 +14,13 @@ public class CSVParser implements Parser {
 
     public CSVParser() {
     }
+
+
+    /**
+     * Parses text data from csv format to inner representation
+     * @param delimiter - values delimiter
+     * @param endofline - lines break char sequence
+     */
     public CSVParser(String delimiter, String endofline) {
         this.delimiter = delimiter;
         this.endofline = endofline;
@@ -28,6 +33,12 @@ public class CSVParser implements Parser {
     public String getEndofline() {
         return endofline;
     }
+
+    /**
+     * Returns set of @Link Tuples (set of @Link Tuple) representing data from csv stream
+     * @param data
+     * @return
+     */
 
     @Override
     public List get(byte[] data) {

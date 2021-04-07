@@ -10,7 +10,7 @@ public class FullGridPatterns extends PatternSet {
 
     /**
      * Generates brute force pattern set that consists enumerating of all possible combinations values of all variables.
-     * Length of the combination restricted by @param maxDepth
+     * Length of the combination is restricted by @param maxDepth
      *
      * @param length - amount of values
      * @param maxDepth - max number of variables in relation

@@ -3,6 +3,11 @@ package cognitionmodel.datasets;
 import java.io.IOException;
 import java.io.InputStream;
 
+/**
+ * Provides CSV data support
+ *
+ */
+
 public class CSVDataSet extends DataSet{
 
 
