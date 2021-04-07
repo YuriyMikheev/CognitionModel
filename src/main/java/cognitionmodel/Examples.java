@@ -5,12 +5,14 @@ import cognitionmodel.datasets.CSVParser;
 import cognitionmodel.datasets.Tuple;
 import cognitionmodel.datasets.Tuples;
 import cognitionmodel.patterns.FullGridPatterns;
+import cognitionmodel.patterns.Pattern;
 
 import java.io.*;
 
 public class Examples {
 
     public static void main(String[] args) throws IOException {
+
         CSVDataSet csvDataSet = new CSVDataSet(new BufferedInputStream(new FileInputStream(new File("D:\\works\\Data\\EMNIST\\emnist-mnist-test.csv"))),new CSVParser(",", "\n"));
 
         for (Tuple tuple: csvDataSet.getHeader().getTuples())

@@ -15,7 +15,7 @@ public class PatternTest {
 
         byte[] pr = pattern.get();
 
-      //  System.out.println(Arrays.toString(pr));
+     //   System.out.println(Arrays.toString(pr));
 
         assertTrue(Arrays.equals(pr, new byte[]{1,1,0,0,1,1,0,0,1,1,0,0,1,1,0,0,1,1,0,1,1,1}));
     }

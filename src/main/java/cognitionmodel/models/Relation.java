@@ -1,4 +1,4 @@
-package main.cognitionmodel;
+package cognitionmodel.models;
 
 import java.io.Serializable;
 import java.nio.ByteBuffer;
