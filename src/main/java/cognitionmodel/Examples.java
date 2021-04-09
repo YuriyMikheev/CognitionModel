@@ -14,13 +14,13 @@ public class Examples {
 
         CSVDataSet csvDataSet = new CSVDataSet(new BufferedInputStream(new FileInputStream(new File("D:\\works\\Data\\EMNIST\\emnist-mnist-test.csv"))),new CSVParser(",", "\n"));
 
-        for (TupleElement tupleElement : csvDataSet.getHeader().getTuples())
+        for (TupleElement tupleElement : csvDataSet.getHeader().getTupleElements())
             System.out.print(tupleElement +"\t");
 
         System.out.println();
         int c = 0;
         for(Tuple ts: csvDataSet.getRecords()) {
-            for (TupleElement tupleElement : ts.getTuples())
+            for (TupleElement tupleElement : ts.getTupleElements())
                 System.out.print(tupleElement +"\t");
             System.out.println();
             if (c++ > 10) break;

@@ -1,0 +1,7 @@
+<root>
+    <item name='java.util.Map V get(java.lang.Object)'>
+        <annotation name='org.jetbrains.annotations.Contract'>
+            <val val="&quot;!null -&gt; _&quot;"/>
+        </annotation>
+    </item>
+</root>

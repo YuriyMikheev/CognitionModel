@@ -1,5 +1,7 @@
 package cognitionmodel.models;
 
+import cognitionmodel.datasets.Tuple;
+
 import java.io.Serializable;
 import java.nio.ByteBuffer;
 import java.util.LinkedList;
@@ -15,20 +17,20 @@ import java.util.Set;
 public abstract class Relation implements Serializable {
 
     private int patternIndex;
-    private LinkedList<Integer> tuples = new LinkedList<>();
+    private LinkedList<Integer> tupleIndices = new LinkedList<>();
     private byte[] signature;
 
-    public Relation(int patternIndex, int[] tuplesIndex, byte[] signature) {
+    public Relation(int patternIndex, int[] tuplesIndexes, byte[] signature) {
         this.patternIndex = patternIndex;
-        for(int i: tuplesIndex)
-            this.tuples.add(i);
+        for(int i: tuplesIndexes)
+            this.tupleIndices.add(i);
 
         this.signature = signature;
     }
 
-    public Relation(int patternIndex, LinkedList<Integer> tuples, byte[] signature) {
+    public Relation(int patternIndex, LinkedList<Integer> tupleIndices, byte[] signature) {
         this.patternIndex = patternIndex;
-        this.tuples = tuples;
+        this.tupleIndices = tupleIndices;
         this.signature = signature;
     }
 
@@ -37,14 +39,14 @@ public abstract class Relation implements Serializable {
     }
 
     public LinkedList<Integer>  getTuples() {
-        return tuples;
+        return tupleIndices;
     }
 
     public byte[] serialize(){
 
-        ByteBuffer r = ByteBuffer.allocate(Integer.BYTES + tuples.size() * Integer.BYTES).putInt(patternIndex);
+        ByteBuffer r = ByteBuffer.allocate(Integer.BYTES + tupleIndices.size() * Integer.BYTES).putInt(patternIndex);
 
-        for (int t: tuples)
+        for (int t: tupleIndices)
             r.putInt(t);
 
         return r.array();
@@ -57,7 +59,7 @@ public abstract class Relation implements Serializable {
         patternIndex = r.getInt();
 
         while (r.position() < serializedRelation.length)
-            tuples.add(r.getInt());
+            tupleIndices.add(r.getInt());
 
     }
 
@@ -72,13 +74,12 @@ public abstract class Relation implements Serializable {
 
     /**
      * Retrieves terminals from relation
-     * @param terminals - set of all possible terminals
      * @return - subset of terminals founded out in relation
      *
      *
      */
 
-    public Set<Relation> getTerminals(Set<Relation> terminals){ // TO-DO
+    public Tuple getTerminals(){ // TO-DO
 
 
         return null;

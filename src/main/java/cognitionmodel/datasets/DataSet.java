@@ -3,6 +3,7 @@ package cognitionmodel.datasets;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Iterator;
 
 /**
@@ -19,6 +20,7 @@ public abstract class DataSet implements Iterable<Tuple> {
     private InputStream inputStream;
     private ArrayList<Tuple> records = new ArrayList<>();
     private Parser parser;
+    private HashMap<TupleElement, Integer> frequencies = new HashMap<>();
 
     /**
      * Creates data set and reads data from input stream.
@@ -38,6 +40,12 @@ public abstract class DataSet implements Iterable<Tuple> {
     private void read() throws IOException {
         records.addAll(parser.get(inputStream.readAllBytes()));
 
+        for (Tuple t: records){
+            for (TupleElement te: t.getTupleElements())
+                if (frequencies.containsKey(te)) frequencies.put(te, frequencies.get(te) + 1);
+                    else frequencies.put(te,1);
+        }
+
     }
 
     public ArrayList<Tuple> getRecords(){
@@ -47,5 +55,16 @@ public abstract class DataSet implements Iterable<Tuple> {
     @Override
     public Iterator<Tuple> iterator() {
         return records.iterator();
+    }
+
+    /**
+     * Returns frequency of the @param tupleElement in the data set
+     * @param tupleElement
+     * @return - frequency
+     */
+
+    public int getFrequency(TupleElement tupleElement){
+        Integer f = frequencies.get(tupleElement);
+        return (f == null?0:f);
     }
 }

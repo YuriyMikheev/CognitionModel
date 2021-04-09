@@ -1,8 +1,10 @@
 package cognitionmodel.models;
 
 import cognitionmodel.datasets.DataSet;
+import cognitionmodel.datasets.TupleElement;
 import cognitionmodel.patterns.PatternSet;
 
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
@@ -45,17 +47,34 @@ public abstract class Model {
     /**
      * Calculates Z measure = ln(P(relation)/production of all Pj), P(relation) - probability of relation,  Pj - probability of value j
      *
-     * @param relation - relation from map
+     * @param relation - relation
      * @return - Z value for the relation
      */
 
     public double getZ(Relation relation){
-        double z = 0;
+        double z = relation.getTuples().size(), p = 1;
 
+        for (TupleElement t: relation.getTerminals())
+            p = p * dataSet.getFrequency(t);
 
-
+        z = Math.log(z / p);
 
         return z;
     }
+
+    /**
+     * Calculates Z measure = ln(P(relation)/production of all Pj), P(relation) - probability of relation,  Pj - probability of value j
+     *
+     * @param signature - relation signature from map
+     * @return - Z value for the relation
+     */
+    public double getZ(byte[] signature){
+        try{
+            return getZ(relationsMap.get(signature));
+        } catch (NullPointerException e){
+            throw new IllegalArgumentException();
+        }
+    }
+
 
 }
