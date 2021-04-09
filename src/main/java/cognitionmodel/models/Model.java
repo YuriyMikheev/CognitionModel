@@ -13,6 +13,8 @@ import java.util.Set;
  * Model = {d*p -> relation}
  * Terminals are basic relations that represent minimal size relation. For example, letter of text or values range
  *
+ * Realization should define
+ * - setRelationsMap()
  */
 
 public abstract class Model {
@@ -30,14 +32,25 @@ public abstract class Model {
     public Model(DataSet dataSet, PatternSet patternSet) {
         this.dataSet = dataSet;
         this.patternSet = patternSet;
+        setRelationMap();
     }
+
+    public abstract void setRelationMap();
 
     public DataSet getDataSet() {
         return dataSet;
     }
 
-    public Map getRelationsMap() {
+/*    public Map getRelationsMap() {
         return relationsMap;
+    }*/
+
+    public Relation get(byte[] signature) {
+        return relationsMap.get(signature);
+    }
+
+    public void putRelation(byte[] signature, Relation relation){
+        relationsMap.put(signature, relation);
     }
 
     public PatternSet getPatternSet() {
@@ -57,7 +70,7 @@ public abstract class Model {
         for (TupleElement t: relation.getTerminals())
             p = p * dataSet.getFrequency(t);
 
-        z = Math.log(z / p);
+        z = Math.log(z / p) - (relation.getLength() - 1) * Math.log(dataSet.size());
 
         return z;
     }
@@ -68,6 +81,7 @@ public abstract class Model {
      * @param signature - relation signature from map
      * @return - Z value for the relation
      */
+
     public double getZ(byte[] signature){
         try{
             return getZ(relationsMap.get(signature));

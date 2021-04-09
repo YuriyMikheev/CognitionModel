@@ -1,17 +1,19 @@
 package cognitionmodel.models;
 
 import cognitionmodel.datasets.Tuple;
+import cognitionmodel.datasets.TupleElement;
 
 import java.io.Serializable;
 import java.nio.ByteBuffer;
 import java.util.LinkedList;
-import java.util.Set;
 
 /**
  * Abstract class representing relation.
  * Relation is a pair of pattern and set of tuples from data set.
  *
- *
+ * Realizations should define methods:
+ * - getTerminals()
+ * - isConsists()
  */
 
 public abstract class Relation implements Serializable {
@@ -79,11 +81,7 @@ public abstract class Relation implements Serializable {
      *
      */
 
-    public Tuple getTerminals(){ // TO-DO
-
-
-        return null;
-    }
+    public abstract Tuple getTerminals();
 
     /**
      * Override this method for relation realization
@@ -91,8 +89,10 @@ public abstract class Relation implements Serializable {
      * @return true if terminal is in relation
      */
 
-    public boolean isConsists(Relation terminal){
-        return false;
+    public abstract boolean isConsists(TupleElement terminal);
+
+    public int getLength(){
+        return getTerminals().getTupleElements().size();
     }
 
 }

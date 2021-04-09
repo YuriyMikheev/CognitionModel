@@ -67,4 +67,8 @@ public abstract class DataSet implements Iterable<Tuple> {
         Integer f = frequencies.get(tupleElement);
         return (f == null?0:f);
     }
+
+    public double size() {
+        return getRecords().size();
+    }
 }
