@@ -11,7 +11,7 @@ import java.io.InputStream;
 public class CSVDataSet extends DataSet{
 
 
-    private Tuples header;
+    private Tuple header;
 
     /**
      * Creates data set and reads CSV data from input stream.
@@ -30,7 +30,7 @@ public class CSVDataSet extends DataSet{
 
     }
 
-    public Tuples getHeader() {
+    public Tuple getHeader() {
         return header;
     }
 }

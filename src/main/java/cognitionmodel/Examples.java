@@ -2,10 +2,9 @@ package cognitionmodel;
 
 import cognitionmodel.datasets.CSVDataSet;
 import cognitionmodel.datasets.CSVParser;
+import cognitionmodel.datasets.TupleElement;
 import cognitionmodel.datasets.Tuple;
-import cognitionmodel.datasets.Tuples;
 import cognitionmodel.patterns.FullGridPatterns;
-import cognitionmodel.patterns.Pattern;
 
 import java.io.*;
 
@@ -15,14 +14,14 @@ public class Examples {
 
         CSVDataSet csvDataSet = new CSVDataSet(new BufferedInputStream(new FileInputStream(new File("D:\\works\\Data\\EMNIST\\emnist-mnist-test.csv"))),new CSVParser(",", "\n"));
 
-        for (Tuple tuple: csvDataSet.getHeader().getTuples())
-            System.out.print(tuple+"\t");
+        for (TupleElement tupleElement : csvDataSet.getHeader().getTuples())
+            System.out.print(tupleElement +"\t");
 
         System.out.println();
         int c = 0;
-        for(Tuples ts: csvDataSet.getRecords()) {
-            for (Tuple tuple: ts.getTuples())
-                System.out.print(tuple+"\t");
+        for(Tuple ts: csvDataSet.getRecords()) {
+            for (TupleElement tupleElement : ts.getTuples())
+                System.out.print(tupleElement +"\t");
             System.out.println();
             if (c++ > 10) break;
         }

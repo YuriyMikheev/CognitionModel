@@ -52,14 +52,14 @@ public class CSVParser implements Parser {
 
         String[] lines = in.split(endofline);
 
-        LinkedList<Tuples> r = new LinkedList<>();
+        LinkedList<Tuple> r = new LinkedList<>();
 
         for (String s: lines) {
-            ArrayList<Tuple> t = new ArrayList<>();
+            ArrayList<TupleElement> t = new ArrayList<>();
             for (String ss : s.split(delimiter)) {
-                t.add(new Tuple(ss));
+                t.add(new TupleElement(ss));
             }
-            r.add(new Tuples(t));
+            r.add(new Tuple(t));
         }
         return r;
     }

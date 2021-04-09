@@ -1,6 +1,5 @@
 package cognitionmodel.patterns;
 
-import cognitionmodel.datasets.Tuple;
 import org.junit.Test;
 
 import static org.junit.Assert.assertTrue;

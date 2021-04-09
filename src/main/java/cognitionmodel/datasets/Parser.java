@@ -9,5 +9,5 @@ import java.util.List;
 
 public interface Parser {
 
-    public List<Tuples> get(byte[] data);
+    public List<Tuple> get(byte[] data);
 }
