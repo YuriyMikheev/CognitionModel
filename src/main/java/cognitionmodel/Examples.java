@@ -1,6 +1,6 @@
 package cognitionmodel;
 
-import cognitionmodel.datasets.CSVDataSet;
+import cognitionmodel.datasets.TableDataSet;
 import cognitionmodel.datasets.CSVParser;
 import cognitionmodel.datasets.TupleElement;
 import cognitionmodel.datasets.Tuple;
@@ -12,7 +12,7 @@ public class Examples {
 
     public static void main(String[] args) throws IOException {
 
-        CSVDataSet csvDataSet = new CSVDataSet(new BufferedInputStream(new FileInputStream(new File("D:\\works\\Data\\EMNIST\\emnist-mnist-test.csv"))),new CSVParser(",", "\n"));
+        TableDataSet csvDataSet = new TableDataSet(new BufferedInputStream(new FileInputStream(new File("D:\\works\\Data\\EMNIST\\emnist-mnist-test.csv"))),new CSVParser(",", "\n"));
 
         for (TupleElement tupleElement : csvDataSet.getHeader().getTupleElements())
             System.out.print(tupleElement +"\t");

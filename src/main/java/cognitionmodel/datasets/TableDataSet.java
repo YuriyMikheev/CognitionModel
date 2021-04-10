@@ -8,21 +8,22 @@ import java.io.InputStream;
  *
  */
 
-public class CSVDataSet extends DataSet{
+public class TableDataSet extends DataSet{
 
 
     private Tuple header;
 
     /**
-     * Creates data set and reads CSV data from input stream.
+     * Creates data set and reads table data from input stream.
      * Store parsed data from input stream.
-     * The first line of CSV data stream should be a header.
+     * The first line of table data stream should be a header.
      *
      * @param inputStream
      * @param parser
      * @throws IOException
      */
-    public CSVDataSet(InputStream inputStream, Parser parser) throws IOException {
+
+    public TableDataSet(InputStream inputStream, Parser parser) throws IOException {
         super(inputStream, parser);
 
         header = getRecords().get(0);

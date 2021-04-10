@@ -11,7 +11,7 @@ public class CSVDataSetTest {
 
     @Test
     public void CSVtest() throws IOException {
-        CSVDataSet csvDataSet = new CSVDataSet( new ByteArrayInputStream("Name,Age,Temperature\r\nJhon, 20, 35.5, \"\"".getBytes()),new CSVParser(",","\r\n"));
+        TableDataSet csvDataSet = new TableDataSet( new ByteArrayInputStream("Name,Age,Temperature\r\nJhon, 20, 35.5, \"\"".getBytes()),new CSVParser(",","\r\n"));
 
        // System.out.println(csvDataSet.getHeader().getTuples().get(0).toString());
 

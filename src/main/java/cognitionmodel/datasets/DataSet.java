@@ -5,6 +5,8 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Spliterator;
+import java.util.function.Consumer;
 
 /**
  * Set of data processing abstract class.
@@ -70,5 +72,15 @@ public abstract class DataSet implements Iterable<Tuple> {
 
     public double size() {
         return getRecords().size();
+    }
+
+    @Override
+    public void forEach(Consumer<? super Tuple> action) {
+        records.forEach(action);
+    }
+
+    @Override
+    public Spliterator<Tuple> spliterator() {
+        return records.spliterator();
     }
 }
