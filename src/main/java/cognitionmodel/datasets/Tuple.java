@@ -7,7 +7,7 @@ import java.util.Spliterator;
 import java.util.function.Consumer;
 
 /**
- * Represents set of tuples
+ * Set of tupleElements
  */
 
 

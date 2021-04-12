@@ -50,13 +50,13 @@ public class CSVParser implements Parser {
 
         String in = new String(data);
 
-        String[] lines = in.split(endofline);
+        String[] lines = in.split(endofline, -1);
 
         LinkedList<Tuple> r = new LinkedList<>();
 
         for (String s: lines) {
             ArrayList<TupleElement> t = new ArrayList<>();
-            for (String ss : s.split(delimiter)) {
+            for (String ss : s.split(delimiter, -1)) {
                 t.add(new TupleElement(ss));
             }
             r.add(new Tuple(t));
