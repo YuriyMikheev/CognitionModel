@@ -2,6 +2,7 @@ package cognitionmodel.datasets;
 
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Spliterator;
 import java.util.function.Consumer;
 
@@ -13,8 +14,8 @@ import java.util.function.Consumer;
 public class Tuple implements Iterable<TupleElement> {
     private ArrayList<TupleElement> tupleElements = new ArrayList<>();
 
-    public Tuple(ArrayList<TupleElement> tupleElements) {
-        this.tupleElements = tupleElements;
+    public Tuple(List<TupleElement> tupleElements) {
+        this.tupleElements.addAll(tupleElements);
     }
 
     public ArrayList<TupleElement> getTupleElements() {
@@ -35,4 +36,9 @@ public class Tuple implements Iterable<TupleElement> {
     public Spliterator<TupleElement> spliterator() {
         return tupleElements.spliterator();
     }
+
+    public int size(){
+        return tupleElements.size();
+    }
+
 }

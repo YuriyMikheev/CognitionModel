@@ -11,6 +11,7 @@ import java.util.Arrays;
 public class TupleElement {
     byte[] data;
     enum Type {
+        Char,
         Empty,
         String,
         Int,
@@ -46,6 +47,13 @@ public class TupleElement {
             } catch (NumberFormatException e){
 
             }
+
+            if (value.length() == 1){
+               data = value.getBytes(Charset.defaultCharset());
+               type = Type.Char;
+               return;
+            }
+
             data = value.getBytes(Charset.defaultCharset());
             type = Type.String;
             return;
@@ -72,6 +80,18 @@ public class TupleElement {
 
     @Override
     public String toString() {
+
+        String val = get().toString();
+
+
+
+        return "{" +
+                "data=" + val +
+                ", type=" + type +
+                '}';
+    }
+
+    public Object get() {
 
         String val = "";
 
@@ -100,11 +120,15 @@ public class TupleElement {
                 val = Arrays.toString(data);
                 break;
             }
+
+            case Char: {
+                val = new String(data);
+                break;
+            }
         }
 
-        return "Tuple{" +
-                "data=" + val +
-                ", type=" + type +
-                '}';
+        return val;
     }
+
+
 }

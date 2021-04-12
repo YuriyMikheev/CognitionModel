@@ -1,0 +1,26 @@
+<component name="libraryTable">
+  <library name="net.openhft:chronicle-map:3.21ea41" type="repository">
+    <properties maven-id="net.openhft:chronicle-map:3.21ea41" />
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/lib/chronicle-map-3.21ea41.jar!/" />
+      <root url="jar://$PROJECT_DIR$/lib/annotations-12.0.jar!/" />
+      <root url="jar://$PROJECT_DIR$/lib/chronicle-core-2.21ea42.jar!/" />
+      <root url="jar://$PROJECT_DIR$/lib/chronicle-analytics-2.20.2.jar!/" />
+      <root url="jar://$PROJECT_DIR$/lib/annotations-19.0.0.jar!/" />
+      <root url="jar://$PROJECT_DIR$/lib/chronicle-values-2.21ea40.jar!/" />
+      <root url="jar://$PROJECT_DIR$/lib/chronicle-bytes-2.21ea40.jar!/" />
+      <root url="jar://$PROJECT_DIR$/lib/javapoet-1.12.1.jar!/" />
+      <root url="jar://$PROJECT_DIR$/lib/chronicle-threads-2.21ea40.jar!/" />
+      <root url="jar://$PROJECT_DIR$/lib/affinity-3.21ea1.jar!/" />
+      <root url="jar://$PROJECT_DIR$/lib/slf4j-api-1.7.30.jar!/" />
+      <root url="jar://$PROJECT_DIR$/lib/chronicle-wire-2.21ea40.jar!/" />
+      <root url="jar://$PROJECT_DIR$/lib/compiler-2.21ea1.jar!/" />
+      <root url="jar://$PROJECT_DIR$/lib/chronicle-algorithms-2.21ea40.jar!/" />
+      <root url="jar://$PROJECT_DIR$/lib/backport-util-concurrent-3.1.jar!/" />
+      <root url="jar://$PROJECT_DIR$/lib/jna-5.5.0.jar!/" />
+      <root url="jar://$PROJECT_DIR$/lib/jna-platform-5.5.0.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>

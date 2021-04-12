@@ -4,75 +4,46 @@ import cognitionmodel.datasets.Tuple;
 import cognitionmodel.datasets.TupleElement;
 
 import java.io.Serializable;
-import java.nio.ByteBuffer;
 import java.util.LinkedList;
 
-/**
- * Abstract class representing relation.
- * Relation is a pair of pattern and set of tuples from data set.
- *
- * Realizations should define methods:
- * - getTerminals()
- * - isConsists()
- */
+public interface Relation extends Serializable {
 
-public abstract class Relation implements Serializable {
+    /**
+     *
+     * @return list of tuples indices
+     */
 
-    private int patternIndex;
-    private LinkedList<Integer> tupleIndices = new LinkedList<>();
-    private byte[] signature;
+    public LinkedList<Integer> getTuplesIndices();
 
-    public Relation(int patternIndex, int[] tuplesIndexes, byte[] signature) {
-        this.patternIndex = patternIndex;
-        for(int i: tuplesIndexes)
-            this.tupleIndices.add(i);
+    /**
+     * Makes relation signature from tuple.
+     * The method defines the way of content of relation to be transfered to signature in Model.RelationMap
+     * Signature is identifier of the relation in the Map. It is used for fast searching relation in the map.
+     *
+     * The method should be redefined for relation realization.
+     *
+     * @param tuple - data
+     * @return - signature
+     */
 
-        this.signature = signature;
-    }
 
-    public Relation(int patternIndex, LinkedList<Integer> tupleIndices, byte[] signature) {
-        this.patternIndex = patternIndex;
-        this.tupleIndices = tupleIndices;
-        this.signature = signature;
-    }
+    public static byte[] makeSignature(Tuple tuple) {
+        return null;
+    };
 
-    public int getPatternIndex() {
-        return patternIndex;
-    }
+    /**
+     *
+     * @return the frequency of the relation in data set
+     */
 
-    public LinkedList<Integer>  getTuples() {
-        return tupleIndices;
-    }
-
-    public byte[] serialize(){
-
-        ByteBuffer r = ByteBuffer.allocate(Integer.BYTES + tupleIndices.size() * Integer.BYTES).putInt(patternIndex);
-
-        for (int t: tupleIndices)
-            r.putInt(t);
-
-        return r.array();
-    }
-
-    public void deserialize(byte[] serializedRelation){
-
-        ByteBuffer r = ByteBuffer.allocate(serializedRelation.length).put(serializedRelation);
-
-        patternIndex = r.getInt();
-
-        while (r.position() < serializedRelation.length)
-            tupleIndices.add(r.getInt());
-
-    }
+    public int getFrequency();
 
     /**
      * Signature identifies relation in Map
      * @return - the relation signature
      */
+    public byte[] getSignature();
 
-    public byte[] getSignature() {
-        return signature;
-    }
 
     /**
      * Retrieves terminals from relation
@@ -81,7 +52,9 @@ public abstract class Relation implements Serializable {
      *
      */
 
-    public abstract Tuple getTerminals();
+    public static Tuple getTerminals(byte[] signature) {
+        return null;
+    };
 
     /**
      * Override this method for relation realization
@@ -91,8 +64,20 @@ public abstract class Relation implements Serializable {
 
     public abstract boolean isConsists(TupleElement terminal);
 
-    public int getLength(){
-        return getTerminals().getTupleElements().size();
-    }
+    /**
+     *
+     * @return the number of terminals that are in relation
+     */
+
+    public int getLength();
+
+    /**
+     * Adds new tuple in tuplesIndices that contains relation
+     * @param tupleIndex
+     * @return frequency of the relation in data set
+     */
+
+    public int addTuple(int tupleIndex);
+
 
 }

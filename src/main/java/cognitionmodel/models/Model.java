@@ -1,10 +1,11 @@
 package cognitionmodel.models;
 
 import cognitionmodel.datasets.DataSet;
+import cognitionmodel.datasets.Tuple;
 import cognitionmodel.datasets.TupleElement;
+import cognitionmodel.patterns.Pattern;
 import cognitionmodel.patterns.PatternSet;
 
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
@@ -17,10 +18,10 @@ import java.util.Set;
  * - setRelationsMap()
  */
 
-public abstract class Model {
+public abstract class Model<R extends Relation> {
     private DataSet dataSet;
-    private Map<byte[], Relation> relationsMap;
-    private Set<Relation> terminals;
+    private Map<byte[], R> relationsMap;
+    private Set<R> terminals;
     private PatternSet patternSet;
 
     /**
@@ -35,22 +36,43 @@ public abstract class Model {
         setRelationMap();
     }
 
+    /**
+     * Sets RelationMap object.
+     */
+
     public abstract void setRelationMap();
 
     public DataSet getDataSet() {
         return dataSet;
     }
 
-/*    public Map getRelationsMap() {
-        return relationsMap;
-    }*/
 
     public Relation get(byte[] signature) {
         return relationsMap.get(signature);
     }
 
-    public void putRelation(byte[] signature, Relation relation){
+    public void putRelation(byte[] signature, R relation){
         relationsMap.put(signature, relation);
+    }
+
+    public void putRelation(Tuple tuple, R relation){
+        relationsMap.put(R.makeSignature(tuple), relation);
+    }
+
+    /**
+     * Gets the relation form the relation map by set of terminals and puts tuple to it.
+     * @param terminals - set of terminals
+     * @param tupleIndex - index of the added tuple in data set
+     */
+
+    public void addRecordToRelation(Tuple terminals, int tupleIndex){
+
+        byte[] s = R.makeSignature(terminals);
+
+        if (relationsMap.containsKey(s)) {
+            relationsMap.get(s).addTuple(tupleIndex);
+        }
+
     }
 
     public PatternSet getPatternSet() {
@@ -64,15 +86,12 @@ public abstract class Model {
      * @return - Z value for the relation
      */
 
-    public double getZ(Relation relation){
-        double z = relation.getTuples().size(), p = 1;
-
-        for (TupleElement t: relation.getTerminals())
-            p = p * dataSet.getFrequency(t);
-
-        z = Math.log(z / p) - (relation.getLength() - 1) * Math.log(dataSet.size());
-
-        return z;
+    public double getZ(R relation){
+        try{
+            return getZ(relation.getSignature());
+        } catch (NullPointerException e){
+            throw new IllegalArgumentException();
+        }
     }
 
     /**
@@ -83,10 +102,45 @@ public abstract class Model {
      */
 
     public double getZ(byte[] signature){
+
+        Relation relation;
+
         try{
-            return getZ(relationsMap.get(signature));
+             relation = relationsMap.get(signature);
         } catch (NullPointerException e){
             throw new IllegalArgumentException();
+        }
+
+        double z = relation.getFrequency(), f = 1;
+        int c = 1;
+
+        for (TupleElement t: R.getTerminals(signature)) {
+            f = f * getDataSet().getFrequency(t);
+            if (f > Double.MAX_VALUE/1000) { //prevents double value overloading
+                f = f / getDataSet().size();
+                c++;
+            }
+        }
+
+        z = Math.log(z / f) - (relation.getLength() - c) * Math.log(getDataSet().size());
+
+        return z;
+
+    }
+
+    /**
+     * Calculates Z measure = ln(P(relation)/production of all Pj), P(relation) - probability of relation,  Pj - probability of value j
+     *
+     * @param tuple - set of terminals in relation
+     * @return - Z value for the relation
+     */
+
+
+    public double getZ(Tuple tuple){
+        try {
+            return getZ(R.makeSignature(tuple));
+        } catch (IllegalArgumentException e){
+            return 0;
         }
     }
 

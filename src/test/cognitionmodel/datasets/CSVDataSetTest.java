@@ -15,7 +15,7 @@ public class CSVDataSetTest {
 
        // System.out.println(csvDataSet.getHeader().getTuples().get(0).toString());
 
-        assertTrue(csvDataSet.getHeader().getTupleElements().get(0).toString().equals("Tuple{data=Name, type=String}"));
+        assertTrue(csvDataSet.getHeader().getTupleElements().get(0).toString().equals("{data=Name, type=String}"));
         assertTrue(csvDataSet.getRecords().get(0).getTupleElements().get(0).type == TupleElement.Type.String);
         assertTrue(csvDataSet.getRecords().get(0).getTupleElements().get(1).type == TupleElement.Type.Int);
         assertTrue(csvDataSet.getRecords().get(0).getTupleElements().get(2).type == TupleElement.Type.Double);
