@@ -14,4 +14,9 @@ public class Pattern {
 
         return bitSet.toByteArray();
     }
+
+    public byte[] getSet() {
+
+        return bitSet.toByteArray();
+    }
 }

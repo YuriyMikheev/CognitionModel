@@ -9,11 +9,20 @@ import java.util.LinkedList;
 public interface Relation extends Serializable {
 
     /**
+     * Relation builder. Should be implemented in inheriting classes
+     * @return the relation object
+     */
+
+    public static Relation of(){
+        return null;
+    };
+
+    /**
      *
      * @return list of tuples indices
      */
 
-    public LinkedList<Integer> getTuplesIndices();
+    public abstract LinkedList<Integer> getTuplesIndices();
 
     /**
      * Makes relation signature from tuple.
@@ -27,22 +36,7 @@ public interface Relation extends Serializable {
      */
 
 
-    public static byte[] makeSignature(Tuple tuple) {
-        return null;
-    };
-
-    /**
-     *
-     * @return the frequency of the relation in data set
-     */
-
-    public int getFrequency();
-
-    /**
-     * Signature identifies relation in Map
-     * @return - the relation signature
-     */
-    public byte[] getSignature();
+    public abstract int[] makeSignature(Tuple tuple);
 
 
     /**
@@ -52,24 +46,7 @@ public interface Relation extends Serializable {
      *
      */
 
-    public static Tuple getTerminals(byte[] signature) {
-        return null;
-    };
-
-    /**
-     * Override this method for relation realization
-     * @param terminal - terminal for checking out
-     * @return true if terminal is in relation
-     */
-
-    public abstract boolean isConsists(TupleElement terminal);
-
-    /**
-     *
-     * @return the number of terminals that are in relation
-     */
-
-    public int getLength();
+    public abstract Tuple getTerminals(int[] signature);
 
     /**
      * Adds new tuple in tuplesIndices that contains relation
@@ -77,7 +54,7 @@ public interface Relation extends Serializable {
      * @return frequency of the relation in data set
      */
 
-    public int addTuple(int tupleIndex);
+    public abstract int addTuple(int tupleIndex);
 
 
 }

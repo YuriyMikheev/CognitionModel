@@ -3,15 +3,14 @@ package cognitionmodel.models;
 import cognitionmodel.datasets.Tuple;
 import cognitionmodel.datasets.TupleElement;
 
-import java.nio.ByteBuffer;
+import java.nio.IntBuffer;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
 
 /**
- * Represents lightest realization of relation. Saves just frequency of the relation in data set.
- * Related terminals are in signature.
- *
+ * Light relation saves nothing.
+ * Serialization returns zero byte array
  *
  */
 
@@ -19,13 +18,7 @@ public class LightRelation implements Relation {
 
     private static HashMap<String, Integer> terminalsMap = new HashMap<>();
     private static ArrayList<String> terminalsArray = new ArrayList<>();
-
-    private int frequency;
-
-    public LightRelation(){
-        getAddTerminal(new TupleElement("").toString());
-    }
-
+    private static Integer aInteger = getAddTerminal(new TupleElement("").toString());
 
     /**
      * LightRelation do not save indices of tuples.
@@ -38,24 +31,20 @@ public class LightRelation implements Relation {
     }
 
 
+    /**
+     *
+     * @return zero size byte array
+     */
 
-    @Override
-    public int getFrequency(){
-        return frequency;
-    }
 
     public byte[] serialize(){
 
-        ByteBuffer r = ByteBuffer.allocate(Integer.BYTES ).putInt(frequency);
-
-        return r.array();
+        return new byte[0];
     }
 
     public void deserialize(byte[] serializedRelation){
 
-        ByteBuffer r = ByteBuffer.allocate(serializedRelation.length).put(serializedRelation);
 
-        frequency = r.getInt();
     }
 
 
@@ -65,7 +54,7 @@ public class LightRelation implements Relation {
      */
 
 
-    public byte[] getSignature(){
+    public int[] getSignature(){
         return null;
     }
 
@@ -77,12 +66,12 @@ public class LightRelation implements Relation {
      *
      */
 
-    public static Tuple getTerminals(byte[] signature){
-        ByteBuffer b = ByteBuffer.allocate(signature.length).put(signature).position(0);
+    public Tuple getTerminals(int[] signature){
+        IntBuffer b = IntBuffer.allocate(signature.length).put(signature).position(0);
         LinkedList<TupleElement> t = new LinkedList<>();
 
         for (int i = 0; i < signature.length / Integer.BYTES; i++)
-            t.add(new TupleElement(terminalsArray.get(b.getInt())));
+            t.add(new TupleElement(terminalsArray.get(b.get())));
 
         return new Tuple(t);
     };
@@ -100,26 +89,15 @@ public class LightRelation implements Relation {
      * The length is in the Model.relationMap Key
      */
 
-    @Override
-    public int getLength(){
-        return 0;
-    }
 
-    @Override
-    public int addTuple(int tupleIndex) {
-        return frequency++;
+    private static synchronized void addTerminal(String terminal){
+        terminalsMap.put(terminal, (Integer) terminalsArray.size());
+        terminalsArray.add(terminal);
     }
-
 
     private static Integer getAddTerminal(String terminal){
-        if (!terminalsMap.containsKey(terminal)){
-            synchronized (terminalsMap) {
-                synchronized (terminalsArray) {
-                    terminalsMap.put(terminal, terminalsArray.size());
-                    terminalsArray.add(terminal);
-                }
-            }
-        }
+        if (!terminalsMap.containsKey(terminal))
+            addTerminal(terminal);
         return terminalsMap.get(terminal);
     }
 
@@ -134,16 +112,28 @@ public class LightRelation implements Relation {
      */
 
 
-    public static byte[] makeSignature(Tuple tuple) {
+    public int[] makeSignature(Tuple tuple) {
 
-        ByteBuffer b = ByteBuffer.allocate(tuple.size() * Integer.BYTES);
+        IntBuffer intBuffer = IntBuffer.allocate(tuple.size());
 
         for (TupleElement t: tuple){
-            b.putInt(getAddTerminal(t.get().toString()));
+            intBuffer.put(getAddTerminal(t.get().toString()));
         }
 
-        return b.array();
-    };
+        return intBuffer.array();
+    }
 
+    @Override
+    public int addTuple(int tupleIndex) {
+        return 0;
+    }
 
+    /**
+     * Provides access to terminals
+     * @return
+     */
+
+    public static ArrayList<String> getTerminalsArray() {
+        return terminalsArray;
+    }
 }

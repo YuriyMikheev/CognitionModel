@@ -2,6 +2,7 @@ package cognitionmodel.datasets;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.HashMap;
 
 /**
  * Provides CSV data support
@@ -9,7 +10,6 @@ import java.io.InputStream;
  */
 
 public class TableDataSet extends DataSet{
-
 
     private Tuple header;
 
@@ -28,6 +28,7 @@ public class TableDataSet extends DataSet{
 
         header = getRecords().get(0);
         getRecords().remove(0);
+
 
     }
 

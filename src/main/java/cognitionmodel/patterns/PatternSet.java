@@ -6,7 +6,18 @@ import java.util.Iterator;
 public abstract class PatternSet implements Iterable<Pattern>{
     ArrayList<Pattern> patterns = new ArrayList<Pattern>();
 
+
+
+    public enum PatternsType {
+        FullCombinations,
+        Recursive,
+        Cellular
+    }
+
+    public PatternsType patternsType;
+
     public PatternSet() {
+
     }
 
     public PatternSet(ArrayList<Pattern> patterns) {
@@ -17,9 +28,7 @@ public abstract class PatternSet implements Iterable<Pattern>{
         return patterns;
     }
 
-    public void generate(){
 
-    }
     @Override
     public Iterator<Pattern> iterator() {
         return patterns.iterator();

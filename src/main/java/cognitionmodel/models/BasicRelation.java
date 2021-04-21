@@ -13,24 +13,40 @@ import java.util.LinkedList;
  * Realizations should define methods:
  * - makeSignature(Tuple);
  * - getTerminals(signature)
- * - isConsists()
  */
 
-public abstract class BasicRelation implements Relation {
+public class BasicRelation implements Relation {
 
     private int patternIndex;
     private LinkedList<Integer> tupleIndices = new LinkedList<>();
-    private byte[] signature;
 
-    public BasicRelation(int patternIndex, int[] tuplesIndexes) {
-        this.patternIndex = patternIndex;
+
+    /**
+     * Relation builder. Should be implemented in inheriting classes
+     * @return the relation object
+     */
+
+    public static BasicRelation of(){
+        return new BasicRelation();
+    };
+
+
+    public static BasicRelation fromTuplesIndecies(int patternIndex, int[] tuplesIndexes) {
+
+        BasicRelation basicRelation = of();
+        basicRelation.patternIndex = patternIndex;
         for(int i: tuplesIndexes)
-            this.tupleIndices.add(i);
+            basicRelation.tupleIndices.add(i);
+
+        return basicRelation;
     }
 
-    public BasicRelation(int patternIndex, LinkedList<Integer> tupleIndices) {
-        this.patternIndex = patternIndex;
-        this.tupleIndices = tupleIndices;
+    public static BasicRelation fromTuplesList(int patternIndex, LinkedList<Integer> tupleIndices) {
+
+        BasicRelation basicRelation = of();
+        basicRelation.patternIndex = patternIndex;
+        basicRelation.tupleIndices = tupleIndices;
+        return basicRelation;
     }
 
     public int getPatternIndex() {
@@ -47,11 +63,6 @@ public abstract class BasicRelation implements Relation {
         return tupleIndices;
     }
 
-
-    @Override
-    public int getFrequency(){
-        return tupleIndices.size();
-    }
 
     public byte[] serialize(){
 
@@ -76,32 +87,15 @@ public abstract class BasicRelation implements Relation {
 
 
     /**
-     * Signature identifies relation in Map
-     * @return - the relation signature
-     */
-
-
-    public byte[] getSignature(){
-        return signature;
-    };
-
-
-    /**
      * Retrieves terminals from relation
+     *
      * @return - subset of terminals founded out in relation
-     *
-     *
      */
 
-    public abstract Tuple getTerminals(byte[] signature);
+    public static Tuple getTerminals(byte[] signature) {
+        return null;
+    }
 
-    /**
-     * Override this method for relation realization
-     * @param terminal - terminal for checking out
-     * @return true if terminal is in relation
-     */
-
-    public abstract boolean isConsists(TupleElement terminal);
 
     /**
      *
@@ -110,11 +104,6 @@ public abstract class BasicRelation implements Relation {
      * Its recommended to redefine method to speed up Z calculations
      */
 
-
-    @Override
-    public int getLength(){
-        return getTerminals(signature).getTupleElements().size();
-    }
 
     @Override
     public int addTuple(int tupleIndex) {
@@ -135,10 +124,16 @@ public abstract class BasicRelation implements Relation {
      * @return - signature
      */
 
-    public static byte[] makeSignature(Tuple tuple) {
+    @Override
+    public int[] makeSignature(Tuple tuple) {
 
         return null;
-    };
+    }
+
+    @Override
+    public Tuple getTerminals(int[] signature) {
+        return null;
+    }
 
 
 }

@@ -93,7 +93,7 @@ public class TupleElement {
 
     public Object get() {
 
-        String val = "";
+        Object val = null;
 
         switch (type) {
             case String: {
@@ -102,12 +102,12 @@ public class TupleElement {
             }
 
             case Double: {
-                val = Double.toString(ByteBuffer.allocate(Double.BYTES).put(data).position(0).getDouble());
+                val = ByteBuffer.allocate(Double.BYTES).put(data).position(0).getDouble();
                 break;
             }
 
             case Int: {
-                val = Integer.toString(ByteBuffer.allocate(Integer.BYTES).put(data).position(0).getInt());
+                val = ByteBuffer.allocate(Integer.BYTES).put(data).position(0).getInt();
                 break;
             }
 
@@ -117,7 +117,7 @@ public class TupleElement {
             }
 
             case ByteArray: {
-                val = Arrays.toString(data);
+                val = data;
                 break;
             }
 
