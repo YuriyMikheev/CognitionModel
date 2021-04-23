@@ -117,7 +117,7 @@ public class LightRelation implements Relation {
         IntBuffer intBuffer = IntBuffer.allocate(tuple.size());
 
         for (TupleElement t: tuple){
-            intBuffer.put(getAddTerminal(t.get().toString()));
+            intBuffer.put(getAddTerminal(t.getValue().toString()));
         }
 
         return intBuffer.array();

@@ -2,14 +2,12 @@ package cognitionmodel.models;
 
 import cognitionmodel.datasets.CSVParser;
 import cognitionmodel.datasets.TableDataSet;
-import cognitionmodel.patterns.FullGridPatterns;
+import cognitionmodel.patterns.FullGridRecursivePatterns;
 import org.junit.Test;
 
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
-
-import static org.junit.Assert.*;
 
 public class TabularModelTest {
 
@@ -24,7 +22,7 @@ public class TabularModelTest {
                       " capital-gain," +
                      " capital-loss").split(","));
 
-        tabularModel.setPatternSet(new FullGridPatterns(tabularModel,4));
+        tabularModel.setPatternSet(new FullGridRecursivePatterns(tabularModel,4));
 
         tabularModel.make();
 

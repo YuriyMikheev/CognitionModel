@@ -36,11 +36,17 @@ public class TabularModel extends Model<LightRelation>{
         super(dataSet, new LightRelation());
         terminalsToField = new int[LightRelation.getTerminalsArray().size()];
 
+        int c = 0;
+
         for (Tuple t: dataSet) {
             int[] sign = relationMethods.makeSignature(t);
             for (int i = 0; i < sign.length; i++) {
-                terminalsToField[sign[i]] = i;
+                if (terminalsToField[sign[i]] == 0) {
+                    terminalsToField[sign[i]] = i;
+                    if (c++ == terminalsToField.length) break;
+                }
             }
+            if (c == terminalsToField.length) break;
         }
 
 
@@ -99,7 +105,7 @@ public class TabularModel extends Model<LightRelation>{
             enabledFields[i] = 0;
 
             for (String f: fields){
-                if (f.equals(t.get().toString()))
+                if (f.equals(t.getValue().toString()))
                     enabledFields[i] = 1;
             }
             i++;
@@ -119,6 +125,12 @@ public class TabularModel extends Model<LightRelation>{
     public void setPatternSet(PatternSet patternSet) {
         this.patternSet = patternSet;
     }
+
+    @Override
+    public TableDataSet getDataSet(){
+        return (TableDataSet) dataSet;
+    }
+
 
 /*
    public void make(){

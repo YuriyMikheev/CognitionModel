@@ -22,7 +22,7 @@ import java.util.stream.Collectors;
  */
 
 public abstract class Model<R extends Relation> {
-    private DataSet dataSet;
+    protected DataSet dataSet;
     protected Map<int[], R> relationsMap = null;
     protected Map<int[], Integer> frequencyMap;
    // private Map<int[], Long> terminalsFrequencies;
@@ -70,6 +70,10 @@ public abstract class Model<R extends Relation> {
      */
 
     public abstract void setMaps();
+
+    public R getRelationMethods() {
+        return relationMethods;
+    }
 
     public DataSet getDataSet() {
         return dataSet;
@@ -119,11 +123,21 @@ public abstract class Model<R extends Relation> {
      * @param signature
      */
 
-    public void incFrequency(int[] signature){
+    public synchronized void incFrequency(int[] signature){
         if (frequencyMap.containsKey(signature))
             frequencyMap.put(signature, frequencyMap.get(signature) + 1);
         else
             frequencyMap.put(signature, 1);
+    }
+
+    /**
+     * Increments frequency of the relation appearance
+     * @param signature
+     */
+
+    public int getFrequency(int[] signature){
+        Integer f = frequencyMap.get(signature);
+        return (f != null? f : 0);
     }
 
 
@@ -145,18 +159,20 @@ public abstract class Model<R extends Relation> {
         if (zf == null) return 0;
 
         double z = zf, f = 1;
-        int c = 1, i = 0;
+        int c = 1, l = 0;
 
 
-        for (int t: signature) {
-            f = f * frequencyMap.get(new int[]{i++,t});
-            if (f > Double.MAX_VALUE/1000) { //prevents double value overloading
-                f = f / getDataSet().size();
-                c++;
+        for (int i = 0; i < signature.length; i++)
+            if (signature[i] != 0){
+                l++;
+                f = f * frequencyMap.get(new int[]{i,signature[i]});
+                if (f > Double.MAX_VALUE/1000000) { //prevents double value overloading
+                    f = f / getDataSet().size();
+                    c++;
             }
         }
 
-        z = Math.log(z / f) - (signature.length - c) * Math.log(getDataSet().size());
+        z = Math.log(z / f) + (l - c) * Math.log(getDataSet().size());
 
         return z;
 
@@ -240,7 +256,8 @@ public abstract class Model<R extends Relation> {
 
         for (Tuple tuple: dataSet){
             int finalI = i;
-            cfl.add(CompletableFuture.supplyAsync(() -> {
+            cfl.add(CompletableFuture.supplyAsync(() ->
+            {
                 for (int[] signature: generateRelations(tuple)) {
                     if (relationsMap != null) addRecordToRelation(signature, finalI);
                     incFrequency(signature);

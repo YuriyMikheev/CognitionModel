@@ -1,5 +1,6 @@
 package cognitionmodel.patterns;
 
+import java.util.Arrays;
 import java.util.BitSet;
 
 public class Pattern {
@@ -18,5 +19,10 @@ public class Pattern {
     public byte[] getSet() {
 
         return bitSet.toByteArray();
+    }
+
+    public String toString(){
+
+        return Arrays.toString(get());
     }
 }

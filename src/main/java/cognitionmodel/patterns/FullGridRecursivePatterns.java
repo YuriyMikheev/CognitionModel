@@ -12,13 +12,13 @@ import java.util.function.Consumer;
  * a full set of all values combinations.
  */
 
-public class FullGridPatterns extends PatternSet {
+public class FullGridRecursivePatterns extends PatternSet {
 
     /**
      * No arguments constructor creates empty set of patterns
      */
 
-    public FullGridPatterns(){
+    public FullGridRecursivePatterns(){
     }
 
     /**
@@ -29,7 +29,7 @@ public class FullGridPatterns extends PatternSet {
      * @param maxDepth - max number of variables in relation
      */
 
-    public FullGridPatterns(int length, int maxDepth) {
+    public FullGridRecursivePatterns(int length, int maxDepth) {
         byte[] enabled = new byte[length];
         Arrays.fill(enabled, (byte) 1);
         int d = 0;
@@ -46,7 +46,7 @@ public class FullGridPatterns extends PatternSet {
      * @param enabled - {0,1} byte array 1 - field ia enabled, 0 - disabled
      */
 
-    public FullGridPatterns(int length, int maxDepth, byte[] enabled){
+    public FullGridRecursivePatterns(int length, int maxDepth, byte[] enabled){
         int d = 0;
 
         if (enabled.length < length) {
@@ -66,7 +66,7 @@ public class FullGridPatterns extends PatternSet {
      * @param maxDepth - max number of variables in relation
      */
 
-    public FullGridPatterns(TabularModel tabularModel, int maxDepth){
+    public FullGridRecursivePatterns(TabularModel tabularModel, int maxDepth){
         this(((TableDataSet)tabularModel.getDataSet()).getHeader().getTupleElements().size(), maxDepth, tabularModel.getEnabledFields());
     }
 

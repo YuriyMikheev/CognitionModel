@@ -4,7 +4,7 @@ import cognitionmodel.datasets.TableDataSet;
 import cognitionmodel.datasets.CSVParser;
 import cognitionmodel.datasets.TupleElement;
 import cognitionmodel.datasets.Tuple;
-import cognitionmodel.patterns.FullGridPatterns;
+import cognitionmodel.patterns.FullGridRecursivePatterns;
 
 import java.io.*;
 
@@ -26,7 +26,7 @@ public class Examples {
             if (c++ > 10) break;
         }
 
-        FullGridPatterns fullGridPatterns = new FullGridPatterns(700, 4);
+        FullGridRecursivePatterns fullGridPatterns = new FullGridRecursivePatterns(700, 4);
         System.out.println(fullGridPatterns.getPatterns().size());
 
     }

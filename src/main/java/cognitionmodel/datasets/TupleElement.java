@@ -1,14 +1,14 @@
 package cognitionmodel.datasets;
 
+import java.io.Serializable;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
-import java.util.Arrays;
 
 /**
  * Saves data and data type. The basic element of inner data representation
  */
 
-public class TupleElement {
+public class TupleElement implements Serializable, Cloneable {
     byte[] data;
     enum Type {
         Char,
@@ -81,7 +81,7 @@ public class TupleElement {
     @Override
     public String toString() {
 
-        String val = get().toString();
+        String val = getValue().toString();
 
 
 
@@ -91,7 +91,7 @@ public class TupleElement {
                 '}';
     }
 
-    public Object get() {
+    public Object getValue() {
 
         Object val = null;
 

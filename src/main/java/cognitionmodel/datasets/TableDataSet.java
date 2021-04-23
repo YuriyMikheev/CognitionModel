@@ -35,4 +35,8 @@ public class TableDataSet extends DataSet{
     public Tuple getHeader() {
         return header;
     }
+
+    public int getFieldIndex(String fieldIndex){
+        return header.findFirstIndex(fieldIndex);
+    }
 }
