@@ -14,7 +14,10 @@ import java.util.Map;
 public class PredictionResults {
 
     private ChronicleMap<int[],Tuple> datamap;
-    private int tpr  = -1, wpr = -1;
+    private int tpr  = -1, wpr = -1, nfailed = 0;
+    private int[][] confusionMatrix;
+
+    private boolean ischanged = true;
 
 
     /**
@@ -32,7 +35,7 @@ public class PredictionResults {
                 .entries(1000000)
                 .maxBloatFactor(10)
                 .averageKeySize(50)
-                .averageValueSize(200)
+                .averageValueSize(2000)
                 .create();
 
     }
@@ -87,8 +90,9 @@ public class PredictionResults {
             Map.Entry<int[],Tuple> entry = entryIterator.next();
             Tuple tuple = entry.getValue();
             if (entry.getKey()[1] == elementIndex & entry.getKey()[0] >= 0)
-               // if (altToIdx.get(tuple.get(1).getValue()) != -1 & altToIdx.get(tuple.get(0).getValue()) != -1)
+                if (!altToIdx.get(tuple.get(1).getValue()).equals("Prediction failed") & !altToIdx.get(tuple.get(0).getValue()).equals("Prediction failed"))
                     confusionMatrix[altToIdx.get(tuple.get(0).getValue())][altToIdx.get(tuple.get(1).getValue())]++;
+                else nfailed++;
         }
 
         tpr = 0; wpr = 0;
@@ -117,18 +121,19 @@ public class PredictionResults {
      * Shows confusion matrix
      */
 
-    public  void showInfo(int elementIndex) {
+    public  void show(int elementIndex) {
 
-        int[][] confusionMatrix = confusionMatrix(elementIndex);
+        if (ischanged) confusionMatrix = confusionMatrix(elementIndex);
+
         Tuple terminals = getHeader(elementIndex).clone();
         terminals.getTupleElements().remove(0);
         terminals.getTupleElements().remove(0);
 
         System.out.println("Confusion matrix\n");
-        System.out.print("\t\t\tactual \n predicted\t");
+        System.out.print("\t\t\tactual \n predicted");
 
         for (int i = 0; i < confusionMatrix.length; i++)
-            System.out.print(terminals.get(i).getValue() + "\t");
+            System.out.printf("%9s",terminals.get(i).getValue());
         System.out.println("\t");
 
         int tpr = 0, wpr = 0;
@@ -166,8 +171,9 @@ public class PredictionResults {
             mpr = mpr + prec; mrec = mrec + rec; mf1 = mf1 + f1;
         }
 
-        System.out.printf("Mean\t\t%1$.5f\t\t%2$.5f\n",(mpr/(confusionMatrix.length)),(mrec/(confusionMatrix.length)));
+        System.out.printf("\nMean\t\t%1$.5f\t\t%2$.5f\n",(mpr/(confusionMatrix.length)),(mrec/(confusionMatrix.length)));
         System.out.printf("Total \nF1-Score\t\t\t\t\t\t\t%1$.5f\n",(2*mpr*mrec/((confusionMatrix.length)*(mpr+mrec))));
+        System.out.println("Prediction failed in "+nfailed+" cases");
 
     }
 

@@ -35,6 +35,8 @@ public abstract class DataSet implements Iterable<Tuple> {
     public DataSet(InputStream inputStream, Parser parser) throws IOException {
         this.inputStream = inputStream;
         this.parser = parser;
+
+
         read();
     }
 

@@ -3,6 +3,10 @@ package cognitionmodel.datasets;
 import java.io.Serializable;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
+import java.text.DecimalFormat;
+import java.text.DecimalFormatSymbols;
+import java.text.NumberFormat;
+import java.text.ParseException;
 
 /**
  * Saves data and data type. The basic element of inner data representation
@@ -19,6 +23,8 @@ public class TupleElement implements Serializable, Cloneable {
         ByteArray
     }
 
+    public static NumberFormat numberFormat = NumberFormat.getInstance();
+
     Type type = Type.Empty;
 
     public TupleElement(){
@@ -30,6 +36,7 @@ public class TupleElement implements Serializable, Cloneable {
         if (value == null) throw new  NullPointerException();
 
         if (!value.isBlank()) {
+
             try {
                 Integer d = Integer.parseInt(value.trim());
                 data = ByteBuffer.allocate(Integer.BYTES).putInt(d).array();

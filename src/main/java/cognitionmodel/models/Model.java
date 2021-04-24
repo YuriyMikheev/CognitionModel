@@ -6,9 +6,7 @@ import cognitionmodel.datasets.Tuple;
 import cognitionmodel.patterns.Pattern;
 import cognitionmodel.patterns.PatternSet;
 
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
@@ -25,7 +23,6 @@ public abstract class Model<R extends Relation> {
     protected DataSet dataSet;
     protected Map<int[], R> relationsMap = null;
     protected Map<int[], Integer> frequencyMap;
-   // private Map<int[], Long> terminalsFrequencies;
     protected PatternSet patternSet = null;
     protected R relationMethods;
 
@@ -123,11 +120,8 @@ public abstract class Model<R extends Relation> {
      * @param signature
      */
 
-    public synchronized void incFrequency(int[] signature){
-        if (frequencyMap.containsKey(signature))
-            frequencyMap.put(signature, frequencyMap.get(signature) + 1);
-        else
-            frequencyMap.put(signature, 1);
+    public void incFrequency(int[] signature){
+        frequencyMap.compute(signature, (k, v)  -> (v == null ? 1: v +1));
     }
 
     /**
@@ -220,19 +214,18 @@ public abstract class Model<R extends Relation> {
     public LinkedList<int[]> generateRelations(int[] signature){
 
         if (patternSet == null) {
-            System.err.println("Pattern set is not defined");
+            throw new IllegalStateException("Pattern set is not defined");
         }
 
         LinkedList<int[]> r = new LinkedList<>();
 
         for (Pattern p: patternSet) {
-            byte[] pb = p.get();
-            int i = 0;
+            int[] pb = p.getSet();
             int[] ns = new int[signature.length];
-            for (byte b: pb) {
-                ns[i] = (b == 1? signature[i]:0);
-                i++;
-            }
+            for (int b: pb)
+                if (b < signature.length){
+                    ns[b] = signature[b];
+                }
             r.add(ns);
         }
 
@@ -264,11 +257,13 @@ public abstract class Model<R extends Relation> {
                 }
                 return null;
             }));
-            if (i++ % (int) (dataSet.size() * 0.01 + 1) == 0) {
+            if (i++ % (int) (dataSet.size() * 0.01 + 1) == 0 | i == dataSet.size()) {
                 cfl.stream().map(m -> m.join()).collect(Collectors.toList());
                 cfl.clear();
             }
         }
     }
+
+
 
 }

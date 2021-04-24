@@ -1,6 +1,8 @@
 package cognitionmodel.datasets;
 
 import java.nio.charset.Charset;
+import java.text.DecimalFormat;
+import java.text.DecimalFormatSymbols;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
@@ -24,6 +26,11 @@ public class CSVParser implements Parser {
     public CSVParser(String delimiter, String endofline) {
         this.delimiter = delimiter;
         this.endofline = endofline;
+
+        TupleElement.numberFormat.setParseIntegerOnly(false);
+        DecimalFormatSymbols decimalFormatSymbols = ((DecimalFormat)TupleElement.numberFormat).getDecimalFormatSymbols();
+        decimalFormatSymbols.setDecimalSeparator('.');
+        ((DecimalFormat) TupleElement.numberFormat).setDecimalFormatSymbols(decimalFormatSymbols);
     }
 
     public String getDelimiter() {
@@ -44,8 +51,7 @@ public class CSVParser implements Parser {
     public List get(byte[] data) {
 
         if (Charset.defaultCharset() == null) {
-            System.err.println("CSV Parser: Default charset decoder is undefined. Can't parse the data");
-            throw new UnsupportedOperationException();
+            throw new UnsupportedOperationException("CSV Parser: Default charset decoder is undefined. Can't parse the data");
         }
 
         String in = new String(data);
@@ -55,7 +61,7 @@ public class CSVParser implements Parser {
         LinkedList<Tuple> r = new LinkedList<>();
 
         for (String s: lines) {
-            ArrayList<TupleElement> t = new ArrayList<>();
+            LinkedList<TupleElement> t = new LinkedList<>();
             for (String ss : s.split(delimiter, -1)) {
                 t.add(new TupleElement(ss));
             }

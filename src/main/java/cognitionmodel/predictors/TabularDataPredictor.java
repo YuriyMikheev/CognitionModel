@@ -8,6 +8,7 @@ import cognitionmodel.models.TabularModel;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
 /**
@@ -45,43 +46,54 @@ public class TabularDataPredictor extends Predictor{
         PredictionResults r = new PredictionResults();
         r.addPredictedDataHeader(signatureIndex,new Tuple().add(dataSet.getHeader().get(signatureIndex).getValue()+" Predicted").add(dataSet.getHeader().get(signatureIndex).getValue()+" From data").addAll(altTerminals));
 
+        LinkedList<CompletableFuture<Integer>> cfl = new LinkedList<>();
+
+
         int recordIndex = 0;
-        for (Tuple record: dataSet){
+        for (Tuple record: dataSet)
+           if (record.size() > signatureIndex){
+               int finalRecordIndex = recordIndex;
+               cfl.add(CompletableFuture.supplyAsync(() -> {
 
-            TupleElement stored = record.get(signatureIndex);
-            record.getTupleElements().set(signatureIndex, new TupleElement(""));
+                   TupleElement stored = record.get(signatureIndex);
+                   record.getTupleElements().set(signatureIndex, new TupleElement(""));
 
-            LinkedList<int[]> relations = model.generateRelations(record);
+                   LinkedList<int[]> relations = model.generateRelations(record);
 
-            Double[] altP = new Double[altTerminals.size()];
-            Arrays.fill(altP,0.0);
+                   Double[] altP = new Double[altTerminals.size()];
+                   Arrays.fill(altP, 0.0);
 
-            for (int[] relation: relations) {
-                relation[signatureIndex] = 0;
-                double fp = model.getFrequency(relation);
-                int j = 0;
-                if (fp != 0)
-                    for (int altTerm: altTerminalsIndices){
-                        relation[signatureIndex] = altTerm;
-                        double p = model.getFrequency(relation) / fp;
-                        double z = model.getZ(relation);
-                        altP[j++] += Math.pow(p,wp) * Math.pow(z, wz);
-                    }
-            }
+                   for (int[] relation : relations) {
+                       relation[signatureIndex] = 0;
+                       double fp = model.getFrequency(relation);
+                       int j = 0;
+                       if (fp != 0)
+                           for (int altTerm : altTerminalsIndices) {
+                               relation[signatureIndex] = altTerm;
+                               double p = model.getFrequency(relation) / fp;
+                               double z = model.getZ(relation);
+                               altP[j++] += Math.pow(p, wp) * Math.pow(z, wz);
+                           }
+                   }
 
-            int maxi = -1;
-            Double maxd = -1000000000.0;
+                   int maxi = -1;
+                   Double maxd = Double.MIN_NORMAL;
 
-            for (int i = 0; i < altP.length; i++) {
-                if (altP[i] > maxd) {
-                    maxi = i;
-                    maxd = altP[i];
-                }
-            }
+                   for (int i = 0; i < altP.length; i++) {
+                       if (altP[i] > maxd) {
+                           maxi = i;
+                           maxd = altP[i];
+                       }
+                   }
 
-            r.put(recordIndex,signatureIndex,new Tuple().add(maxi!= -1? altTerminals.get(maxi):"Prediction failed").add(stored).addAll(Arrays.stream(altP).collect(Collectors.toList())));
+                   r.put(finalRecordIndex, signatureIndex, new Tuple().add(maxi != -1 ? altTerminals.get(maxi) : "Prediction failed").add(stored).addAll(Arrays.stream(altP).collect(Collectors.toList())));
+                   return null;
+               }));
 
-            recordIndex++;
+               if (recordIndex++ % (int) (dataSet.size() * 0.01 + 1) == 0 | recordIndex == dataSet.size()) {
+                   cfl.stream().map(m -> m.join()).collect(Collectors.toList());
+                   cfl.clear();
+               }
         }
 
         return r;
@@ -104,9 +116,8 @@ public class TabularDataPredictor extends Predictor{
             if (t.getValue().toString().equals(fieldName)) break;
                else i++;
 
-        if (!model.getDataSet().getHeader().get(i).getValue().toString().equals(fieldName)) {
-            System.err.println(fieldName + "is not found in model data set");
-            throw new IllegalArgumentException();
+        if (i == dataSet.getHeader().size() | !model.getDataSet().getHeader().get(i).getValue().toString().equals(fieldName)) {
+            throw new IllegalArgumentException(fieldName + " is not found in model data set");
         }
 
         return predict(model, dataSet, i, wp, wz);

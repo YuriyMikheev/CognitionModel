@@ -33,4 +33,12 @@ public abstract class PatternSet implements Iterable<Pattern>{
     public Iterator<Pattern> iterator() {
         return patterns.iterator();
     }
+
+    public void singleClean(){
+        Iterator<Pattern> iterator = patterns.iterator();
+
+        while (iterator.hasNext()){
+            if (iterator.next().getSetAmount() == 1) iterator.remove();
+        }
+    }
 }

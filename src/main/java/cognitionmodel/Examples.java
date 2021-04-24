@@ -4,30 +4,92 @@ import cognitionmodel.datasets.TableDataSet;
 import cognitionmodel.datasets.CSVParser;
 import cognitionmodel.datasets.TupleElement;
 import cognitionmodel.datasets.Tuple;
+import cognitionmodel.models.TabularModel;
+import cognitionmodel.patterns.FullGridIterativePatterns;
 import cognitionmodel.patterns.FullGridRecursivePatterns;
+import cognitionmodel.predictors.PredictionResults;
+import cognitionmodel.predictors.TabularDataPredictor;
 
 import java.io.*;
+import java.util.concurrent.TimeUnit;
 
 public class Examples {
 
+
+    public static void adult() throws IOException {
+        TabularModel tabularModel = new TabularModel(
+                new TableDataSet(new FileInputStream(new File("D:\\works\\Data\\adult\\adult.data")),
+                        new CSVParser(",","\n")),
+                (" education-num," +
+                        " marital-status," +
+                        " capital-gain," +
+                        " capital-loss,"+
+                        " INCOME").split(","));
+
+        tabularModel.setPatternSet(new FullGridIterativePatterns(tabularModel,3));
+
+        tabularModel.make();
+
+        PredictionResults predictionResults = TabularDataPredictor.predict(tabularModel,new TableDataSet(new FileInputStream(new File("D:\\works\\Data\\adult\\adult.test")),
+                new CSVParser(",","\n")), " INCOME" ,10 ,2.0);
+
+
+        predictionResults.show(tabularModel.getDataSet().getFieldIndex(" INCOME"));
+        tabularModel.close();
+    }
+
+
+    public static void census() throws IOException {
+        TabularModel tabularModel = new TabularModel(
+                new TableDataSet(new FileInputStream(new File("D:\\works\\Data\\Census\\census-income.data")),
+                        new CSVParser(",","\n")),
+        (" AHGA, AWKSTAT, CAPLOSS, TAXINC, CAPGAIN").split(","));
+
+        tabularModel.setPatternSet(new FullGridIterativePatterns(tabularModel,3));
+
+        tabularModel.make();
+
+        PredictionResults predictionResults = TabularDataPredictor.predict(tabularModel,new TableDataSet(new FileInputStream(new File("D:\\works\\Data\\Census\\census-income.test")),
+                new CSVParser(",","\n")), " TAXINC" ,10 ,2.0);
+
+
+        predictionResults.show(tabularModel.getDataSet().getFieldIndex(" TAXINC"));
+        tabularModel.close();
+    }
+
+
+    public static void letters() throws IOException {
+        TabularModel tabularModel = new TabularModel(
+                new TableDataSet(new FileInputStream(new File("D:\\works\\Data\\letter\\letter-recognition.data.train.csv")),
+                        new CSVParser(";","\r\n")));
+
+        tabularModel.setPatternSet(new FullGridRecursivePatterns(tabularModel,4));
+
+        tabularModel.make();
+
+        PredictionResults predictionResults = TabularDataPredictor.predict(tabularModel,new TableDataSet(new FileInputStream(new File("D:\\works\\Data\\letter\\letter-recognition.data.test.csv")),
+                new CSVParser(";","\r\n")), "lettr" ,1 ,1);
+
+
+        predictionResults.show(tabularModel.getDataSet().getFieldIndex("lettr"));
+        tabularModel.close();
+    }
+
     public static void main(String[] args) throws IOException {
 
-        TableDataSet csvDataSet = new TableDataSet(new BufferedInputStream(new FileInputStream(new File("D:\\works\\Data\\EMNIST\\emnist-mnist-test.csv"))),new CSVParser(",", "\n"));
+        long t = System.currentTimeMillis();
 
-        for (TupleElement tupleElement : csvDataSet.getHeader().getTupleElements())
-            System.out.print(tupleElement +"\t");
+        adult();
+      //  census();
+       // letters();
 
-        System.out.println();
-        int c = 0;
-        for(Tuple ts: csvDataSet.getRecords()) {
-            for (TupleElement tupleElement : ts.getTupleElements())
-                System.out.print(tupleElement +"\t");
-            System.out.println();
-            if (c++ > 10) break;
-        }
+        t = System.currentTimeMillis()-t;
 
-        FullGridRecursivePatterns fullGridPatterns = new FullGridRecursivePatterns(700, 4);
-        System.out.println(fullGridPatterns.getPatterns().size());
+        System.out.println(String.format("working time %02d:%02d:%02d", TimeUnit.MILLISECONDS.toHours(t), TimeUnit.MILLISECONDS.toMinutes(t) - TimeUnit.HOURS.toMinutes(TimeUnit.MILLISECONDS.toHours(t)),
+                TimeUnit.MILLISECONDS.toSeconds(t) - TimeUnit.MINUTES.toSeconds(TimeUnit.MILLISECONDS.toMinutes(t))));
+
+        System.out.println("memory usage: " + (Runtime.getRuntime().totalMemory()-Runtime.getRuntime().freeMemory())/(1024*1024) + " Mb");
+
 
     }
 }

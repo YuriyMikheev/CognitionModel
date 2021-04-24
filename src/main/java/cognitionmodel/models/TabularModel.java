@@ -4,6 +4,7 @@ import cognitionmodel.datasets.TableDataSet;
 import cognitionmodel.datasets.Tuple;
 import cognitionmodel.datasets.TupleElement;
 import cognitionmodel.patterns.PatternSet;
+import net.openhft.chronicle.map.ChronicleMap;
 import net.openhft.chronicle.map.ChronicleMapBuilder;
 
 import java.util.Arrays;
@@ -123,6 +124,7 @@ public class TabularModel extends Model<LightRelation>{
      */
 
     public void setPatternSet(PatternSet patternSet) {
+        patternSet.singleClean();
         this.patternSet = patternSet;
     }
 
@@ -132,12 +134,11 @@ public class TabularModel extends Model<LightRelation>{
     }
 
 
-/*
-   public void make(){
-        ((Model)this).make();
-    }
-*/
+    public void close(){
+        ((ChronicleMap) frequencyMap).close();
+        if (relationsMap != null) ((ChronicleMap) relationsMap).close();
 
+   }
 
 
 }
