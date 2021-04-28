@@ -6,6 +6,7 @@ import cognitionmodel.models.SparseLightRelation;
 import cognitionmodel.models.TabularModel;
 import cognitionmodel.patterns.FullGridIterativePatterns;
 import cognitionmodel.patterns.FullGridRecursivePatterns;
+import cognitionmodel.patterns.ImageCellularPatterns;
 import cognitionmodel.patterns.ImageRecursivePatterns;
 import cognitionmodel.predictors.PredictionResults;
 import cognitionmodel.predictors.TabularDataPredictor;
@@ -98,8 +99,8 @@ public class Examples {
                 new TableDataSet(new FileInputStream(new File("D:\\works\\Data\\EMNIST\\emnist-balanced-train.csv")),
                         new ImageCSVParser(",", "\n", new int[]{0, 4, 3000})), new ImageLightRelation(0));
 
-        tabularModel.setPatternSet(new ImageRecursivePatterns(0, 28,28, 50, new int[]{-7,-5,-3, -2, -1, 1, 2, 3,5,7}, new int[]{2,3,5} ));
-
+       // tabularModel.setPatternSet(new ImageRecursivePatterns(0, 28,28, 50, new int[]{-3, -2, -1, 1, 2, 3}, new int[]{2,3} ));
+        tabularModel.setPatternSet(new ImageCellularPatterns(0, 28*28,200, new int[]{75, 35, 12}));
         tabularModel.make();
 
         PredictionResults predictionResults = TabularDataPredictor.predict(tabularModel,new TableDataSet(new FileInputStream(new File("D:\\works\\Data\\EMNIST\\emnist-balanced-test.csv")),
