@@ -6,21 +6,31 @@ import cognitionmodel.patterns.Pattern;
 
 import java.nio.IntBuffer;
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Class represents set of methods for processing signatures and new relations from table data
+ * Class represents set of methods for processing signatures and new relations from table data about images.
  * Light relation saves nothing.
  *
  */
 
-public class LightRelation implements Relation {
+
+public class ImageLightRelation extends LightRelation {
 
     private static ConcurrentHashMap<String, Integer> terminalsMap = new ConcurrentHashMap<>();
     private static ArrayList<String> terminalsArray = new ArrayList<>();
     private static Integer aInteger = getAddTerminal(new TupleElement("").toString());
+
+    private int labelindex;
+
+
+    public ImageLightRelation(int labelindex) {
+        this.labelindex = labelindex;
+    }
+
+
 
     /**
      * LightRelation do not save indices of tuples.
@@ -53,12 +63,18 @@ public class LightRelation implements Relation {
 
     public Tuple getTerminals(int[] signature){
         IntBuffer b = IntBuffer.allocate(signature.length).put(signature).position(0);
-        LinkedList<TupleElement> t = new LinkedList<>();
+        Tuple t = new Tuple();
 
-        for (int i = 0; i < signature.length / Integer.BYTES; i++)
-            t.add(new TupleElement(terminalsArray.get(b.get())));
+        int j = 0;
+        while (b.hasRemaining()){
+            int i = b.get();
+            while (j++ != i)
+                t.add("");
 
-        return new Tuple(t);
+            t.add(terminalsArray.get(b.get()));
+        }
+
+        return t;
     };
 
     /**
@@ -145,13 +161,7 @@ public class LightRelation implements Relation {
     public int[] makeRelation(Tuple tuple, Pattern pattern){
         int[] r = new int[tuple.size()];
         int[] signature = makeSignature(tuple);
-
-        for (int b: pattern.getSet())
-            if (b < signature.length){
-                r[b] = signature[b];
-            }
-
-        return r;
+        return makeRelation(signature, pattern);
     }
 
 
@@ -166,12 +176,14 @@ public class LightRelation implements Relation {
 
     @Override
     public int[] makeRelation(int[] signature, Pattern pattern){
-        int[] r = new int[signature.length];
+        int[] r = new int[pattern.getSetAmount()];
 
-        for (int b: pattern.getSet())
-            if (b < signature.length){
-                r[b] = signature[b];
-            }
+        int j = 0;
+        for (int i: pattern.getSet())
+            if (i < signature.length)
+                r[j++] = signature[i];
+            else
+                return new int[]{};
 
         return r;
     }
@@ -184,10 +196,10 @@ public class LightRelation implements Relation {
      * @param term - term
      */
 
-    public int[] addTermToRelation(int[] signature, int index, int term){
+    public int[] addTermToRelation(int[] signature, int index, int term) {
         signature[index] = term;
         return signature;
-    };
+    }
 
     /**
      * Remove term from relation
@@ -198,6 +210,9 @@ public class LightRelation implements Relation {
     public int[] removeTermFromRelation(int[] signature, int index){
         signature[index] = 0;
         return signature;
-    };
+    }
+
+
+
 
 }

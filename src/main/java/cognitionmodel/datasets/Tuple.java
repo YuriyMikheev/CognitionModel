@@ -76,6 +76,13 @@ public class Tuple implements Iterable<TupleElement>, Serializable, Cloneable {
         return this;
     }
 
+    public Tuple addAll(String[] strings){
+        for (String s : strings) {
+            add(new TupleElement(s));
+        }
+        return this;
+    }
+
 
     public String toString(){
         String s = "";

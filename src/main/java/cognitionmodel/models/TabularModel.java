@@ -1,6 +1,7 @@
 package cognitionmodel.models;
 
 import cognitionmodel.datasets.TableDataSet;
+import cognitionmodel.datasets.TabularParser;
 import cognitionmodel.datasets.Tuple;
 import cognitionmodel.datasets.TupleElement;
 import cognitionmodel.patterns.PatternSet;
@@ -11,8 +12,8 @@ import java.util.Arrays;
 
 public class TabularModel extends Model<LightRelation>{
 
-    private int[] terminalsToField;
     private byte[] enabledFields;
+    private int[][] termToFiled;
 
 
     /**
@@ -30,26 +31,27 @@ public class TabularModel extends Model<LightRelation>{
      *
      * @param enabledFieldsNames - array of enabled fields names
      * @param dataSet    - data for model
+     * @param relationInstance - the instance of relation for this model
      */
 
 
-    public TabularModel(TableDataSet dataSet, String... enabledFieldsNames) {
-        super(dataSet, new LightRelation());
-        terminalsToField = new int[LightRelation.getTerminalsArray().size()];
+    public TabularModel(TableDataSet dataSet, LightRelation relationInstance, String... enabledFieldsNames) {
+        super();
 
-        int c = 0;
+        setRelationMethods(relationInstance);
+        setDataSet(dataSet);
 
-        for (Tuple t: dataSet) {
-            int[] sign = relationMethods.makeSignature(t);
-            for (int i = 0; i < sign.length; i++) {
-                if (terminalsToField[sign[i]] == 0) {
-                    terminalsToField[sign[i]] = i;
-                    if (c++ == terminalsToField.length) break;
-                }
-            }
-            if (c == terminalsToField.length) break;
+        termToFiled = new int[dataSet.getHeader().size()][];
+
+        TabularParser parser = (TabularParser) dataSet.getParser();
+
+        for (int i = 0; i < dataSet.getHeader().size(); i++) {
+            String[] terms = parser.terminals(i);
+            termToFiled[i] = new int[terms.length];
+
+            for (int j = 0; j < terms.length; j++)
+                termToFiled[i][j] = relationInstance.getTerminalIndex(terms[j]);
         }
-
 
         if (enabledFieldsNames == null) {
             this.enabledFields = new byte[dataSet.getHeader().size()];
@@ -59,6 +61,19 @@ public class TabularModel extends Model<LightRelation>{
             this.enabledFields = new byte[dataSet.getHeader().size()];
             setEnabledFields(enabledFieldsNames);
         }
+
+    }
+
+        /**
+         * Creates TabularModel object and sets fields from dataset are enabled for usage
+         *
+         * @param enabledFieldsNames - array of enabled fields names
+         * @param dataSet    - data for model
+         */
+
+
+    public TabularModel(TableDataSet dataSet, String... enabledFieldsNames) {
+        this(dataSet, new LightRelation(), enabledFieldsNames);
     }
 
 
@@ -73,7 +88,7 @@ public class TabularModel extends Model<LightRelation>{
 */
         frequencyMap = ChronicleMapBuilder.of(int[].class, Integer.class)
                 .name("frequencyMap")
-                .entries(10000000)
+                .entries(100000000)
                 .maxBloatFactor(10)
                 .averageKeySize(50)
                 .create();
@@ -82,16 +97,6 @@ public class TabularModel extends Model<LightRelation>{
     @Override
     public void addRecordToRelation(int[] signature, int tupleIndex) {
 
-    }
-
-    /**
-     *
-     * @param terminalIndex
-     * @return field index in data set and signature
-     */
-
-    public int getFieldIndex(int terminalIndex){
-        return terminalsToField[terminalIndex];
     }
 
     /**
@@ -140,5 +145,8 @@ public class TabularModel extends Model<LightRelation>{
 
    }
 
+    public int[] termsByField(int fieldIndex){
+        return termToFiled[fieldIndex];
+    }
 
 }

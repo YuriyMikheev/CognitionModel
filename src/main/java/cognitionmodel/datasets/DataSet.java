@@ -35,15 +35,15 @@ public abstract class DataSet implements Iterable<Tuple> {
     public DataSet(InputStream inputStream, Parser parser) throws IOException {
         this.inputStream = inputStream;
         this.parser = parser;
-
-
         read();
     }
 
     private void read() throws IOException {
         records.addAll(parser.get(inputStream.readAllBytes()));
+    }
 
-
+    public Parser getParser() {
+        return parser;
     }
 
     public ArrayList<Tuple> getRecords(){

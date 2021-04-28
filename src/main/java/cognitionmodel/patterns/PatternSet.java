@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 
 public abstract class PatternSet implements Iterable<Pattern>{
-    ArrayList<Pattern> patterns = new ArrayList<Pattern>();
+    protected ArrayList<Pattern> patterns = new ArrayList<Pattern>();
 
 
 

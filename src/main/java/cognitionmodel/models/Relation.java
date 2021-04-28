@@ -1,7 +1,9 @@
 package cognitionmodel.models;
 
+import cognitionmodel.datasets.Parser;
 import cognitionmodel.datasets.Tuple;
 import cognitionmodel.datasets.TupleElement;
+import cognitionmodel.patterns.Pattern;
 
 import java.io.Serializable;
 import java.util.LinkedList;
@@ -55,6 +57,46 @@ public interface Relation extends Serializable {
      */
 
     public abstract int addTuple(int tupleIndex);
+
+    /**
+     * Generates new relation
+     *
+     * @param tuple - input data
+     * @param pattern
+     * @return
+     */
+
+
+    public abstract int[] makeRelation(Tuple tuple, Pattern pattern);
+
+
+    /**
+     * Generates new relation
+     *
+     * @param signature - signature of the input data
+     * @param pattern
+     * @return
+     */
+
+    public abstract int[] makeRelation(int[] signature, Pattern pattern);
+
+    /**
+     * Add term to relation
+     *
+     * @param signature - relation signature
+     * @param index - term index
+     * @param term - term
+     */
+
+    public int[] addTermToRelation(int[] signature, int index, int term);
+
+    /**
+     * Remove term from relation
+     * @param signature - relation signature
+     * @param index - term index
+     */
+
+    public int[] removeTermFromRelation(int[] signature, int index);
 
 
 }

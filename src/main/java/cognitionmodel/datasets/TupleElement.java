@@ -14,7 +14,7 @@ import java.text.ParseException;
 
 public class TupleElement implements Serializable, Cloneable {
     byte[] data;
-    enum Type {
+    public enum Type {
         Char,
         Empty,
         String,
@@ -37,22 +37,27 @@ public class TupleElement implements Serializable, Cloneable {
 
         if (!value.isBlank()) {
 
-            try {
-                Integer d = Integer.parseInt(value.trim());
-                data = ByteBuffer.allocate(Integer.BYTES).putInt(d).array();
-                type = Type.Int;
-                return;
-            } catch (NumberFormatException e) {
-                //System.out.println(value + " is No Int");
-            }
+            String s = value.trim();
+            char firstchar = s.charAt(0);
+            if (firstchar =='+' | firstchar =='-' | firstchar =='.' | (firstchar >= '0' & firstchar <= '9')) {
 
-            try {
-                Double d = Double.parseDouble(value);
-                data = ByteBuffer.allocate(Double.BYTES).putDouble(d).array();
-                type = Type.Double;
-                return;
-            } catch (NumberFormatException e){
+                try {
+                    Integer d = Integer.parseInt(s);
+                    data = ByteBuffer.allocate(Integer.BYTES).putInt(d).array();
+                    type = Type.Int;
+                    return;
+                } catch (NumberFormatException e) {
+                    //System.out.println(value + " is No Int");
+                }
 
+                try {
+                    Double d = Double.parseDouble(s);
+                    data = ByteBuffer.allocate(Double.BYTES).putDouble(d).array();
+                    type = Type.Double;
+                    return;
+                } catch (NumberFormatException e) {
+
+                }
             }
 
             if (value.length() == 1){
@@ -87,13 +92,8 @@ public class TupleElement implements Serializable, Cloneable {
 
     @Override
     public String toString() {
-
-        String val = getValue().toString();
-
-
-
         return "{" +
-                "data=" + val +
+                "data=" + getValue().toString() +
                 ", type=" + type +
                 '}';
     }
@@ -137,5 +137,7 @@ public class TupleElement implements Serializable, Cloneable {
         return val;
     }
 
-
+    public Type getType() {
+        return type;
+    }
 }

@@ -2,8 +2,10 @@ package cognitionmodel.predictors;
 
 import cognitionmodel.datasets.CSVParser;
 import cognitionmodel.datasets.TableDataSet;
+import cognitionmodel.models.LightRelation;
 import cognitionmodel.models.TabularModel;
 import cognitionmodel.patterns.FullGridIterativePatterns;
+import cognitionmodel.predictors.predictionfunctions.Powerfunction;
 import org.junit.Test;
 
 import java.io.File;
@@ -22,7 +24,7 @@ public class TabularDataPredictorTest {
 
         TabularModel tabularModel = new TabularModel(
                 new TableDataSet(new FileInputStream(new File("D:\\works\\Data\\adult\\adult.data")),
-                        new CSVParser(",","\n")),
+                        new CSVParser(",","\n")),new LightRelation(),
                 (" education-num," +
                         " marital-status," +
                         " capital-gain," +
@@ -34,7 +36,7 @@ public class TabularDataPredictorTest {
         tabularModel.make();
 
         PredictionResults predictionResults = TabularDataPredictor.predict(tabularModel,new TableDataSet(new FileInputStream(new File("D:\\works\\Data\\adult\\adult.test")),
-                        new CSVParser(",","\n")), " INCOME" ,10 ,2.0);
+                        new CSVParser(",","\n")), " INCOME" ,new Powerfunction(tabularModel, 10 ,2.0));
 
 
         predictionResults.show(tabularModel.getDataSet().getFieldIndex(" INCOME"));

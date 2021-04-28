@@ -1,18 +1,15 @@
 package cognitionmodel.datasets;
 
 import java.nio.charset.Charset;
-import java.text.DecimalFormat;
-import java.text.DecimalFormatSymbols;
-import java.util.ArrayList;
-import java.util.LinkedList;
-import java.util.List;
+import java.util.*;
 
 
-
-public class CSVParser implements Parser {
+public class CSVParser implements TabularParser {
 
     private String delimiter = "\t";
     private String endofline = "\r\n";
+    private Tuple header;
+    private HashSet<String>[] terminalsByfieldIndex;
 
     public CSVParser() {
     }
@@ -26,11 +23,6 @@ public class CSVParser implements Parser {
     public CSVParser(String delimiter, String endofline) {
         this.delimiter = delimiter;
         this.endofline = endofline;
-
-        TupleElement.numberFormat.setParseIntegerOnly(false);
-        DecimalFormatSymbols decimalFormatSymbols = ((DecimalFormat)TupleElement.numberFormat).getDecimalFormatSymbols();
-        decimalFormatSymbols.setDecimalSeparator('.');
-        ((DecimalFormat) TupleElement.numberFormat).setDecimalFormatSymbols(decimalFormatSymbols);
     }
 
     public String getDelimiter() {
@@ -43,8 +35,8 @@ public class CSVParser implements Parser {
 
     /**
      * Returns set of @Link Tuples (set of @Link Tuple) representing data from csv stream
-     * @param data
-     * @return
+     * @param data - read data from stream
+     * @return - list of parsed tuples
      */
 
     @Override
@@ -60,13 +52,32 @@ public class CSVParser implements Parser {
 
         LinkedList<Tuple> r = new LinkedList<>();
 
-        for (String s: lines) {
-            LinkedList<TupleElement> t = new LinkedList<>();
-            for (String ss : s.split(delimiter, -1)) {
-                t.add(new TupleElement(ss));
-            }
-            r.add(new Tuple(t));
+        header = new Tuple().addAll(lines[0].split(delimiter, -1));
+
+        terminalsByfieldIndex =new HashSet[header.size()];
+
+        for (int i = 0; i < terminalsByfieldIndex.length; i++)
+            terminalsByfieldIndex[i] = new HashSet<>();
+
+        for (int i = 1; i < lines.length; i++) {
+            Tuple tuple = new Tuple().addAll(lines[i].split(delimiter,-1));
+            r.add(tuple);
+
+            for (int j = 0; j < tuple.size(); j++)
+                terminalsByfieldIndex[j].add(tuple.get(j).getValue().toString());
         }
+
         return r;
+    }
+
+    @Override
+    public String[] terminals(int fieldIndex) {
+        return terminalsByfieldIndex[fieldIndex].toArray(new String[]{});
+    }
+
+
+    @Override
+    public Tuple getHeader() {
+        return header;
     }
 }

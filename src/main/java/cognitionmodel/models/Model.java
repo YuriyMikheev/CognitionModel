@@ -10,6 +10,8 @@ import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
+import static java.lang.Math.log;
+
 /**
  * Abstract class represents model of data set. Consists map of relations produced from data set (D) and pattern set (P).
  * Model = {d*p -> relation}
@@ -29,22 +31,10 @@ public abstract class Model<R extends Relation> {
 
     /**
      * Creates model object
-     * @param dataSet - data for model
      */
 
-    public Model(DataSet dataSet, R relationInstance) {
-        try {
-            relationMethods = (R) relationInstance.getClass().newInstance();
-        } catch (InstantiationException e) {
-            e.printStackTrace();
-        } catch (IllegalAccessException e) {
-            e.printStackTrace();
-        }
-
+    public Model() {
         setMaps();
-
-        setDataSet(dataSet);
-
     }
 
 
@@ -53,12 +43,8 @@ public abstract class Model<R extends Relation> {
 
         for (Tuple t: dataSet){
             int[] sign = relationMethods.makeSignature(t);
-            for (int i = 0; i < sign.length; i++) {
-                int[] s = new int[]{i,sign[i]};
-                if (frequencyMap.containsKey(s))
-                    frequencyMap.put(s, frequencyMap.get(s) + 1);
-                else frequencyMap.put(s, 1);
-            }
+            for (int i = 0; i < sign.length; i++)
+                frequencyMap.compute(new int[]{i,sign[i]}, (k, v)  -> (v == null ? 1: v + 1));
         }
     }
 
@@ -70,6 +56,10 @@ public abstract class Model<R extends Relation> {
 
     public R getRelationMethods() {
         return relationMethods;
+    }
+
+    public void setRelationMethods(R relationMethods) {
+        this.relationMethods = relationMethods;
     }
 
     public DataSet getDataSet() {
@@ -121,7 +111,7 @@ public abstract class Model<R extends Relation> {
      */
 
     public void incFrequency(int[] signature){
-        frequencyMap.compute(signature, (k, v)  -> (v == null ? 1: v +1));
+        frequencyMap.compute(signature, (k, v)  -> (v == null ? 1: v + 1));
     }
 
     /**
@@ -188,6 +178,28 @@ public abstract class Model<R extends Relation> {
         }
     }
 
+
+    /**
+     * Faster calculation Z measure = ln(P(relation) + const, P(relation) - probability of relation
+     * Is correct if and only if of equal relations length and elements. in this case on prediction stage denominators could be eliminated
+     *
+     * @param signature - relation signature from map
+     * @return - Z value for the relation
+     */
+
+    public double getZfast(int[] signature){
+
+        Integer zf = frequencyMap.get(signature);
+        if (zf == null) return 0;
+
+        return log((double)zf) + (signature.length - 1)*log(dataSet.size());
+
+    }
+
+
+
+
+
     public void setPatternSet(PatternSet patternSet) {
         this.patternSet = patternSet;
     }
@@ -199,9 +211,21 @@ public abstract class Model<R extends Relation> {
      */
 
     public LinkedList<int[]> generateRelations(Tuple tuple){
-        int[] sign = relationMethods.makeSignature(tuple);
+        if (patternSet == null) {
+            throw new IllegalStateException("Pattern set is not defined");
+        }
 
-        return generateRelations(sign);
+        LinkedList<int[]> r = new LinkedList<>();
+        int[] signature = relationMethods.makeSignature(tuple);
+
+        for (Pattern p: patternSet) {
+            int[] nr = relationMethods.makeRelation(signature, p);
+
+            if (nr.length > 0)
+                r.add(nr);
+        }
+
+        return r;
     }
 
     /**
@@ -220,13 +244,14 @@ public abstract class Model<R extends Relation> {
         LinkedList<int[]> r = new LinkedList<>();
 
         for (Pattern p: patternSet) {
-            int[] pb = p.getSet();
+
+/*            int[] pb = p.getSet();
             int[] ns = new int[signature.length];
             for (int b: pb)
                 if (b < signature.length){
                     ns[b] = signature[b];
-                }
-            r.add(ns);
+                }*/
+            r.add(relationMethods.makeRelation(signature, p));
         }
 
         return r;

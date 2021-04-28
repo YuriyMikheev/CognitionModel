@@ -15,12 +15,12 @@ public class LightRelationTest {
     public void signatureTest(){
         CSVParser cp = new CSVParser(",", "\r\n");
         LinkedList<Tuple> tp = (LinkedList<Tuple>) cp.get("values,41,0,0.0,0,0,0,0,0,0,0,0,0,0,0,0,y,,".getBytes());
-        int[] s = new LightRelation().makeSignature(tp.getFirst());
+        int[] s = new LightRelation().makeSignature(cp.getHeader());
 
         Tuple t = new LightRelation().getTerminals(s);
 
-        for (int i = 0; i < t.size(); i++)
-            assertTrue(t.getTupleElements().get(i).toString().equals(tp.getFirst().getTupleElements().get(i).toString()));
+        for (int i = 1; i < t.size(); i++)
+            assertTrue(t.getTupleElements().get(i).toString().equals(cp.getHeader().get(i).toString()));
 
     }
 

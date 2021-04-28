@@ -2,6 +2,7 @@ package cognitionmodel.models;
 
 import cognitionmodel.datasets.Tuple;
 import cognitionmodel.datasets.TupleElement;
+import cognitionmodel.patterns.Pattern;
 
 import java.nio.ByteBuffer;
 import java.util.LinkedList;
@@ -136,4 +137,56 @@ public class BasicRelation implements Relation {
     }
 
 
+    @Override
+    public int[] makeRelation(Tuple tuple, Pattern pattern){
+        int[] r = new int[pattern.get().length];
+        int[] signature = makeSignature(tuple);
+
+        for (int b: pattern.get())
+            if (b < signature.length){
+                r[b] = signature[b];
+            }
+
+        return r;
+    }
+
+    @Override
+    public int[] makeRelation(int[] signature, Pattern pattern){
+        int[] r = new int[pattern.get().length];
+
+        for (int b: pattern.get())
+            if (b < signature.length){
+                r[b] = signature[b];
+            }
+
+        return r;
+    }
+
+    /**
+     * Add term to relation
+     *
+     * @param signature - relation signature
+     * @param index - term index
+     * @param term - term
+     */
+
+    public int[] addTermToRelation(int[] signature, int index, int term){
+        return signature;
+    };
+
+    /**
+     * Remove term from relation
+     * @param signature - relation signature
+     * @param index - term index
+     */
+
+    public int[] removeTermFromRelation(int[] signature, int index){
+        return signature;
+    };
+
+
+
 }
+
+
+

@@ -11,32 +11,27 @@ import java.util.HashMap;
 
 public class TableDataSet extends DataSet{
 
-    private Tuple header;
-
     /**
      * Creates data set and reads table data from input stream.
      * Store parsed data from input stream.
      * The first line of table data stream should be a header.
      *
-     * @param inputStream
-     * @param parser
+     * @param inputStream - data form input stream
+     * @param parser - tabular parser object
      * @throws IOException
      */
 
-    public TableDataSet(InputStream inputStream, Parser parser) throws IOException {
+    public TableDataSet(InputStream inputStream, TabularParser parser) throws IOException {
         super(inputStream, parser);
-
-        header = getRecords().get(0);
-        getRecords().remove(0);
-
-
     }
+
 
     public Tuple getHeader() {
-        return header;
+        return ((TabularParser)getParser()).getHeader();
     }
 
-    public int getFieldIndex(String fieldIndex){
-        return header.findFirstIndex(fieldIndex);
+    public int getFieldIndex(String field){
+        return getHeader().findFirstIndex(field);
     }
+
 }

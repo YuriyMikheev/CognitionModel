@@ -5,6 +5,7 @@ import cognitionmodel.datasets.Tuple;
 import cognitionmodel.datasets.TupleElement;
 import cognitionmodel.models.LightRelation;
 import cognitionmodel.models.TabularModel;
+import cognitionmodel.predictors.predictionfunctions.Predictionfunction;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
@@ -23,28 +24,23 @@ public class TabularDataPredictor extends Predictor{
      * @param model - tabular model underlines prediction
      * @param dataSet - data set with data for making predictions
      * @param signatureIndex - index of the unknown data in the @param model relations
-     * @param wz - weight of Z in prediction
-     * @param wp - weight of P in prediction
      *
      * @return - results of predictions saved in PredictionResults object
      */
 
 
     @NotNull
-    public static PredictionResults predict(TabularModel model, TableDataSet dataSet, int signatureIndex, double wp, double wz){
+    public static PredictionResults predict(TabularModel model, TableDataSet dataSet, int signatureIndex, Predictionfunction predictionfunction){
 
-        LinkedList<Integer> altTerminalsIndices = new LinkedList<>();
-        LinkedList<String> altTerminals = new LinkedList<>();
+        int[] altTerminals = model.termsByField(signatureIndex);
+        String[] altTermNames = new String[altTerminals.length];
 
-        for (int i = 1; i < LightRelation.getTerminalsArray().size(); i++){
-            if (model.getFieldIndex(i) == signatureIndex) {
-                altTerminalsIndices.add(i);
-                altTerminals.add(LightRelation.getTerminalsArray().get(i));
-            }
-        }
+        for (int i = 0; i < altTerminals.length; i++)
+            altTermNames[i] = model.getRelationMethods().getTerminalsArray().get(altTerminals[i]);
+
 
         PredictionResults r = new PredictionResults();
-        r.addPredictedDataHeader(signatureIndex,new Tuple().add(dataSet.getHeader().get(signatureIndex).getValue()+" Predicted").add(dataSet.getHeader().get(signatureIndex).getValue()+" From data").addAll(altTerminals));
+        r.addPredictedDataHeader(signatureIndex,new Tuple().add(dataSet.getHeader().get(signatureIndex).getValue()+" Predicted").add(dataSet.getHeader().get(signatureIndex).getValue()+" From data").addAll(altTermNames));
 
         LinkedList<CompletableFuture<Integer>> cfl = new LinkedList<>();
 
@@ -60,20 +56,12 @@ public class TabularDataPredictor extends Predictor{
 
                    LinkedList<int[]> relations = model.generateRelations(record);
 
-                   Double[] altP = new Double[altTerminals.size()];
+                   Double[] altP = new Double[altTerminals.length];
                    Arrays.fill(altP, 0.0);
 
                    for (int[] relation : relations) {
-                       relation[signatureIndex] = 0;
-                       double fp = model.getFrequency(relation);
-                       int j = 0;
-                       if (fp != 0)
-                           for (int altTerm : altTerminalsIndices) {
-                               relation[signatureIndex] = altTerm;
-                               double p = model.getFrequency(relation) / fp;
-                               double z = model.getZ(relation);
-                               altP[j++] += Math.pow(p, wp) * Math.pow(z, wz);
-                           }
+                       for (int j = 0; j < altTerminals.length; j++)
+                            altP[j] += predictionfunction.predictionfunction(model.getRelationMethods().addTermToRelation(relation,signatureIndex,altTerminals[j]),signatureIndex);
                    }
 
                    int maxi = -1;
@@ -86,7 +74,7 @@ public class TabularDataPredictor extends Predictor{
                        }
                    }
 
-                   r.put(finalRecordIndex, signatureIndex, new Tuple().add(maxi != -1 ? altTerminals.get(maxi) : "Prediction failed").add(stored).addAll(Arrays.stream(altP).collect(Collectors.toList())));
+                   r.put(finalRecordIndex, signatureIndex, new Tuple().add(maxi != -1 ? altTermNames[maxi] : "Prediction failed").add(stored).addAll(Arrays.stream(altP).collect(Collectors.toList())));
                    return null;
                }));
 
@@ -109,7 +97,7 @@ public class TabularDataPredictor extends Predictor{
      */
 
 
-    public static PredictionResults predict(TabularModel model, TableDataSet dataSet, String fieldName, double wp, double wz){
+    public static PredictionResults predict(TabularModel model, TableDataSet dataSet, String fieldName, Predictionfunction predictionfunction){
 
         int i = 0;
         for (TupleElement t:dataSet.getHeader())
@@ -120,10 +108,7 @@ public class TabularDataPredictor extends Predictor{
             throw new IllegalArgumentException(fieldName + " is not found in model data set");
         }
 
-        return predict(model, dataSet, i, wp, wz);
+        return predict(model, dataSet, i, predictionfunction);
     }
-
-
-
 
 }

@@ -90,8 +90,8 @@ public class PredictionResults {
             Map.Entry<int[],Tuple> entry = entryIterator.next();
             Tuple tuple = entry.getValue();
             if (entry.getKey()[1] == elementIndex & entry.getKey()[0] >= 0)
-                if (!altToIdx.get(tuple.get(1).getValue()).equals("Prediction failed") & !altToIdx.get(tuple.get(0).getValue()).equals("Prediction failed"))
-                    confusionMatrix[altToIdx.get(tuple.get(0).getValue())][altToIdx.get(tuple.get(1).getValue())]++;
+                if (altToIdx.get(tuple.get(1).getValue().toString()) != null & altToIdx.get(tuple.get(0).getValue().toString()) != null & !tuple.get(1).getValue().equals("Prediction failed") & !tuple.get(0).getValue().equals("Prediction failed"))
+                    confusionMatrix[altToIdx.get(tuple.get(0).getValue().toString())][altToIdx.get(tuple.get(1).getValue().toString())]++;
                 else nfailed++;
         }
 
