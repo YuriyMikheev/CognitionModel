@@ -89,8 +89,8 @@ public class TabularModel extends Model<LightRelation>{
         frequencyMap = ChronicleMapBuilder.of(int[].class, Integer.class)
                 .name("frequencyMap")
                 .entries(100000000)
-                .maxBloatFactor(10)
-                .averageKeySize(50)
+                .maxBloatFactor(20.0)
+                .averageKeySize(5)
                 .create();
     }
 

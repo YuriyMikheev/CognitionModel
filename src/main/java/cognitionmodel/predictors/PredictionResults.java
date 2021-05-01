@@ -9,7 +9,7 @@ import java.util.Iterator;
 import java.util.Map;
 
 /**
- * Consists results of prediction in map
+ * Consists results of prediction saved in map
  */
 public class PredictionResults {
 
@@ -94,25 +94,6 @@ public class PredictionResults {
                     confusionMatrix[altToIdx.get(tuple.get(0).getValue().toString())][altToIdx.get(tuple.get(1).getValue().toString())]++;
                 else nfailed++;
         }
-
-        tpr = 0; wpr = 0;
-
-        int fp[] = new int[confusionMatrix.length];
-        int fn[] = new int[confusionMatrix.length];
-        int tp[] = new int[confusionMatrix.length];
-
-        for (int i = 0; i < confusionMatrix.length; i++){
-            tp[i] = tp[i] + confusionMatrix[i][i];
-            tpr = tpr + confusionMatrix[i][i];
-            for (int j = 0; j < confusionMatrix.length; j++) {
-                if (i != j) {
-                    wpr = wpr + confusionMatrix[i][j];
-                    fn[i] = fn[i] + confusionMatrix[i][j];
-                    fp[i] = fp[i] + confusionMatrix[j][i];
-                }
-            }
-        }
-
 
         return confusionMatrix;
     }

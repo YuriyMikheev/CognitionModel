@@ -5,7 +5,7 @@ import java.util.*;
 import java.util.function.Consumer;
 
 /**
- * Set of tupleElements
+ * Consists data in form of set of tupleElements
  */
 
 

@@ -37,6 +37,12 @@ public class ImageCellularPatterns extends PatternSet {
 
     }
 
+    public ImageCellularPatterns(int labelindex, int length, int count, int[] pointscounts, int numofvariants) {
+        for (int pointscount: pointscounts)
+            for (int i = 0; i < numofvariants; i++)
+                patterns.addAll(cellularPatterns184(labelindex,length,count, pointscount));
+
+    }
 
     private static int getBubbleX(int x, int length) {
         return (x < 0 ? (length + x - 1) % length : x > length - 1 ? x % length: x);
@@ -100,7 +106,6 @@ public class ImageCellularPatterns extends PatternSet {
 
         for (int i = 0; i < pointscount ; i++){
             newState[randomint(0, newState.length-1)] = 1;
-
         }
 
         return newState;

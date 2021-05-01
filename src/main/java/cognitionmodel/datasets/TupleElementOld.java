@@ -3,10 +3,7 @@ package cognitionmodel.datasets;
 import java.io.Serializable;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
-import java.text.DecimalFormat;
-import java.text.DecimalFormatSymbols;
 import java.text.NumberFormat;
-import java.text.ParseException;
 
 /**
  * Saves data and data type. The basic element of inner data representation.
@@ -20,8 +17,8 @@ import java.text.ParseException;
  *
  */
 
-public class TupleElement implements Serializable, Cloneable {
-    Object data;
+public class TupleElementOld implements Serializable, Cloneable {
+    byte[] data;
     public enum Type {
         Char,
         Empty,
@@ -35,6 +32,9 @@ public class TupleElement implements Serializable, Cloneable {
 
     Type type = Type.Empty;
 
+    public TupleElementOld(){
+        data = new byte[0];
+    }
 
     /**
      * Creates element of the tuple. Autodetect type of the element
@@ -42,7 +42,7 @@ public class TupleElement implements Serializable, Cloneable {
      */
 
 
-    public TupleElement(String value) {
+    public TupleElementOld(String value) {
 
         if (value == null) throw new  NullPointerException();
 
@@ -53,7 +53,8 @@ public class TupleElement implements Serializable, Cloneable {
             if (firstchar =='+' | firstchar =='-' | firstchar =='.' | (firstchar >= '0' & firstchar <= '9')) {
 
                 try {
-                    data = Integer.parseInt(s);
+                    Integer d = Integer.parseInt(s);
+                    data = ByteBuffer.allocate(Integer.BYTES).putInt(d).array();
                     type = Type.Int;
                     return;
                 } catch (NumberFormatException e) {
@@ -61,7 +62,8 @@ public class TupleElement implements Serializable, Cloneable {
                 }
 
                 try {
-                    data = Double.parseDouble(s);
+                    Double d = Double.parseDouble(s);
+                    data = ByteBuffer.allocate(Double.BYTES).putDouble(d).array();
                     type = Type.Double;
                     return;
                 } catch (NumberFormatException e) {
@@ -70,12 +72,12 @@ public class TupleElement implements Serializable, Cloneable {
             }
 
             if (value.length() == 1){
-               data = value;
+               data = value.getBytes(Charset.defaultCharset());
                type = Type.Char;
                return;
             }
 
-            data = value;
+            data = value.getBytes(Charset.defaultCharset());
             type = Type.String;
             return;
         }
@@ -84,18 +86,23 @@ public class TupleElement implements Serializable, Cloneable {
         type = Type.Empty;
     }
 
-    public TupleElement(Integer value) {
-        data = value;
+    /**
+     *
+     * @param value
+     */
+
+    public TupleElementOld(Integer value) {
+        data = ByteBuffer.allocate(Integer.BYTES).putInt(value).array();
         type = Type.Int;
     }
 
-    public TupleElement(Double value) {
-        data = value;
+    public TupleElementOld(Double value) {
+        data = ByteBuffer.allocate(Double.BYTES).putDouble(value).array();
         type = Type.Double;
     }
 
-    public TupleElement(byte[] value) {
-        data = value;
+    public TupleElementOld(byte[] value) {
+        data = ByteBuffer.allocate(value.length).put(value).array();
         type = Type.ByteArray;
     }
 
@@ -114,7 +121,41 @@ public class TupleElement implements Serializable, Cloneable {
 
     public Object getValue() {
 
-        return data;
+        Object val = null;
+
+        switch (type) {
+            case String: {
+                val = new String(data);
+                break;
+            }
+
+            case Double: {
+                val = ByteBuffer.allocate(Double.BYTES).put(data).position(0).getDouble();
+                break;
+            }
+
+            case Int: {
+                val = ByteBuffer.allocate(Integer.BYTES).put(data).position(0).getInt();
+                break;
+            }
+
+            case Empty: {
+                val = "";
+                break;
+            }
+
+            case ByteArray: {
+                val = data;
+                break;
+            }
+
+            case Char: {
+                val = new String(data);
+                break;
+            }
+        }
+
+        return val;
     }
 
     /**

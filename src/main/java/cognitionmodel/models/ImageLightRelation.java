@@ -115,13 +115,18 @@ public class ImageLightRelation extends LightRelation {
 
     public int[] makeSignature(Tuple tuple) {
 
-        IntBuffer intBuffer = IntBuffer.allocate(tuple.size());
+        int[] r = new int[tuple.size()];
+
+        for (int i = 0; i < tuple.size(); i++)
+            r[i] = getAddTerminal(tuple.get(i).getValue().toString());
+
+/*        IntBuffer intBuffer = IntBuffer.allocate(tuple.size());
 
         for (TupleElement t: tuple){
             intBuffer.put(getAddTerminal(t.getValue().toString()));
-        }
+        }*/
 
-        return intBuffer.array();
+        return r;
     }
 
     @Override
@@ -159,7 +164,6 @@ public class ImageLightRelation extends LightRelation {
 
     @Override
     public int[] makeRelation(Tuple tuple, Pattern pattern){
-        int[] r = new int[tuple.size()];
         int[] signature = makeSignature(tuple);
         return makeRelation(signature, pattern);
     }

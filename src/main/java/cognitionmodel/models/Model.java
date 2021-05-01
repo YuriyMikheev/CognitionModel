@@ -8,6 +8,7 @@ import cognitionmodel.patterns.PatternSet;
 
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 import static java.lang.Math.log;
@@ -27,6 +28,7 @@ public abstract class Model<R extends Relation> {
     protected Map<int[], Integer> frequencyMap;
     protected PatternSet patternSet = null;
     protected R relationMethods;
+    private ConcurrentHashMap<String, Integer> termsfrequencies = new ConcurrentHashMap<>();
 
 
     /**
@@ -44,7 +46,7 @@ public abstract class Model<R extends Relation> {
         for (Tuple t: dataSet){
             int[] sign = relationMethods.makeSignature(t);
             for (int i = 0; i < sign.length; i++)
-                frequencyMap.compute(new int[]{i,sign[i]}, (k, v)  -> (v == null ? 1: v + 1));
+                termsfrequencies.compute(i + ":" + sign[i], (k, v)  -> (v == null ? 1: v + 1));
         }
     }
 
@@ -111,7 +113,11 @@ public abstract class Model<R extends Relation> {
      */
 
     public void incFrequency(int[] signature){
-        frequencyMap.compute(signature, (k, v)  -> (v == null ? 1: v + 1));
+        try {
+            frequencyMap.compute(signature, (k, v) -> (v == null ? 1 : v + 1));
+        } catch (IllegalStateException e){
+
+        }
     }
 
     /**
@@ -149,7 +155,7 @@ public abstract class Model<R extends Relation> {
         for (int i = 0; i < signature.length; i++)
             if (signature[i] != 0){
                 l++;
-                f = f * frequencyMap.get(new int[]{i,signature[i]});
+                f = f * termsfrequencies.get(i + ":" + signature[i]);
                 if (f > Double.MAX_VALUE/1000000) { //prevents double value overloading
                     f = f / getDataSet().size();
                     c++;

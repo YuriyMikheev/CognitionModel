@@ -74,4 +74,18 @@ public class Pattern {
     public int getSetAmount(){
         return indices.length;
     }
+
+    /**
+     * Adds index to pattern
+     * @param index
+     */
+
+    public Pattern addIndex(int index){
+        bitSet.set(index);
+        indices = Arrays.copyOf(indices, indices.length + 1);
+        indices[indices.length - 1] = index;
+        indices = Arrays.stream(indices).sorted().toArray();
+        return this;
+    }
+
 }
