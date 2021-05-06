@@ -28,20 +28,43 @@ public class ImageCellularPatterns extends PatternSet {
      * @param labelindex - predicting variable index
      * @param length - pattern length
      * @param count - amount of shifts
-     * @param pointscounts - array if numbers of points in pattern
+     * @param pointscounts - array if numbers of points in pattern randomly generated
      */
 
     public ImageCellularPatterns(int labelindex, int length, int count, int[] pointscounts) {
         for (int pointscount: pointscounts)
             patterns.addAll(cellularPatterns184(labelindex,length,count, pointscount));
-
+       // addShorter();
     }
+
+    /**
+     * Creates cellular pattern #184 according to Stiven Walphram works from random start array
+     *
+     * @param labelindex - predicting variable index
+     * @param length - pattern length
+     * @param count - amount of shifts
+     * @param pointscounts - array if numbers of points in pattern randomly generated
+     * @param numofvariants - amount of start random states
+     */
 
     public ImageCellularPatterns(int labelindex, int length, int count, int[] pointscounts, int numofvariants) {
         for (int pointscount: pointscounts)
             for (int i = 0; i < numofvariants; i++)
                 patterns.addAll(cellularPatterns184(labelindex,length,count, pointscount));
 
+    }
+
+    private void addShorter(){
+        LinkedList<Pattern> newP = new LinkedList<>();
+
+        for (Pattern pattern: patterns){
+            for (int i = pattern.getSetAmount(); i >= 4; i--) {
+                int[] ip = Arrays.copyOf(pattern.getSet(), pattern.getSetAmount() - 1);
+                newP.add(new Pattern(ip));
+            }
+        }
+
+        patterns.addAll(newP);
     }
 
     private static int getBubbleX(int x, int length) {

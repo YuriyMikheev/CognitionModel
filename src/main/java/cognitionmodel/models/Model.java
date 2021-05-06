@@ -54,7 +54,7 @@ public abstract class Model<R extends Relation> {
      * Sets RelationsMap object.
      */
 
-    public abstract void setMaps();
+    protected abstract void setMaps();
 
     public R getRelationMethods() {
         return relationMethods;
@@ -250,13 +250,6 @@ public abstract class Model<R extends Relation> {
         LinkedList<int[]> r = new LinkedList<>();
 
         for (Pattern p: patternSet) {
-
-/*            int[] pb = p.getSet();
-            int[] ns = new int[signature.length];
-            for (int b: pb)
-                if (b < signature.length){
-                    ns[b] = signature[b];
-                }*/
             r.add(relationMethods.makeRelation(signature, p));
         }
 

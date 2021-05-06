@@ -54,7 +54,7 @@ public class ImageRandomPatterns extends PatternSet {
         int[] pointscounts = new int[pointcounts];
 
         for (int i = 0; i < pointscounts.length; i++)
-            pointscounts[i] = 3 + randomint(length/10, length/4);
+            pointscounts[i] = 3 + randomint(0, length/10);
 
         for (int pointscount: pointscounts)
             for (int i = 0; i < count; i++)

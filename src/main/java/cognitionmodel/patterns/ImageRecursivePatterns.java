@@ -55,7 +55,8 @@ public class ImageRecursivePatterns extends PatternSet {
 
     public ImageRecursivePatterns(int labelindex, int imageHeight, int imageWidth, int maxlength, int[] shifts, int[] steps) {
 
-        for (int step : steps) {
+        for (int step : steps)
+          if (step > 1){
             makePatternPart(labelindex, 0, 0, imageHeight, imageWidth, imageHeight, imageWidth, step, maxlength);
             for (int shift : shifts)
                 for (int x : new int[]{0, 1})

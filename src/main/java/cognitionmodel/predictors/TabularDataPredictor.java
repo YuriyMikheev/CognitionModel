@@ -3,13 +3,13 @@ package cognitionmodel.predictors;
 import cognitionmodel.datasets.TableDataSet;
 import cognitionmodel.datasets.Tuple;
 import cognitionmodel.datasets.TupleElement;
-import cognitionmodel.models.LightRelation;
 import cognitionmodel.models.TabularModel;
 import cognitionmodel.predictors.predictionfunctions.Predictionfunction;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 /**
@@ -34,6 +34,8 @@ public class TabularDataPredictor extends Predictor{
 
         int[] altTerminals = model.termsByField(signatureIndex);
         String[] altTermNames = new String[altTerminals.length];
+        AtomicInteger zerofit = new AtomicInteger();
+        AtomicInteger fit = new AtomicInteger();
 
         for (int i = 0; i < altTerminals.length; i++)
             altTermNames[i] = model.getRelationMethods().getTerminalsArray().get(altTerminals[i]);
@@ -60,8 +62,15 @@ public class TabularDataPredictor extends Predictor{
                    Arrays.fill(altP, 0.0);
 
                    for (int[] relation : relations) {
-                       for (int j = 0; j < altTerminals.length; j++)
-                            altP[j] += predictionfunction.predictionfunction(model.getRelationMethods().addTermToRelation(relation,signatureIndex,altTerminals[j]),signatureIndex);
+                       int c = 0;
+                       for (int j = 0; j < altTerminals.length; j++) {
+                           double da;
+                           altP[j] += (da = predictionfunction.predictionfunction(model.getRelationMethods().addTermToRelation(relation, signatureIndex, altTerminals[j]), signatureIndex));
+                           if (da == 0) c++;
+                       }
+                       if (c == altTerminals.length)
+                           zerofit.getAndIncrement();
+                       fit.getAndIncrement();
                    }
 
                    int maxi = -1;
@@ -83,6 +92,8 @@ public class TabularDataPredictor extends Predictor{
                    cfl.clear();
                }
         }
+
+        System.err.println("no fitted relations "+((double)zerofit.get()/fit.get()));
 
         return r;
     }

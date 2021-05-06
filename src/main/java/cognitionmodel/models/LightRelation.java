@@ -80,7 +80,7 @@ public class LightRelation implements Relation {
         terminalsArray.add(terminal);
     }
 
-    private static Integer getAddTerminal(String terminal){
+    private synchronized static Integer getAddTerminal(String terminal){
         if (!terminalsMap.containsKey(terminal))
             addTerminal(terminal);
         return terminalsMap.get(terminal);

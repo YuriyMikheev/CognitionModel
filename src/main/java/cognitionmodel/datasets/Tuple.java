@@ -2,6 +2,7 @@ package cognitionmodel.datasets;
 
 import java.io.Serializable;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 
 /**
@@ -11,6 +12,7 @@ import java.util.function.Consumer;
 
 public class Tuple implements Iterable<TupleElement>, Serializable, Cloneable {
     private ArrayList<TupleElement> tupleElements = new ArrayList<>();
+    private ConcurrentHashMap<String, int[]> indexMap = new ConcurrentHashMap<>();
 
     public Tuple(List<TupleElement> tupleElements) {
         this.tupleElements.addAll(tupleElements);
@@ -42,7 +44,16 @@ public class Tuple implements Iterable<TupleElement>, Serializable, Cloneable {
         return tupleElements.size();
     }
 
-    public Tuple add(TupleElement tupleElement){
+    public synchronized Tuple add(TupleElement tupleElement){
+        String k = tupleElement.getValue().toString();
+        if (indexMap.containsKey(k)) {
+            int[] v = indexMap.get(k);
+            v = Arrays.copyOf(v, v.length + 1);
+            v[v.length - 1] = tupleElements.size();
+            indexMap.put(k, v);
+        }
+        else
+            indexMap.put(k, new int[]{tupleElements.size()});
         tupleElements.add(tupleElement);
         return this;
     }
@@ -59,8 +70,7 @@ public class Tuple implements Iterable<TupleElement>, Serializable, Cloneable {
      */
 
     public Tuple add(Object object){
-        tupleElements.add(new TupleElement(object.toString()));
-        return this;
+        return add(new TupleElement(object.toString()));
     }
 
 
@@ -72,13 +82,13 @@ public class Tuple implements Iterable<TupleElement>, Serializable, Cloneable {
 
     public Tuple addAll(Collection collection){
         for (Object o: collection)
-            tupleElements.add(new TupleElement(o.toString()));
+            add(new TupleElement(o.toString()));
         return this;
     }
 
     public Tuple addAll(String[] strings){
         for (String s : strings) {
-            add(new TupleElement(s));
+            add(s);
         }
         return this;
     }
@@ -95,13 +105,18 @@ public class Tuple implements Iterable<TupleElement>, Serializable, Cloneable {
     }
 
     public int findFirstIndex(Object element){
-        int i = 0;
 
-        for (TupleElement tupleElement: tupleElements)
-            if (tupleElement.getValue().toString().equals(element.toString())) break;
-                else i++;
+        if (indexMap.containsKey(element.toString()))
+            return indexMap.get(element.toString())[0];
+        else
+            return -1;
+    }
 
-        return i;
+    public int[] findAllIndices(Object element){
+        if (indexMap.containsKey(element.toString()))
+            return indexMap.get(element.toString());
+        else
+            return new int[]{};
     }
 
     @Override

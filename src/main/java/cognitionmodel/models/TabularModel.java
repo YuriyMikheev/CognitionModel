@@ -78,7 +78,7 @@ public class TabularModel extends Model<LightRelation>{
 
 
     @Override
-    public void setMaps() {
+    protected void setMaps() {
  /*       relationsMap = ChronicleMapBuilder.of(int[].class, LightRelation.class)
                 .name("relationsMap")
                 .entries(1000000)

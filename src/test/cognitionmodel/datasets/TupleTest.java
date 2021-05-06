@@ -15,7 +15,7 @@ public class TupleTest {
         Tuple tuple = new Tuple();
 
        // System.out.println(tuple.add(1).add("!").add(10.001).add("WTF"));
-        assertTrue(tuple.add(1).add("!").add(10.001).add("WTF").toString().equals("{data=1, type=Int},{data=!, type=Char},{data=10.001, type=Double},{data=WTF, type=String}"));
+        assertTrue(tuple.add(1).add(1).add("!").add(10.001).add("WTF").toString().equals("{data=1, type=Int},{data=1, type=Int},{data=!, type=Char},{data=10.001, type=Double},{data=WTF, type=String}"));
 
 
     }
@@ -39,7 +39,7 @@ public class TupleTest {
     public void findFirstIndex() {
 
         assertTrue(new Tuple().add("1").add(1.0).add("!!!!").findFirstIndex("!!!!") == 2);
-       // System.out.println(new Tuple().add("1").add(1.0).add("!!!!").findFirstIndex("!!!!"));
+      //  System.out.println(new Tuple().add("1").add(1.0).add("!!!!").findFirstIndex("!!!!"));
 
     }
 }

@@ -96,7 +96,7 @@ public class ImageLightRelation extends LightRelation {
         terminalsArray.add(terminal);
     }
 
-    private static Integer getAddTerminal(String terminal){
+    private synchronized static Integer getAddTerminal(String terminal){
         if (!terminalsMap.containsKey(terminal))
             addTerminal(terminal);
         return terminalsMap.get(terminal);
@@ -185,7 +185,8 @@ public class ImageLightRelation extends LightRelation {
         int j = 0;
         for (int i: pattern.getSet())
             if (i < signature.length)
-                r[j++] = signature[i];
+                if (r[j] != signature[i])
+                    r[j++] = signature[i];
             else
                 return new int[]{};
 
