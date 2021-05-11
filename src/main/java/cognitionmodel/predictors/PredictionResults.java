@@ -114,7 +114,7 @@ public class PredictionResults {
         System.out.print("\t\t\tactual \n predicted");
 
         for (int i = 0; i < confusionMatrix.length; i++)
-            System.out.printf("%9s",terminals.get(i).getValue());
+            System.out.printf("%9s ",terminals.get(i).getValue());
         System.out.println("\t");
 
         int tpr = 0, wpr = 0;
@@ -123,11 +123,11 @@ public class PredictionResults {
         int tp[] = new int[confusionMatrix.length];
 
         for (int i = 0; i < confusionMatrix.length; i++) {
-            System.out.printf("%9s",terminals.get(i).getValue());
+            System.out.printf("%9s ",terminals.get(i).getValue());
             tp[i] = tp[i] + confusionMatrix[i][i];
             tpr = tpr + confusionMatrix[i][i];
             for (int j = 0; j < confusionMatrix.length; j++) {
-                System.out.printf("%9d", confusionMatrix[i][j]);
+                System.out.printf("%9d ", confusionMatrix[i][j]);
                 if (i != j) {
                     wpr = wpr + confusionMatrix[i][j];
                     fn[i] = fn[i] + confusionMatrix[i][j];

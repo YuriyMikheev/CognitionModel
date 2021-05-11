@@ -2,7 +2,6 @@ package cognitionmodel;
 
 import cognitionmodel.datasets.*;
 import cognitionmodel.models.ImageLightRelation;
-import cognitionmodel.models.SparseLightRelation;
 import cognitionmodel.models.TabularModel;
 import cognitionmodel.patterns.*;
 import cognitionmodel.predictors.PredictionResults;
@@ -11,7 +10,10 @@ import cognitionmodel.predictors.predictionfunctions.Imagefunction;
 import cognitionmodel.predictors.predictionfunctions.Powerfunction;
 
 import java.io.*;
+import java.util.Arrays;
 import java.util.concurrent.TimeUnit;
+
+import static java.lang.Math.round;
 
 public class Examples {
 
@@ -78,21 +80,18 @@ public class Examples {
     public static void mnist() throws IOException {
         TabularModel tabularModel = new TabularModel(
                 new TableDataSet(new FileInputStream(new File("D:\\works\\Data\\EMNIST\\emnist-mnist-train.csv")),
-                        new ImageCSVParser(",", "\n", new int[]{0, 4, 3000})), new ImageLightRelation(0));
+                        new ImageNoizyCSVParser(",", "\n", new int[]{0, 4, 3000}, 0, 0.0, "100")),
+                new ImageLightRelation(0));
 
-        tabularModel.setPatternSet(new ImageRecursivePatterns(0, 28,28, 150, new int[]{-3, -2, -1, 1, 2, 3}, new int[]{2, 3} ));
-      //  tabularModel.setPatternSet(new ImageCellularPatterns(0, 28*28,200, new int[]{75, 35, 12}));
-      //   tabularModel.setPatternSet(new ImageRandomPatterns(0, 28*28, 10, 10));
-/*
-        tabularModel.setPatternSet(new ImageShiftingSquarePatterns(0,4,4,28,28,14*28,2));
-        tabularModel.getPatternSet().getPatterns().addAll(new ImageShiftingSquarePatterns(0,8,8,28,28,7*28,4).getPatterns());
-        tabularModel.getPatternSet().getPatterns().addAll(new ImageShiftingSquarePatterns(0,16,16,28,28,3*28,8).getPatterns());
-*/
+       tabularModel.setPatternSet(new ImageRecursivePatterns(0, 28,28, 750, new int[]{-5,-3, -2, -1, 1, 2, 3,5}, new int[]{2, 3} ));
+      //  tabularModel.setPatternSet(new ImageCellularPatterns(0, 28*28,700, new int[]{75, 35, 12}));
+      //  tabularModel.setPatternSet(new ImageRandomPatterns(0, 28*28, 10, 10));
 
         tabularModel.make();
 
         PredictionResults predictionResults = TabularDataPredictor.predict(tabularModel,new TableDataSet(new FileInputStream(new File("D:\\works\\Data\\EMNIST\\emnist-mnist-test.csv")),
-                new ImageCSVParser(",", "\n", new int[]{0, 4, 3000})), "label" , new Imagefunction(tabularModel));
+                new ImageCSVParser(",", "\n", 0).setIntervals(new int[]{0, 4, 3000})), "label" ,
+                new Imagefunction(tabularModel));
 
         predictionResults.show(tabularModel.getDataSet().getFieldIndex("label"));
         tabularModel.close();
@@ -101,14 +100,85 @@ public class Examples {
     public static void mnistletters() throws IOException {
         TabularModel tabularModel = new TabularModel(
                 new TableDataSet(new FileInputStream(new File("D:\\works\\Data\\EMNIST\\emnist-balanced-train.csv")),
-                        new ImageCSVParser(",", "\n", new int[]{0, 4, 3000})), new ImageLightRelation(0));
+                        new ImageCSVParser(",", "\n", 0).setIntervals(new int[]{0, 4, 3000})), new ImageLightRelation(0));
 
        // tabularModel.setPatternSet(new ImageRecursivePatterns(0, 28,28, 50, new int[]{-3, -2, -1, 1, 2, 3}, new int[]{2,3} ));
         tabularModel.setPatternSet(new ImageCellularPatterns(0, 28*28,200, new int[]{75, 35, 12}));
         tabularModel.make();
 
         PredictionResults predictionResults = TabularDataPredictor.predict(tabularModel,new TableDataSet(new FileInputStream(new File("D:\\works\\Data\\EMNIST\\emnist-balanced-test.csv")),
-                new ImageCSVParser(",", "\n", new int[]{0, 4, 3000})), "label" , new Imagefunction(tabularModel));
+                new ImageCSVParser(",", "\n", 0).setIntervals(new int[]{0, 4, 3000})), "label" , new Imagefunction(tabularModel));
+
+        predictionResults.show(tabularModel.getDataSet().getFieldIndex("label"));
+        tabularModel.close();
+    }
+
+    private static String cifartransfer(String a){
+        String r = "";
+        String[] v = a.split("r|g|b");
+
+        if (v.length != 4) return "";
+        try {
+            int[] c = new int[4];
+            for (int i = 1; i < 4; i++)
+                c[i] = Integer.parseInt(v[i]);
+
+            double rv = Arrays.stream(c).average().getAsDouble();
+
+            int intervalsamount = 10;
+
+            r = ""+ round(intervalsamount*rv/256); //(rv > 200 ? 3 : rv > 100 ? 2 : rv > 50 ? 1 : 0);
+
+/*
+            r = "r" + (Integer.parseInt(v[1]) > 200 ? 3 : Integer.parseInt(v[1]) > 100 ? 2 : Integer.parseInt(v[1]) > 50 ? 1 : 0);
+            r = r + "g" + (Integer.parseInt(v[2]) > 200 ? 3 : Integer.parseInt(v[2]) > 100 ? 2 : Integer.parseInt(v[2]) > 50 ? 1 : 0);
+            r = r + "b" + (Integer.parseInt(v[3]) > 200 ? 3 : Integer.parseInt(v[3]) > 100 ? 2 : Integer.parseInt(v[3]) > 50 ? 1 : 0);;
+*/
+        } catch (NumberFormatException e){
+            System.err.println(v+" is not transferabale");
+        }
+        return r;
+    }
+
+
+    private static Tuple cifartupletransfer(Tuple tuple){
+        Tuple t = new Tuple();
+
+        int[] intervals = new int[]{0, 4, 25, 50, 100, 150, 200, 250, 300};
+
+        int i = 0;
+        for (TupleElement tupleElement: tuple)
+          if (i++ != 0) {
+            String[] v = tupleElement.getValue().toString().split("r|g|b");
+
+            if (v.length != 4)
+                t.add(tupleElement);
+            else
+                try {
+                    t.add("r" + ImageCSVParser.pixelfilter(v[1], intervals))
+                            .add("g" + ImageCSVParser.pixelfilter(v[2], intervals))
+                            .add("b" + ImageCSVParser.pixelfilter(v[3], intervals));
+                }catch (NumberFormatException e){
+                    t.add(tupleElement);
+                }
+        } else t.add(tupleElement);
+
+
+        return t;
+    }
+
+
+    public static void cifar() throws IOException {
+        TabularModel tabularModel = new TabularModel(
+                new TableDataSet(new FileInputStream(new File("D:\\works\\Data\\CIFAR\\bin\\train.csv")),
+                        new ImageCSVParser(",", "\r\n", 0).setTupleTransferFunction(Examples::cifartupletransfer)), new ImageLightRelation(0));
+
+    //     tabularModel.setPatternSet(new ImageRecursivePatterns(0, 32,32*3, 50, new int[]{-3, -2, -1, 1, 2, 3}, new int[]{2,3} ));
+        tabularModel.setPatternSet(new ImageCellularPatterns(0, 32*32*3,3000, new int[]{75, 35, 12}));
+        tabularModel.make();
+
+        PredictionResults predictionResults = TabularDataPredictor.predict(tabularModel,new TableDataSet(new FileInputStream(new File("D:\\works\\Data\\CIFAR\\bin\\test.csv")),
+                new ImageCSVParser(",", "\r\n", 0).setTupleTransferFunction(Examples::cifartupletransfer)), "label" , new Imagefunction(tabularModel));
 
         predictionResults.show(tabularModel.getDataSet().getFieldIndex("label"));
         tabularModel.close();
@@ -123,8 +193,9 @@ public class Examples {
        // adult();
        // census();
       //  letters();
-        mnist();
+      //  mnist();
        // mnistletters();
+        cifar();
 
         t = System.currentTimeMillis()-t;
 
