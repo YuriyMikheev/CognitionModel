@@ -30,7 +30,30 @@ public class FullGridPatterns1Test {
         patterns = new FullGridIterativePatterns(6, 3, new byte[]{1,0,1});
        // System.out.println(patterns.getPatterns().size());
         assertTrue(patterns.getPatterns().size() == 25);
-
-
     }
+
+    @Test
+    public void  generateTestview(){
+        patterns = new FullGridIterativePatterns(5, 4);
+          System.out.println(patterns.getPatterns().size());
+        assertTrue(patterns.getPatterns().size() == 30);
+
+        patterns = new FullGridIterativePatterns(4, 3);
+        //  System.out.println(patterns.getPatterns().size());
+        assertTrue(patterns.getPatterns().size() == 14);
+
+        patterns = new FullGridIterativePatterns(5, 2);
+        //  System.out.println(patterns.getPatterns().size());
+        assertTrue(patterns.getPatterns().size() == 15);
+
+        patterns = new FullGridIterativePatterns(10, 6);
+        //System.out.println(patterns.getPatterns().size());
+        assertTrue(patterns.getPatterns().size() == 847);
+
+
+        patterns = new FullGridIterativePatterns(6, 3, new byte[]{1,0,1});
+        // System.out.println(patterns.getPatterns().size());
+        assertTrue(patterns.getPatterns().size() == 25);
+    }
+
 }

@@ -1,8 +1,8 @@
 package cognitionmodel.models;
 
 import cognitionmodel.datasets.DataSet;
-import cognitionmodel.datasets.TableDataSet;
 import cognitionmodel.datasets.Tuple;
+import cognitionmodel.models.relations.Relation;
 import cognitionmodel.patterns.Pattern;
 import cognitionmodel.patterns.PatternSet;
 
@@ -28,7 +28,7 @@ public abstract class Model<R extends Relation> {
     protected Map<int[], Integer> frequencyMap;
     protected PatternSet patternSet = null;
     protected R relationMethods;
-    private ConcurrentHashMap<String, Integer> termsfrequencies = new ConcurrentHashMap<>();
+    protected ConcurrentHashMap<String, Integer> termsfrequencies = new ConcurrentHashMap<>();
 
 
     /**
@@ -288,6 +288,14 @@ public abstract class Model<R extends Relation> {
         }
     }
 
+    /**
+     * Gets iterator for relation map
+     * @return - iterator for the set of <Entry<int[], Integer>>
+     */
 
+
+    public Iterator<Map.Entry<int[], Integer>> relationIterator(){
+        return frequencyMap.entrySet().iterator();
+    }
 
 }

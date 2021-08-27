@@ -40,7 +40,7 @@ public class CSVParser implements TabularParser {
      */
 
     @Override
-    public List get(byte[] data) {
+    public List parse(byte[] data) {
 
         if (Charset.defaultCharset() == null) {
             throw new UnsupportedOperationException("CSV Parser: Default charset decoder is undefined. Can't parse the data");

@@ -2,6 +2,7 @@ package cognitionmodel.models;
 
 import cognitionmodel.datasets.CSVParser;
 import cognitionmodel.datasets.Tuple;
+import cognitionmodel.models.relations.SparseLightRelation;
 import cognitionmodel.patterns.Pattern;
 import org.junit.Test;
 
@@ -13,7 +14,7 @@ public class SparseLightRelationTest {
     @Test
     public void signatureTest(){
         CSVParser cp = new CSVParser(",", "\r\n");
-        LinkedList<Tuple> tp = (LinkedList<Tuple>) cp.get("values,41,0,0.0,0,0,0,0,0,0,0,0,0,0,0,0,y,,".getBytes());
+        LinkedList<Tuple> tp = (LinkedList<Tuple>) cp.parse("values,41,0,0.0,0,0,0,0,0,0,0,0,0,0,0,0,y,,".getBytes());
         int[] s = new SparseLightRelation(0).makeSignature(cp.getHeader());
 
         Tuple t = new SparseLightRelation(0).getTerminals(s);
@@ -27,7 +28,7 @@ public class SparseLightRelationTest {
     @Test
     public void makeRelation() {
         CSVParser cp = new CSVParser(",", "\r\n");
-        LinkedList<Tuple> tp = (LinkedList<Tuple>) cp.get("values,41,0,0.0,0,0,0,0,0,0,0,0,0,0,0,0,y,,".getBytes());
+        LinkedList<Tuple> tp = (LinkedList<Tuple>) cp.parse("values,41,0,0.0,0,0,0,0,0,0,0,0,0,0,0,0,y,,".getBytes());
         int[] s = new SparseLightRelation(0).makeSignature(cp.getHeader());
 
         Pattern p = new Pattern(new int[]{1,4,16,18});

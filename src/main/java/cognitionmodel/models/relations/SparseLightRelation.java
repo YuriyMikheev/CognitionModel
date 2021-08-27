@@ -1,4 +1,4 @@
-package cognitionmodel.models;
+package cognitionmodel.models.relations;
 
 import cognitionmodel.datasets.Tuple;
 import cognitionmodel.datasets.TupleElement;
@@ -17,7 +17,7 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 
 
-public class ImageLightRelation extends LightRelation {
+public class SparseLightRelation extends LightRelation {
 
     private static ConcurrentHashMap<String, Integer> terminalsMap = new ConcurrentHashMap<>();
     private static ArrayList<String> terminalsArray = new ArrayList<>();
@@ -26,7 +26,7 @@ public class ImageLightRelation extends LightRelation {
     private int labelindex;
 
 
-    public ImageLightRelation(int labelindex) {
+    public SparseLightRelation(int labelindex) {
         this.labelindex = labelindex;
     }
 
@@ -96,7 +96,7 @@ public class ImageLightRelation extends LightRelation {
         terminalsArray.add(terminal);
     }
 
-    private synchronized static Integer getAddTerminal(String terminal){
+    private static Integer getAddTerminal(String terminal){
         if (!terminalsMap.containsKey(terminal))
             addTerminal(terminal);
         return terminalsMap.get(terminal);
@@ -115,16 +115,20 @@ public class ImageLightRelation extends LightRelation {
 
     public int[] makeSignature(Tuple tuple) {
 
-        int[] r = new int[tuple.size()];
+        LinkedList<Integer> sig = new LinkedList<>();
 
-        for (int i = 0; i < tuple.size(); i++)
-            r[i] = getAddTerminal(tuple.get(i).getValue().toString());
-
-/*        IntBuffer intBuffer = IntBuffer.allocate(tuple.size());
-
-        for (TupleElement t: tuple){
-            intBuffer.put(getAddTerminal(t.getValue().toString()));
-        }*/
+        int i = 0;
+        for (TupleElement t: tuple) {
+            if ((labelindex == i) | !(t.getValue().toString().equals("0") | (t.getValue().toString().equals("0.0")))) {
+                sig.add(i);
+                sig.add(getAddTerminal(t.getValue().toString()));
+            }
+            i++;
+        }
+        i = 0;
+        int[] r = new int[sig.size()];
+        for (int j: sig)
+            r[i++] = j;
 
         return r;
     }
@@ -164,8 +168,22 @@ public class ImageLightRelation extends LightRelation {
 
     @Override
     public int[] makeRelation(Tuple tuple, Pattern pattern){
+        int[] r = new int[tuple.size()];
         int[] signature = makeSignature(tuple);
-        return makeRelation(signature, pattern);
+
+        int j = 0, l = 0;
+        for (int i = 0; j < signature.length & i < pattern.getSetAmount() & l < r.length; ){
+            if (signature[j] < pattern.getSet()[i]) j += 2;
+            else
+            if ((signature[j] > pattern.getSet()[i])) i++;
+            else {
+                r[l++] = signature[j++];
+                r[l++] = signature[j++];
+            }
+
+        }
+
+        return Arrays.copyOf(r, l);
     }
 
 
@@ -180,17 +198,24 @@ public class ImageLightRelation extends LightRelation {
 
     @Override
     public int[] makeRelation(int[] signature, Pattern pattern){
-        int[] r = new int[pattern.getSetAmount()];
+        int[] r = new int[pattern.getSetAmount()*2];
 
-        int j = 0;
-        for (int i: pattern.getSet())
-            if (i < signature.length)
-                if (r[j] != signature[i])
-                    r[j++] = signature[i];
-            else
-                return new int[]{};
+        int j = 0, l = 0;
+        for (int i = 0; j < signature.length & i < pattern.getSetAmount() & l < r.length; ){
+            if (signature[j] < pattern.getSet()[i]) j += 2;
+                else
+                    if ((signature[j] > pattern.getSet()[i])) i++;
+                        else {
+                            r[l++] = signature[j++];
+                            r[l++] = signature[j++];
+                    }
 
-        return r;
+        }
+
+        if (l > 2)
+            return Arrays.copyOf(r, l);
+        else
+            return new int[]{};
     }
 
     /**
@@ -202,8 +227,26 @@ public class ImageLightRelation extends LightRelation {
      */
 
     public int[] addTermToRelation(int[] signature, int index, int term) {
-        signature[index] = term;
-        return signature;
+        int[] s = new int[signature.length + 2];
+        int i = 0, j = 0;
+
+        for (i = 0; i < signature.length & index < signature[i];) {
+            s[i] = signature[i++];
+            s[i] = signature[i++];
+        }
+
+        if (index == signature[i]) j = i;
+            else j = i + 2;
+
+        s[i++] = index;
+        s[i++] = term;
+
+        for (;i < signature.length;) {
+            s[j++] = signature[i++];
+            s[j++] = signature[i++];
+        }
+
+        return Arrays.copyOf(s, j);
     }
 
     /**
@@ -213,8 +256,17 @@ public class ImageLightRelation extends LightRelation {
      */
 
     public int[] removeTermFromRelation(int[] signature, int index){
-        signature[index] = 0;
-        return signature;
+        int[] s = new int[signature.length];
+        int j = 0;
+
+        for (int i = 0; i < signature.length; )
+            if (signature[i] != index) {
+                s[j++] = s[i++];
+                s[j++] = s[i++];
+            } else
+                i += 2;
+
+        return Arrays.copyOf(s, j);
     }
 
 

@@ -1,4 +1,4 @@
-package cognitionmodel.models;
+package cognitionmodel.models.relations;
 
 import cognitionmodel.datasets.Tuple;
 import cognitionmodel.datasets.TupleElement;
@@ -6,31 +6,20 @@ import cognitionmodel.patterns.Pattern;
 
 import java.nio.IntBuffer;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Class represents set of methods for processing signatures and new relations from table data about images.
+ * Class represents set of methods for processing signatures and new relations from table data
  * Light relation saves nothing.
  *
  */
 
-
-public class SparseLightRelation extends LightRelation {
+public class LightRelation implements Relation {
 
     private static ConcurrentHashMap<String, Integer> terminalsMap = new ConcurrentHashMap<>();
     private static ArrayList<String> terminalsArray = new ArrayList<>();
     private static Integer aInteger = getAddTerminal(new TupleElement("").toString());
-
-    private int labelindex;
-
-
-    public SparseLightRelation(int labelindex) {
-        this.labelindex = labelindex;
-    }
-
-
 
     /**
      * LightRelation do not save indices of tuples.
@@ -62,17 +51,11 @@ public class SparseLightRelation extends LightRelation {
      */
 
     public Tuple getTerminals(int[] signature){
-        IntBuffer b = IntBuffer.allocate(signature.length).put(signature).position(0);
+
         Tuple t = new Tuple();
 
-        int j = 0;
-        while (b.hasRemaining()){
-            int i = b.get();
-            while (j++ != i)
-                t.add("");
-
-            t.add(terminalsArray.get(b.get()));
-        }
+        for (int s: signature)
+            t.add(terminalsArray.get(s));
 
         return t;
     };
@@ -96,7 +79,7 @@ public class SparseLightRelation extends LightRelation {
         terminalsArray.add(terminal);
     }
 
-    private static Integer getAddTerminal(String terminal){
+    private synchronized static Integer getAddTerminal(String terminal){
         if (!terminalsMap.containsKey(terminal))
             addTerminal(terminal);
         return terminalsMap.get(terminal);
@@ -115,22 +98,13 @@ public class SparseLightRelation extends LightRelation {
 
     public int[] makeSignature(Tuple tuple) {
 
-        LinkedList<Integer> sig = new LinkedList<>();
+        IntBuffer intBuffer = IntBuffer.allocate(tuple.size());
 
-        int i = 0;
-        for (TupleElement t: tuple) {
-            if ((labelindex == i) | !(t.getValue().toString().equals("0") | (t.getValue().toString().equals("0.0")))) {
-                sig.add(i);
-                sig.add(getAddTerminal(t.getValue().toString()));
-            }
-            i++;
+        for (TupleElement t: tuple){
+            intBuffer.put(getAddTerminal(t.getValue().toString()));
         }
-        i = 0;
-        int[] r = new int[sig.size()];
-        for (int j: sig)
-            r[i++] = j;
 
-        return r;
+        return intBuffer.array();
     }
 
     @Override
@@ -171,19 +145,12 @@ public class SparseLightRelation extends LightRelation {
         int[] r = new int[tuple.size()];
         int[] signature = makeSignature(tuple);
 
-        int j = 0, l = 0;
-        for (int i = 0; j < signature.length & i < pattern.getSetAmount() & l < r.length; ){
-            if (signature[j] < pattern.getSet()[i]) j += 2;
-            else
-            if ((signature[j] > pattern.getSet()[i])) i++;
-            else {
-                r[l++] = signature[j++];
-                r[l++] = signature[j++];
+        for (int b: pattern.getSet())
+            if (b < signature.length){
+                r[b] = signature[b];
             }
 
-        }
-
-        return Arrays.copyOf(r, l);
+        return r;
     }
 
 
@@ -198,24 +165,14 @@ public class SparseLightRelation extends LightRelation {
 
     @Override
     public int[] makeRelation(int[] signature, Pattern pattern){
-        int[] r = new int[pattern.getSetAmount()*2];
+        int[] r = new int[signature.length];
 
-        int j = 0, l = 0;
-        for (int i = 0; j < signature.length & i < pattern.getSetAmount() & l < r.length; ){
-            if (signature[j] < pattern.getSet()[i]) j += 2;
-                else
-                    if ((signature[j] > pattern.getSet()[i])) i++;
-                        else {
-                            r[l++] = signature[j++];
-                            r[l++] = signature[j++];
-                    }
+        for (int b: pattern.getSet())
+            if (b < signature.length){
+                r[b] = signature[b];
+            }
 
-        }
-
-        if (l > 2)
-            return Arrays.copyOf(r, l);
-        else
-            return new int[]{};
+        return r;
     }
 
     /**
@@ -226,28 +183,10 @@ public class SparseLightRelation extends LightRelation {
      * @param term - term
      */
 
-    public int[] addTermToRelation(int[] signature, int index, int term) {
-        int[] s = new int[signature.length + 2];
-        int i = 0, j = 0;
-
-        for (i = 0; i < signature.length & index < signature[i];) {
-            s[i] = signature[i++];
-            s[i] = signature[i++];
-        }
-
-        if (index == signature[i]) j = i;
-            else j = i + 2;
-
-        s[i++] = index;
-        s[i++] = term;
-
-        for (;i < signature.length;) {
-            s[j++] = signature[i++];
-            s[j++] = signature[i++];
-        }
-
-        return Arrays.copyOf(s, j);
-    }
+    public int[] addTermToRelation(int[] signature, int index, int term){
+        signature[index] = term;
+        return signature;
+    };
 
     /**
      * Remove term from relation
@@ -256,20 +195,8 @@ public class SparseLightRelation extends LightRelation {
      */
 
     public int[] removeTermFromRelation(int[] signature, int index){
-        int[] s = new int[signature.length];
-        int j = 0;
-
-        for (int i = 0; i < signature.length; )
-            if (signature[i] != index) {
-                s[j++] = s[i++];
-                s[j++] = s[i++];
-            } else
-                i += 2;
-
-        return Arrays.copyOf(s, j);
-    }
-
-
-
+        signature[index] = 0;
+        return signature;
+    };
 
 }

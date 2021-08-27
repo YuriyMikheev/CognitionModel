@@ -1,7 +1,6 @@
-package cognitionmodel.models;
+package cognitionmodel.models.relations;
 
 import cognitionmodel.datasets.Tuple;
-import cognitionmodel.datasets.TupleElement;
 import cognitionmodel.patterns.Pattern;
 
 import java.nio.ByteBuffer;

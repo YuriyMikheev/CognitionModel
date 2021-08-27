@@ -60,7 +60,7 @@ public class ImageNoizyCSVParser implements TabularParser {
      */
 
     @Override
-    public List get(byte[] data) {
+    public List parse(byte[] data) {
         final Random random = new Random();
 
         if (Charset.defaultCharset() == null) {

@@ -12,11 +12,13 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
+import static java.lang.Math.round;
+
 /**
  * Encapsulates predictor method applied to @param Model
  */
 
-public class TabularDataPredictor extends Predictor{
+public class TabularDataPredictor implements Predictor{
 
     /**
      * Makes predictions for the tabular data in @param signatureIndex from the @param dataSet based on @param model
@@ -64,8 +66,8 @@ public class TabularDataPredictor extends Predictor{
                    for (int[] relation : relations) {
                        int c = 0;
                        for (int j = 0; j < altTerminals.length; j++) {
-                           double da;
-                           altP[j] += (da = predictionfunction.predictionfunction(model.getRelationMethods().addTermToRelation(relation, signatureIndex, altTerminals[j]), signatureIndex));
+                           double da = predictionfunction.predictionfunction(model.getRelationMethods().addTermToRelation(relation, signatureIndex, altTerminals[j]), signatureIndex);
+                           altP[j] += da;//(Double.isNaN(da)? 0: da);
                            if (da == 0) c++;
                        }
                        if (c == altTerminals.length)
@@ -74,7 +76,7 @@ public class TabularDataPredictor extends Predictor{
                    }
 
                    int maxi = -1;
-                   Double maxd = Double.MIN_NORMAL;
+                   Double maxd = Double.MIN_VALUE;
 
                    for (int i = 0; i < altP.length; i++) {
                        if (altP[i] > maxd) {
@@ -84,6 +86,8 @@ public class TabularDataPredictor extends Predictor{
                    }
 
                    r.put(finalRecordIndex, signatureIndex, new Tuple().add(maxi != -1 ? altTermNames[maxi] : "Prediction failed").add(stored).addAll(Arrays.stream(altP).collect(Collectors.toList())));
+                   if (maxi == -1)
+                       maxi = maxi/1;
                    return null;
                }));
 
@@ -121,5 +125,49 @@ public class TabularDataPredictor extends Predictor{
 
         return predict(model, dataSet, i, predictionfunction);
     }
+
+    /**
+     * Fits numeric values in data set to nearest values in the dataset of the model
+     * @param model - the model to fit to
+     * @param dataSet - fitting dataset
+     * @return dataset with modified numeric values
+     */
+
+
+    public static TableDataSet fit2model(TabularModel model, TableDataSet dataSet) {
+
+        TableDataSet modelDataSet = model.getDataSet();
+
+        TreeSet<Double>[] valuesMap = new TreeSet[dataSet.getHeader().size()];
+        for (int i = 0; i < modelDataSet.getHeader().size(); i++) {
+            valuesMap[i] = new TreeSet<>();
+        }
+
+        for (Tuple record: modelDataSet){
+            for (int i = 0; i < modelDataSet.getHeader().size(); i++) {
+                if (i < record.size())
+                    if (record.get(i).isNumber())
+                        valuesMap[i].add(record.get(i).asDouble());
+            }
+        }
+
+        for (Tuple record: dataSet){
+            for (int i = 0; i < dataSet.getHeader().size(); i++){
+                if (i < record.size())
+                    if (record.get(i).isNumber() & !valuesMap[i].isEmpty()) {
+                        Double value = record.get(i).asDouble();
+                        if (!valuesMap[i].contains(value)) {
+                            if (record.get(i).getType() == TupleElement.Type.Double)
+                                record.set(i, valuesMap[i].floor(value) != null ? valuesMap[i].floor(value)  : valuesMap[i].higher(value));
+                            if (record.get(i).getType() == TupleElement.Type.Int)
+                                record.set(i, valuesMap[i].floor(value) != null ? (int)round(valuesMap[i].floor(value)) : (int)round(valuesMap[i].higher(value)));
+                        }
+                    }
+            }
+        }
+
+        return dataSet;
+    }
+
 
 }

@@ -2,7 +2,7 @@ package cognitionmodel.predictors;
 
 import cognitionmodel.datasets.CSVParser;
 import cognitionmodel.datasets.TableDataSet;
-import cognitionmodel.models.LightRelation;
+import cognitionmodel.models.relations.LightRelation;
 import cognitionmodel.models.TabularModel;
 import cognitionmodel.patterns.FullGridIterativePatterns;
 import cognitionmodel.predictors.predictionfunctions.Powerfunction;

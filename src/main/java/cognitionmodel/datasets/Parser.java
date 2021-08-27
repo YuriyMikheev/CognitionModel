@@ -9,7 +9,7 @@ import java.util.List;
 
 public interface Parser {
 
-    public List<Tuple> get(byte[] data);
+    public List<Tuple> parse(byte[] data);
 
 
 }

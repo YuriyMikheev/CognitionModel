@@ -2,7 +2,6 @@ package cognitionmodel.datasets;
 
 import org.junit.Test;
 
-import java.nio.ByteBuffer;
 import java.util.LinkedList;
 
 import static org.junit.Assert.*;
@@ -12,7 +11,7 @@ public class CSVParserTest {
     @Test
     public void parseTest(){
         CSVParser cp = new CSVParser(",", "\r\n");
-        LinkedList<Tuple> tp = (LinkedList<Tuple>) cp.get("values,41,0,0.0,0,0,0,0,0,0,0,0,0,0,0,0,y".getBytes());
+        LinkedList<Tuple> tp = (LinkedList<Tuple>) cp.parse("values,41,0,0.0,0,0,0,0,0,0,0,0,0,0,0,0,y".getBytes());
 
         assertTrue(cp.getHeader().get(0).type == TupleElement.Type.String);
         assertTrue(cp.getHeader().get(3).type == TupleElement.Type.Double);

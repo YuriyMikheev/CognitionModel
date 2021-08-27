@@ -2,13 +2,12 @@ package cognitionmodel.predictors;
 
 import cognitionmodel.datasets.DataSet;
 import cognitionmodel.models.Model;
-import cognitionmodel.models.Relation;
 
 /**
  * Encapsulates predictor method applied to @param Model
  */
 
-public class Predictor {
+public interface Predictor {
 
 
     /**

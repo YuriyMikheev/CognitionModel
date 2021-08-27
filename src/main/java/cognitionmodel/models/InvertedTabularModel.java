@@ -4,16 +4,17 @@ import cognitionmodel.datasets.DataSet;
 import cognitionmodel.datasets.TableDataSet;
 import cognitionmodel.datasets.Tuple;
 import cognitionmodel.datasets.TupleElement;
+import cognitionmodel.models.relations.LightRelation;
 
-import java.util.HashMap;
-import java.util.HashSet;
+import java.util.*;
 
 public class InvertedTabularModel extends TabularModel {
 
-    private HashMap<String, HashSet<Integer>> invertedIndex = new HashMap<>();
+    private TreeMap<Object, HashSet<Integer>>[] invertedIndex;// = new HashMap<>();
+    private TableDataSet dataSet;
 
     /**
-     * Creates TabularModel object
+     * Creates TabularModel object with inverted indexes of the dataset
      *
      * @param dataSet    - data for model
      */
@@ -51,25 +52,48 @@ public class InvertedTabularModel extends TabularModel {
 
     @Override
     protected void setDataSet(DataSet dataSet) {
-        this.dataSet = dataSet;
+        super.setDataSet(dataSet);
+
+        this.dataSet = (TableDataSet) dataSet;
+        invertedIndex = new TreeMap[this.dataSet.getHeader().size()];
+
+        for (int i = 0; i < this.dataSet.getHeader().size(); i++) {
+            invertedIndex[i] = new TreeMap<Object, HashSet<Integer>>();
+        }
 
         int i = 0;
         for (Tuple tuple: dataSet) {
+            int j = 0;
             for (TupleElement tupleElement: tuple){
                 HashSet<Integer> integers;
-                if (invertedIndex.containsKey(tupleElement.getValue().toString()))
-                    integers = invertedIndex.get(tupleElement.getValue().toString());
+                if (invertedIndex[j].containsKey(tupleElement.getValue()))
+                    integers = invertedIndex[j].get(tupleElement.getValue());
                 else {
                     integers = new HashSet<>();
-                    invertedIndex.put(tupleElement.getValue().toString(), integers);
+                    invertedIndex[j].put(tupleElement.getValue(), integers);
                 }
                 integers.add(i);
+                j++;
             }
             i++;
         }
     }
 
+    private class Agent{
+        public double Z = 0;
+        ArrayList<Object[]> spot = new ArrayList<>();
+        BitSet records = new BitSet();
 
+        public Agent(Object[] startPoint){
+            addPoint(startPoint);
+        }
+
+        private void addPoint(Object[] point){
+            spot.add(point);
+
+        }
+
+    }
 
 
 }

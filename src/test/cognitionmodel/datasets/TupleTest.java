@@ -42,4 +42,37 @@ public class TupleTest {
       //  System.out.println(new Tuple().add("1").add(1.0).add("!!!!").findFirstIndex("!!!!"));
 
     }
+
+    @Test
+    public void asDoubletest(){
+
+        Tuple t = new Tuple().add("1").add(10.0).add("11.25");
+
+        assertTrue(t.get(0).asDouble() == 1.0);
+        assertTrue(t.get(1).asDouble() == 10.0);
+        assertTrue(t.get(2).asDouble() == 11.25);
+        assertTrue(t.asDoubleArray()[2] == 11.25);
+/*
+        for (TupleElement te:t)
+            System.out.println(te.asDouble());
+*/
+
+    }
+
+    @Test
+    public void asInttest(){
+
+        Tuple t = new Tuple().add("1").add(10.0).add("11.25").add(3E9);
+
+        assertTrue(t.get(0).asInt() == 1);
+        assertTrue(t.get(1).asInt() == 10);
+        assertTrue(t.get(2).asInt() == 11);
+        assertTrue(t.get(3).asInt() == -1294967296);
+/*
+        for (TupleElement te:t)
+            System.out.println(te.asInt());
+*/
+
+    }
+
 }

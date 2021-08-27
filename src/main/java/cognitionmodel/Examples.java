@@ -1,18 +1,22 @@
 package cognitionmodel;
 
 import cognitionmodel.datasets.*;
-import cognitionmodel.models.ImageLightRelation;
+import cognitionmodel.models.relations.ImageLightRelation;
 import cognitionmodel.models.TabularModel;
 import cognitionmodel.patterns.*;
 import cognitionmodel.predictors.PredictionResults;
 import cognitionmodel.predictors.TabularDataPredictor;
 import cognitionmodel.predictors.predictionfunctions.Imagefunction;
 import cognitionmodel.predictors.predictionfunctions.Powerfunction;
+import cognitionmodel.predictors.predictionfunctions.ZdPowerfunction;
 
 import java.io.*;
 import java.util.Arrays;
+import java.util.Iterator;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
+import static java.lang.Math.log;
 import static java.lang.Math.round;
 
 public class Examples {
@@ -32,9 +36,8 @@ public class Examples {
 
         tabularModel.make();
 
-        PredictionResults predictionResults = TabularDataPredictor.predict(tabularModel,new TableDataSet(new FileInputStream(new File("D:\\works\\Data\\adult\\adult.test")),
-                new CSVParser(",","\n")), " INCOME" ,new Powerfunction(tabularModel,10 ,2.0));
-
+        PredictionResults predictionResults = TabularDataPredictor.predict(tabularModel, TabularDataPredictor.fit2model(tabularModel, new TableDataSet(new FileInputStream(new File("D:\\works\\Data\\adult\\adult.test")),
+                new CSVParser(",","\n"))), " INCOME" ,new Powerfunction(tabularModel,10 ,2));
 
         predictionResults.show(tabularModel.getDataSet().getFieldIndex(" INCOME"));
         tabularModel.close();
@@ -51,9 +54,8 @@ public class Examples {
 
         tabularModel.make();
 
-        PredictionResults predictionResults = TabularDataPredictor.predict(tabularModel,new TableDataSet(new FileInputStream(new File("D:\\works\\Data\\Census\\census-income.test")),
-                new CSVParser(",","\n")), " TAXINC" , new Powerfunction(tabularModel, 10 ,2.0));
-
+        PredictionResults predictionResults = TabularDataPredictor.predict(tabularModel,TabularDataPredictor.fit2model(tabularModel, new TableDataSet(new FileInputStream(new File("D:\\works\\Data\\Census\\census-income.test")),
+                new CSVParser(",","\n"))), " TAXINC" , new Powerfunction(tabularModel, 10 ,2.0));
 
         predictionResults.show(tabularModel.getDataSet().getFieldIndex(" TAXINC"));
         tabularModel.close();
@@ -65,12 +67,12 @@ public class Examples {
                 new TableDataSet(new FileInputStream(new File("D:\\works\\Data\\letter\\letter-recognition.data.train.csv")),
                         new CSVParser(";","\r\n")));
 
-        tabularModel.setPatternSet(new FullGridRecursivePatterns(tabularModel,4));
+        tabularModel.setPatternSet(new FullGridRecursivePatterns(tabularModel,5));
 
         tabularModel.make();
 
-        PredictionResults predictionResults = TabularDataPredictor.predict(tabularModel,new TableDataSet(new FileInputStream(new File("D:\\works\\Data\\letter\\letter-recognition.data.test.csv")),
-                new CSVParser(";","\r\n")), "lettr" ,new Powerfunction(tabularModel, 1 ,1));
+        PredictionResults predictionResults = TabularDataPredictor.predict(tabularModel,TabularDataPredictor.fit2model(tabularModel, new TableDataSet(new FileInputStream(new File("D:\\works\\Data\\letter\\letter-recognition.data.test.csv")),
+                new CSVParser(";","\r\n"))), "lettr" ,new Powerfunction(tabularModel, 0 ,1));
 
 
         predictionResults.show(tabularModel.getDataSet().getFieldIndex("lettr"));
@@ -145,6 +147,7 @@ public class Examples {
         Tuple t = new Tuple();
 
         int[] intervals = new int[]{0, 4, 25, 50, 100, 150, 200, 250, 300};
+        String[] tv = new String[1024*3];
 
         int i = 0;
         for (TupleElement tupleElement: tuple)
@@ -155,14 +158,19 @@ public class Examples {
                 t.add(tupleElement);
             else
                 try {
-                    t.add("r" + ImageCSVParser.pixelfilter(v[1], intervals))
-                            .add("g" + ImageCSVParser.pixelfilter(v[2], intervals))
-                            .add("b" + ImageCSVParser.pixelfilter(v[3], intervals));
+                    tv[i - 2] = ImageCSVParser.pixelfilter(v[1], intervals);
+                    tv[i - 2 + 1024] = ImageCSVParser.pixelfilter(v[2], intervals);
+                    tv[i - 2 + 2*1024] = ImageCSVParser.pixelfilter(v[3], intervals);
+
+/*                    t.add("r" + ImageCSVParser.pixelfilter(v[1], intervals))
+                     .add("g" + ImageCSVParser.pixelfilter(v[2], intervals))
+                     .add("b" + ImageCSVParser.pixelfilter(v[3], intervals));*/
                 }catch (NumberFormatException e){
                     t.add(tupleElement);
                 }
         } else t.add(tupleElement);
 
+        t.addAll(tv);
 
         return t;
     }
@@ -173,8 +181,8 @@ public class Examples {
                 new TableDataSet(new FileInputStream(new File("D:\\works\\Data\\CIFAR\\bin\\train.csv")),
                         new ImageCSVParser(",", "\r\n", 0).setTupleTransferFunction(Examples::cifartupletransfer)), new ImageLightRelation(0));
 
-    //     tabularModel.setPatternSet(new ImageRecursivePatterns(0, 32,32*3, 50, new int[]{-3, -2, -1, 1, 2, 3}, new int[]{2,3} ));
-        tabularModel.setPatternSet(new ImageCellularPatterns(0, 32*32*3,3000, new int[]{75, 35, 12}));
+         tabularModel.setPatternSet(new ImageRecursivePatterns(0, 32,32*3, 50, new int[]{-3, -2, -1, 1, 2, 3}, new int[]{2,3} ));
+      //  tabularModel.setPatternSet(new ImageCellularPatterns(0, 32*32*3,1000, new int[]{75, 35, 12}));
         tabularModel.make();
 
         PredictionResults predictionResults = TabularDataPredictor.predict(tabularModel,new TableDataSet(new FileInputStream(new File("D:\\works\\Data\\CIFAR\\bin\\test.csv")),
@@ -184,6 +192,46 @@ public class Examples {
         tabularModel.close();
     }
 
+    public static void rz() throws IOException {
+          TabularModel tabularModel = new TabularModel(
+                new TableDataSet(new FileInputStream(new File("D:\\works\\Data\\R-Z\\R-Z 16.05 4.csv")),
+                        new CSVParser(",","\r\n")),
+                ("кп,кп1").split(","));
+
+
+        tabularModel.setPatternSet(new FullGridIterativePatterns(tabularModel,2));
+        tabularModel.make();
+
+        Iterator<Map.Entry<int[], Integer>> it = tabularModel.relationIterator();
+
+        double sz = 1;
+        int n = 0;
+        while (it.hasNext()) {
+            int[] k = it.next().getKey();
+            double dz = tabularModel.getZd(k);//* tabularModel.getFrequency(k)/tabularModel.getDataSet().size();
+            sz += dz;
+            System.out.println(sz+"\t"+dz);
+            n++;
+        }
+
+/*
+        int si = 1, i =0;
+        for (byte e: tabularModel.getEnabledFields()) {
+            if (e == 1)
+                si *= tabularModel.termsByField(i).length;
+            i++;
+        }
+*/
+
+
+        System.out.println("Sum of Z = "+sz);
+
+    /*    PredictionResults predictionResults = TabularDataPredictor.predict(tabularModel,new TableDataSet(new FileInputStream(new File("D:\\works\\Data\\CIFAR\\bin\\test.csv")),
+                new ImageCSVParser(",", "\r\n", 0).setTupleTransferFunction(Examples::cifartupletransfer)), "label" , new Imagefunction(tabularModel));
+
+        predictionResults.show(tabularModel.getDataSet().getFieldIndex("label"));*/
+        tabularModel.close();
+    }
 
 
     public static void main(String[] args) throws IOException {
@@ -192,10 +240,11 @@ public class Examples {
 
        // adult();
        // census();
-      //  letters();
+        letters();
       //  mnist();
        // mnistletters();
-        cifar();
+      //  cifar();
+      //  rz();
 
         t = System.currentTimeMillis()-t;
 

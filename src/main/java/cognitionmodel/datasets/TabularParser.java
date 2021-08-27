@@ -10,7 +10,7 @@ import java.util.List;
 public interface TabularParser extends Parser{
 
 
-    public List<Tuple> get(byte[] data);
+    public List<Tuple> parse(byte[] data);
 
     /**
      * Gets array of terminals indices for the field associated with @param fieldIndex

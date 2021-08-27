@@ -70,7 +70,7 @@ public class Tuple implements Iterable<TupleElement>, Serializable, Cloneable {
      */
 
     public Tuple add(Object object){
-        return add(new TupleElement(object.toString()));
+        return add(new TupleElement(object));
     }
 
 
@@ -130,5 +130,46 @@ public class Tuple implements Iterable<TupleElement>, Serializable, Cloneable {
         return tuple;
     }
 
+    /**
+     * Gets elements of tuple as array of doubles
+     * @return - array of doubles
+     *
+     * @throws ClassCastException if tuple element is not int or double
+     */
+
+    public double[] asDoubleArray(){
+        double[] r = new double[size()];
+
+        int i =0;
+        for (TupleElement tupleElement: tupleElements)
+            r[i++] = tupleElement.asDouble();
+
+        return r;
+
+    }
+
+
+    /**
+     * Gets elements of tuple as array of ints
+     * @return - array of ints
+     *
+     * @throws ClassCastException if tuple element is not int or double, double elements are rounded
+     */
+
+    public int[] asIntArray(){
+        int[] r = new int[size()];
+
+        int i =0;
+        for (TupleElement tupleElement: tupleElements)
+            r[i++] = tupleElement.asInt();
+
+        return r;
+
+    }
+
+
+    public TupleElement set(int index, Object object){
+        return tupleElements.set(index, new TupleElement(object));
+    }
 
 }

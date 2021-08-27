@@ -3,7 +3,6 @@ package cognitionmodel.datasets;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Spliterator;
 import java.util.function.Consumer;
@@ -39,7 +38,7 @@ public abstract class DataSet implements Iterable<Tuple> {
     }
 
     private void read() throws IOException {
-        records.addAll(parser.get(inputStream.readAllBytes()));
+        records.addAll(parser.parse(inputStream.readAllBytes()));
     }
 
     public Parser getParser() {

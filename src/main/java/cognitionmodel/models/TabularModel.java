@@ -2,13 +2,16 @@ package cognitionmodel.models;
 
 import cognitionmodel.datasets.TableDataSet;
 import cognitionmodel.datasets.TabularParser;
-import cognitionmodel.datasets.Tuple;
 import cognitionmodel.datasets.TupleElement;
+import cognitionmodel.models.relations.LightRelation;
 import cognitionmodel.patterns.PatternSet;
 import net.openhft.chronicle.map.ChronicleMap;
 import net.openhft.chronicle.map.ChronicleMapBuilder;
 
 import java.util.Arrays;
+
+import static java.lang.Math.log;
+import static java.lang.Math.pow;
 
 public class TabularModel extends Model<LightRelation>{
 
@@ -116,6 +119,41 @@ public class TabularModel extends Model<LightRelation>{
             }
             i++;
         }
+
+    }
+
+
+    /**
+     * Calculates Z measure for dependent values = ln(P(relation)/production of all Pj) + ln(1 - P(relation)/production of all (1 - Pj)), P(relation) - probability of relation,  Pj - probability of value j
+     *
+     * @param signature - relation signature from map
+     * @return - Z value for the relation
+     */
+
+    public double getZd(int[] signature){
+
+        Integer zf = frequencyMap.get(signature);
+        if (zf == null) return 0;
+
+        double z = zf, f = 1, fi = 1;
+        int c = 1, l = 0, ci = 1;
+
+
+        for (int i = 0; i < signature.length; i++)
+            if (signature[i] != 0){
+                l++;
+                f = f * termsfrequencies.get(i + ":" + signature[i]);// * termsfrequencies.get(i + ":" + signature[i]);
+                fi = fi * (getDataSet().size() - termsfrequencies.get(i + ":" + signature[i]));
+
+                if (f > Double.MAX_VALUE/1000000) { //prevents double value overloading
+                    f = f / getDataSet().size();
+                    c++;
+                }
+            }
+
+        z = f * (log(z / f) + (l - c) * log(getDataSet().size()))/(pow(getDataSet().size(), l - c));// + log((getDataSet().size() - z) / fi) + (l - ci) * log(getDataSet().size());
+
+        return z;
 
     }
 
