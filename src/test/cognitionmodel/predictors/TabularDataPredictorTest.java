@@ -25,18 +25,22 @@ public class TabularDataPredictorTest {
         TabularModel tabularModel = new TabularModel(
                 new TableDataSet(new FileInputStream(new File("D:\\works\\Data\\adult\\adult.data")),
                         new CSVParser(",","\n")),new LightRelation(),
-                (" education-num," +
+                (" INCOME,"+
+                        " education-num," +
                         " marital-status," +
                         " capital-gain," +
-                        " capital-loss,"+
-                        " INCOME").split(","));
+                        " education," +
+                        "age," +
+                        " race," +
+                        " sex," +
+                        " capital-loss").split(","));
 
         tabularModel.setPatternSet(new FullGridIterativePatterns(tabularModel,3));
 
         tabularModel.make();
 
-        PredictionResults predictionResults = TabularDataPredictor.predict(tabularModel,new TableDataSet(new FileInputStream(new File("D:\\works\\Data\\adult\\adult.test")),
-                        new CSVParser(",","\n")), " INCOME" ,new Powerfunction(tabularModel, 10 ,2.0));
+        PredictionResults predictionResults = TabularDataPredictor.predict(tabularModel,TabularDataPredictor.fit2model(tabularModel, new TableDataSet(new FileInputStream(new File("D:\\works\\Data\\adult\\adult.test")),
+                        new CSVParser(",","\n"))), " INCOME" ,new Powerfunction(tabularModel, 10 ,2));
 
 
         predictionResults.show(tabularModel.getDataSet().getFieldIndex(" INCOME"));

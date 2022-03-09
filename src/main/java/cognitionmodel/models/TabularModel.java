@@ -56,6 +56,9 @@ public class TabularModel extends Model<LightRelation>{
                 termToFiled[i][j] = relationInstance.getTerminalIndex(terms[j]);
         }
 
+        if (enabledFieldsNames != null)
+            if (enabledFieldsNames.length == 0) enabledFieldsNames = null;
+
         if (enabledFieldsNames == null) {
             this.enabledFields = new byte[dataSet.getHeader().size()];
             Arrays.fill(this.enabledFields, (byte) 1);
@@ -162,7 +165,7 @@ public class TabularModel extends Model<LightRelation>{
     }
 
     /**
-     *
+     * Puts set of patterns into the model
      * @param patternSet
      */
 
@@ -170,6 +173,20 @@ public class TabularModel extends Model<LightRelation>{
         patternSet.singleClean();
         this.patternSet = patternSet;
     }
+
+/*
+    */
+/**
+     * Gets set of patterns
+     * @return
+     *//*
+
+
+    public PatternSet getPatternSet(){
+        return patternSet;
+    }
+*/
+
 
     @Override
     public TableDataSet getDataSet(){

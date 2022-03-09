@@ -67,7 +67,9 @@ public class TabularDataPredictor implements Predictor{
                        int c = 0;
                        for (int j = 0; j < altTerminals.length; j++) {
                            double da = predictionfunction.predictionfunction(model.getRelationMethods().addTermToRelation(relation, signatureIndex, altTerminals[j]), signatureIndex);
-                           altP[j] += da;//(Double.isNaN(da)? 0: da);
+                           if (!Double.isNaN(da))altP[j] += da;
+                                else
+                                    da = da;//(Double.isNaN(da)? 0: da);
                            if (da == 0) c++;
                        }
                        if (c == altTerminals.length)

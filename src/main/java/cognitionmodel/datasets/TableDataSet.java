@@ -34,4 +34,8 @@ public class TableDataSet extends DataSet{
         return getHeader().findFirstIndex(field);
     }
 
+    public TupleElement get(int recordIndex, String field){
+        return getRecords().get(recordIndex).get(getFieldIndex(field));
+    }
+
 }

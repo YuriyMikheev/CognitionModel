@@ -67,7 +67,7 @@ public class Examples {
                 new TableDataSet(new FileInputStream(new File("D:\\works\\Data\\letter\\letter-recognition.data.train.csv")),
                         new CSVParser(";","\r\n")));
 
-        tabularModel.setPatternSet(new FullGridRecursivePatterns(tabularModel,5));
+        tabularModel.setPatternSet(new FullGridRecursivePatterns(tabularModel,6));
 
         tabularModel.make();
 
@@ -239,9 +239,9 @@ public class Examples {
         long t = System.currentTimeMillis();
 
        // adult();
-       // census();
+      //  census();
         letters();
-      //  mnist();
+        //mnist();
        // mnistletters();
       //  cifar();
       //  rz();

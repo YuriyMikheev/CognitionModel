@@ -20,12 +20,22 @@ public class InvertedTabularModelTest {
         InvertedTabularModel tabularModel = new InvertedTabularModel(
                 new TableDataSet(new FileInputStream(new File("D:\\works\\Data\\adult\\adult.data")),
                         new CSVParser(",","\n")),
-                       (" education-num," +
+                       (" INCOME,"+
+                        " education-num," +
                         " marital-status," +
-                        " capital-gain," +
+                               " capital-gain," +
+/*                               " education," +
+                               " age," +
+                               " race," +
+                               " sex," +*/
                         " capital-loss").split(","));
 
 
+        tabularModel.make();
+
+
+        tabularModel.getAgents().get(35).addPoint(tabularModel.getAgents().get(36).relation.get(" capital-loss:1735"));
+        tabularModel.getAgents().get(35).addPoint(tabularModel.getAgents().get(195).relation.get(" capital-gain:11678"));
 
         System.out.println("Model initialized");
 

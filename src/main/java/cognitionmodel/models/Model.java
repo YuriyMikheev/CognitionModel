@@ -73,6 +73,10 @@ public abstract class Model<R extends Relation> {
         return relationsMap.get(signature);
     }
 
+    public long getReltionsAmount(){
+        return  frequencyMap.size();
+    }
+
     public void putRelation(int[] signature, R relation){
         relationsMap.put(signature, relation);
     }

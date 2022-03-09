@@ -7,13 +7,12 @@ import cognitionmodel.models.relations.LightRelation;
 import cognitionmodel.predictors.PredictionResults;
 
 import java.util.*;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 import static java.lang.Double.NaN;
 import static java.lang.Math.*;
 
-public class InvertedTabularModel extends TabularModel {
+public class InvertedTabularModel2 extends TabularModel {
 
     private HashMap<String, TreeMap<Object, BitSet>> invertedIndex = new HashMap();// = new HashMap<>();
     private TableDataSet dataSet;
@@ -39,7 +38,7 @@ public class InvertedTabularModel extends TabularModel {
      * @param dataSet    - data for model
      * @param relationInstance - the instance of relation for this model
      */
-    public InvertedTabularModel(TableDataSet dataSet, LightRelation relationInstance, String... enabledFieldsNames){
+    public InvertedTabularModel2(TableDataSet dataSet, LightRelation relationInstance, String... enabledFieldsNames){
         super(dataSet, relationInstance, enabledFieldsNames);
         this.dataSet = (TableDataSet) dataSet;
         indexInit();
@@ -53,7 +52,7 @@ public class InvertedTabularModel extends TabularModel {
      * @param enabledFieldsNames - array of enabled fields names
      * @param dataSet    - data for model
      */
-    public InvertedTabularModel(TableDataSet dataSet, String... enabledFieldsNames) {
+    public InvertedTabularModel2(TableDataSet dataSet, String... enabledFieldsNames) {
         this(dataSet, new LightRelation(), enabledFieldsNames);
     }
 
@@ -128,32 +127,10 @@ public class InvertedTabularModel extends TabularModel {
         return b.isEmpty();
     }
 
-
-    private class Node{
-        public LinkedList<Agent> agents = new LinkedList<>();
-        private double z;
-        public BitSet fields = new BitSet();
-
-        public double getZ() {
-            return z;
-        }
-
-        public Node(LinkedList<Agent> agents){
-            this.agents.addAll(agents);
-        }
-
-        public void addAgent(Agent agent){
-            agents.add(agent);
-            z += agent.getZ();
-            fields.or(agent.fields);
-        }
-    }
-
-    public static double gamma = 000000000.0; //
+    public static double gamma = 0; //
     public static double epsilon = 0.00; //probability of confidential interval
-    public static double tau =  0.9999; // maximal conditional probability
+    public static double tau =  0.9; // maximal conditional probability
     public static int d = 3; //max depth
-    public static int minFreq = 1; //minimal frequency to decade that we have enough data
 
     public void make(){
         predict(null, null);
@@ -185,7 +162,7 @@ public class InvertedTabularModel extends TabularModel {
          if (record.size() > si){
 
             points.clear();
-           // agentsindex.clear();
+            agentsindex.clear();
             if (record == null)
                 initPoints();
             else
@@ -229,32 +206,41 @@ public class InvertedTabularModel extends TabularModel {
                 }
             }
             double dz , ddz = -1;
-            int it = newAgents.size(), cn = 0;
+            int it = 0, cn = 0;
 
-            HashMap<String, Agent> addagentindex = new HashMap<>();
+            /*
+                1. для значения predictingfield создаем  список значений других полей упорядоченный по веротяности возникновения со значением predictingfield
+                2. просматриваем все ноды из списка нод
+                    2.1 копируем ноду, добавляем новый агент с элементом, помещаем копию ноды в список нод
+                    2.2 перебираем все агенты ноды, копируем ноду, копируем агента, добавляем элемент к копи ноды к агенту, помещаем копию ноды в список нод
+                3  помещаем элемент в новую ноду, помещаем ноду в список нод
+                4. берем следующий элемент повторяем с п. 2
+                5. повторяем для следующего значения predictingfield с п.1
+                6. сортируем ноды по количеству агентов
+                7. находим ноду с наибольшим количеством агентов и суммарной условной вероятностью при условии возникновения значения  predictingfield равной вероятности этого значения
+             */
+
+
+
 
             do {
                 dz = ddz;
                 cn = 0;
                 LinkedList<Agent> addAgents = new LinkedList<>();
 
-                for (Iterator<Agent> agentIterator = newAgents.descendingIterator(); agentIterator.hasNext() & (it--) > 0; ) {
-                    Agent a1 = agentIterator.next();
-                    if (a1.getP() > 1.0 / dataSet.size())
-                     if (a1.relationByField.get(predictingfield).size() > 0 & a1.getLength() < d & (a1.relation.size() == 1 | a1.getCondP(predictingfield) < tau))// & a1.getCondP(predictingfield) > 1 - tau )
+                for (Agent a1 : newAgents) {
+                    if (a1.iteration == it & a1.relationByField.get(predictingfield).size() > 0 & a1.fields.cardinality() < d & (a1.relation.size() == 1 | a1.getCondP(predictingfield) < tau))// & a1.getCondP(predictingfield) > 1 - tau )
                       for (Agent a2 : newAgents)
-                          if (a2.getP() > 1.0 / dataSet.size())
-                           if (a1 != a2 & a2.relationByField.get(predictingfield).size() == 0 & canMerge(a1, a2) & a2.getLength() < d & (a2.relation.size() == 1 | a2.getCondP(predictingfield) < tau)){// & a2.getCondP(predictingfield) > 1 - tau ) {
+                        if (a1 != a2 & a2.relationByField.get(predictingfield).size() == 0 & canMerge(a1, a2) & a2.fields.cardinality() < d & (a2.relation.size() == 1 | a2.getCondP(predictingfield) < tau)){// & a2.getCondP(predictingfield) > 1 - tau ) {
                             Agent na = merge(a1, a2);
-                            if (!addagentindex.containsKey(na.signature)  & (na.getZ() >= (a1.getZ() + a2.getZ()) * (1 + gamma)) & na.getConfP() >= 1 - epsilon) {
+                            if (!agentsindex.containsKey(na.signature) & (na.getZ() >= (a1.getZ() + a2.getZ()) * (1 + gamma)) & na.getConfP() >= 1 - epsilon) {
                                 addAgents.add(na);
-                                if (!agentsindex.containsKey(na.signature)) agentsindex.put(na.signature, na);
-                                addagentindex.put(na.signature, na);
-                                cn++;
+                                agentsindex.put(na.signature, na);
+                                na.iteration = it + 1; cn++;
                             }
                         }
                 }
-                it = cn;
+                it++;
                 newAgents.addAll(addAgents); //newAgents.sort(Comparator.comparing(a -> -a.iteration));
 
                 //  System.out.println("---------  "+dz);
@@ -270,44 +256,22 @@ public class InvertedTabularModel extends TabularModel {
             double[] pc = new double[predictingvalues.size()];
             int c[] = new int[predictingvalues.size()];
 
-            agents.sort((a1, a2) -> (a1.getZ() > a2.getZ()? -1:a1.getZ() == a2.getZ()?0:1));
-
-            BitSet f = new BitSet(); //f.set(0, record.size(), true); f.set(si, false);
-          //  int fi = agentsindex.get(predictingfield + ":" + predictingvalues.get(0)).fields.nextSetBit(0);
-
-
             for (Agent a : agents) {
                 int i = 0;
-                if (a.relation.size() > 1)
-                    if (!f.intersects(a.fields))
-                         for (Object v : predictingvalues) {
-                            if (a.relation.containsKey(predictingfield + ":" + v)) {
-                                pa[i] += ( pow(a.getCondP(predictingfield), 10) * pow(a.getZ(),1));
-                                //pa[i] += (a.getZ());
-
-                               // f.or(a.fields); f.set(fi, false);
-
-                                //pa[i] += agentsindex.get(predictingfield + ":" + v).getP() - log(a.getCondP(predictingfield));
-                                //pa[i] += log(a.getP());
-                                pc[i] += (a.getConfP());
-                                c[i]++;
-                            }
+                if (a.relation.size() > 1)// & a.iteration == it - 1)
+                 for (Object v : predictingvalues) {
+                    if (a.relation.containsKey(predictingfield + ":" + v)) {
+                       //pa[i] += ( pow(a.getCondP(predictingfield), 15) * pow(a.getZ(),1));
+                        //pa[i] += a.getZ();
+                        pa[i] += 1/(a.getCondP(predictingfield));
+                        pc[i] += (a.getConfP());
+                        c[i]++;
+                    }
                     i++;
                 }
             }
 
-
-            int i1 = 0;
-            for (Object v : predictingvalues) {
-                //pa[i1] = pow(agentsindex.get(predictingfield + ":" + v).getP(),-c[i1])*exp(pa[i1]);
-                //pa[i1] = agentsindex.get(predictingfield + ":" + v).getP()*exp(pa[i1]);
-                pa[i1] = exp(pa[i1]);
-                i1++;
-            }
-
-
-                 // System.out.print(predictingfield + "\t " + record.get(14).getValue() + "\t");
-
+           // System.out.print(predictingfield + "\t " + record.get(14).getValue() + "\t");
 
             int mi = 0;
             double[] pr = new double[c.length];
@@ -374,11 +338,6 @@ public class InvertedTabularModel extends TabularModel {
             r.relationByField.get(p.field).add(p.toString());
         }
 
-        r.resign();
-
-        if (agentsindex.containsKey(r.signature))
-            return agentsindex.get(r.signature);
-
         for (String f: invertedIndex.keySet()) {
             BitSet bs = r.recordsByField.get(f);
             bs.or(a1.recordsByField.get(f));
@@ -397,7 +356,7 @@ public class InvertedTabularModel extends TabularModel {
 
         r.dZ = r.getZ() - a1.getZ() - a2.getZ();
 
-     //   r.resign();
+        r.resign();
         return r;
     }
 
@@ -414,10 +373,10 @@ public class InvertedTabularModel extends TabularModel {
         BitSet records = new BitSet(); // records common for all points from relation
         HashMap<Integer, Integer> orRecords = new HashMap<Integer, Integer>(); // records pointed in any any point from relation
         String signature = "";
+        public int iteration = 0;
         private double z = NaN, p = NaN, cp = NaN;
         public BitSet fields = new BitSet();
         public double dZ = NaN;
-        private int length = 0;
 
         /**
          * Creates Agent for starting point
@@ -458,27 +417,23 @@ public class InvertedTabularModel extends TabularModel {
             return signature+"\t"+relation.size()+"; "+recordsByField.values().stream().filter(b -> !b.isEmpty()).count()+"; "+getZ();
         }
 
-        public int getLength(){
-            return (length == 0? length = fields.cardinality(): length);
-        }
-
         /**
          * Gets confidential probability of the agents subspace that equal production of all confidential intervals probabilities included in agent
          * @return - confidential probability of the agent
          */
 
         public double getConfP(){
-            double p = 1, f = 0 ;
+            double p = 0, f = 0 ;
 
             if(!Double.isNaN(cp)) return cp;
 
             for (Map.Entry<String, BitSet> e: recordsByField.entrySet()) {
                 BitSet b = e.getValue();
                 if (relationByField.get(e.getKey()).size() > 1) //& invertedIndex.get(e.getKey()).size()*epsilon > 1)
-                    p = p * (1+((double) b.cardinality() / b.size()));
+                    p = max(p, ((double) b.cardinality() / b.size()));
             }
 
-            return cp = 1 - (p == 0?0: p - 1);
+            return cp = 1 - (p == 0?0:p);
         }
 
         /**

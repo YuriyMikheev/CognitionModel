@@ -63,6 +63,7 @@ public class Tuple implements Iterable<TupleElement>, Serializable, Cloneable {
     }
 
 
+
     /**
      * Adds object to the end of tuple. Integer, Double, String, Char are allowed
      * @param object - added data
@@ -93,6 +94,12 @@ public class Tuple implements Iterable<TupleElement>, Serializable, Cloneable {
         return this;
     }
 
+    public Tuple addAll(double[] doubles){
+        for (double d : doubles) {
+            add(d);
+        }
+        return this;
+    }
 
     public String toString(){
         String s = "";
