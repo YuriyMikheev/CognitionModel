@@ -16,7 +16,12 @@ import java.util.Map;
 import static java.lang.StrictMath.log;
 import static java.lang.StrictMath.round;
 
-public class entropy {
+/**
+ * The set of entropy calculations functions
+ */
+
+
+public class Entropy {
 
     /**
      * Calculates information entropy of records as a whole H = - sum(p(record)*log(p(record))

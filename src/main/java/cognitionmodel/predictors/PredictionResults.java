@@ -99,7 +99,7 @@ public class PredictionResults {
     }
 
     /**
-     * Shows confusion matrix
+     * Shows confusion matrix, accuracy, precision, recall and F1-score
      */
 
     public  void show(int elementIndex) {
@@ -149,7 +149,7 @@ public class PredictionResults {
         for (int i = 0; i < confusionMatrix.length; i++) {
             double prec, rec, f1;
             System.out.printf("%1$9s\t%2$.5f\t\t%3$.5f\t\t%4$.5f\n", terminals.get(i).getValue().toString(),(prec = (double) tp[i]/(tp[i]+fp[i])),(rec = (double)tp[i]/(tp[i]+fn[i]) ),(f1 = 2*prec*rec/(prec+rec)));
-            mpr = mpr + prec; mrec = mrec + rec; mf1 = mf1 + f1;
+            mpr = mpr + (Double.isNaN(prec)?0:prec); mrec = mrec + (Double.isNaN(rec)?0:rec); mf1 = mf1 + (Double.isNaN(f1)?0:f1);
         }
 
         System.out.printf("\nMean\t\t%1$.5f\t\t%2$.5f\n",(mpr/(confusionMatrix.length)),(mrec/(confusionMatrix.length)));

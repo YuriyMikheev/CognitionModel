@@ -1,6 +1,10 @@
 package cognitionmodel.predictors.predictionfunctions;
 
+import cognitionmodel.models.inverted.Agent;
+import cognitionmodel.models.inverted.InvertedTabularModel;
 import cognitionmodel.models.Model;
+
+import static java.lang.StrictMath.pow;
 
 /**
  * Class represents prediction function
@@ -42,5 +46,10 @@ public class Powerfunction implements Predictionfunction {
         if (fp == 0) return 0;
 
         return Math.pow(p / fp, wp) * Math.pow(z, wz);
+    }
+
+    @Override
+    public double predictionfunction(Agent agent, String predictingfield) {
+        return  pow(agent.getCondP(predictingfield), wp) * pow(agent.getZ(),wz);
     }
 }

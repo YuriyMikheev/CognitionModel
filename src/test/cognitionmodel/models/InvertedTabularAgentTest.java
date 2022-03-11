@@ -2,21 +2,18 @@ package cognitionmodel.models;
 
 import cognitionmodel.datasets.CSVParser;
 import cognitionmodel.datasets.TableDataSet;
-import cognitionmodel.datasets.Tuple;
-import cognitionmodel.predictors.PredictionResults;
-import cognitionmodel.predictors.TabularDataPredictor;
+import cognitionmodel.models.inverted.InvertedTabularModel;
 import cognitionmodel.predictors.predictionfunctions.Powerfunction;
 import org.junit.Test;
 
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.util.stream.Collectors;
 
 public class InvertedTabularAgentTest {
 
     @Test
-    public void createTest() throws IOException {
+    public void createTestAdult() throws IOException {
 
         InvertedTabularModel tabularModel = new InvertedTabularModel(
                 new TableDataSet(new FileInputStream(new File("D:\\works\\Data\\adult\\adult.data")),
@@ -36,7 +33,7 @@ public class InvertedTabularAgentTest {
         TableDataSet testDataSet = new TableDataSet(new FileInputStream(new File("D:\\works\\Data\\adult\\adult.test")),
                 new CSVParser(",","\n"));
 
-        tabularModel.predict(testDataSet.getRecords(), " INCOME").show(tabularModel.getDataSet().getFieldIndex(" INCOME"));
+        tabularModel.predict(testDataSet.getRecords(), " INCOME", new Powerfunction(null, 10,1)).show(tabularModel.getDataSet().getFieldIndex(" INCOME"));
 
 /*        for (InvertedTabularModel.Agent a: tabularModel.getAgents().stream().sorted((a1, a2) -> (a1.getZ() > a2.getZ())?1:-1).collect(Collectors.toList()))
             System.out.println(a);*/
@@ -51,7 +48,7 @@ public class InvertedTabularAgentTest {
 
 
     @Test
-    public void createTest1() throws IOException {
+    public void createTestCensus() throws IOException {
 
         InvertedTabularModel tabularModel = new InvertedTabularModel(
                 new TableDataSet(new FileInputStream(new File("D:\\works\\Data\\Census\\census-income.data")),
@@ -63,7 +60,7 @@ public class InvertedTabularAgentTest {
         TableDataSet testDataSet = new TableDataSet(new FileInputStream(new File("D:\\works\\Data\\Census\\census-income.test")),
                 new CSVParser(",","\n"));
 
-        tabularModel.predict(testDataSet.getRecords(), " TAXINC").show(tabularModel.getDataSet().getFieldIndex(" TAXINC"));
+        tabularModel.predict(testDataSet.getRecords(), " TAXINC", new Powerfunction(null, 7,1)).show(tabularModel.getDataSet().getFieldIndex(" TAXINC"));
 
 /*        for (InvertedTabularModel.Agent a: tabularModel.getAgents().stream().sorted((a1, a2) -> (a1.getZ() > a2.getZ())?1:-1).collect(Collectors.toList()))
             System.out.println(a);*/
@@ -88,7 +85,7 @@ public class InvertedTabularAgentTest {
                 new CSVParser(";","\r\n"));
 
 
-        tabularModel.predict(testDataSet.getRecords(), "lettr").show(tabularModel.getDataSet().getFieldIndex("lettr"));
+        tabularModel.predict(testDataSet.getRecords(), "lettr", new Powerfunction(null, 0,1)).show(tabularModel.getDataSet().getFieldIndex("lettr"));
 
     }
 

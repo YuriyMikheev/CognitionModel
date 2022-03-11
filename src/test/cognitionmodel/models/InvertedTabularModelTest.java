@@ -2,15 +2,12 @@ package cognitionmodel.models;
 
 import cognitionmodel.datasets.CSVParser;
 import cognitionmodel.datasets.TableDataSet;
-import cognitionmodel.predictors.TabularDataPredictor;
+import cognitionmodel.models.inverted.InvertedTabularModel;
 import org.junit.Test;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
-
-import static org.junit.Assert.*;
 
 public class InvertedTabularModelTest {
 
@@ -33,9 +30,6 @@ public class InvertedTabularModelTest {
 
         tabularModel.make();
 
-
-        tabularModel.getAgents().get(35).addPoint(tabularModel.getAgents().get(36).relation.get(" capital-loss:1735"));
-        tabularModel.getAgents().get(35).addPoint(tabularModel.getAgents().get(195).relation.get(" capital-gain:11678"));
 
         System.out.println("Model initialized");
 

@@ -8,10 +8,7 @@ import org.junit.Test;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
-
-import static org.junit.Assert.*;
 
 public class entropyTest {
 
@@ -24,7 +21,7 @@ public class entropyTest {
 
 
         //System.out.println("Records entropy  " + entropy.recordsEntropy(tableDataSet));
-        assert(3.367295829986472 == entropy.recordsEntropy(tableDataSet));
+        assert(3.367295829986472 == Entropy.recordsEntropy(tableDataSet));
     }
 
     @Test
@@ -35,7 +32,7 @@ public class entropyTest {
 
 
         //System.out.println("Fields entropy "+entropy.fieldsEntropy(tableDataSet));
-        assert(10.840008158358575 == entropy.fieldsEntropy(tableDataSet));
+        assert(10.840008158358575 == Entropy.fieldsEntropy(tableDataSet));
 
     }
 
@@ -55,7 +52,7 @@ public class entropyTest {
 
         tabularModel.make();
 
-        System.out.println("Model entropy "+entropy.modelEntropy(tabularModel));
+        System.out.println("Model entropy "+ Entropy.modelEntropy(tabularModel));
        // assert(10.840008158358575 == entropy.fieldsEntropy(tableDataSet));
 
     }

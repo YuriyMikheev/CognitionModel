@@ -4,19 +4,14 @@ import cognitionmodel.datasets.CSVParser;
 import cognitionmodel.datasets.ImageNoizyCSVParser;
 import cognitionmodel.datasets.TableDataSet;
 import cognitionmodel.models.TabularModel;
-import cognitionmodel.models.analyze.entropy;
+import cognitionmodel.models.analyze.Entropy;
 import cognitionmodel.models.relations.ImageLightRelation;
 import cognitionmodel.patterns.FullGridIterativePatterns;
 import cognitionmodel.patterns.ImageRecursivePatterns;
-import cognitionmodel.patterns.Pattern;
-import cognitionmodel.patterns.PatternSet;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
 
 public class Experiments {
 
@@ -26,8 +21,8 @@ public class Experiments {
                 new CSVParser(",", "\n"));
 
 
-        System.out.println("Records entropy " + entropy.recordsEntropy(tableDataSet));
-        System.out.println("Fields entropy " + entropy.fieldsEntropy(tableDataSet));
+        System.out.println("Records entropy " + Entropy.recordsEntropy(tableDataSet));
+        System.out.println("Fields entropy " + Entropy.fieldsEntropy(tableDataSet));
 
         TabularModel tabularModel = new TabularModel(tableDataSet,
                 (" education-num," +
@@ -39,7 +34,7 @@ public class Experiments {
         tabularModel.setPatternSet(new FullGridIterativePatterns(tabularModel,3));
 
         tabularModel.make();
-        System.out.println("Model entropy "+entropy.modelEntropy(tabularModel));
+        System.out.println("Model entropy "+ Entropy.modelEntropy(tabularModel));
 
     }
 
@@ -48,8 +43,8 @@ public class Experiments {
                 new CSVParser(",", "\n"));
 
 
-        System.out.println("Records entropy " + entropy.recordsEntropy(tableDataSet));
-        System.out.println("Fields entropy " + entropy.fieldsEntropy(tableDataSet));
+        System.out.println("Records entropy " + Entropy.recordsEntropy(tableDataSet));
+        System.out.println("Fields entropy " + Entropy.fieldsEntropy(tableDataSet));
 
         TabularModel tabularModel = new TabularModel(tableDataSet,
                 (" AHGA, AWKSTAT, CAPLOSS, TAXINC, CAPGAIN").split(","));
@@ -57,7 +52,7 @@ public class Experiments {
         tabularModel.setPatternSet(new FullGridIterativePatterns(tabularModel,5));
 
         tabularModel.make();
-        System.out.println("Model entropy "+entropy.modelEntropy(tabularModel));
+        System.out.println("Model entropy "+ Entropy.modelEntropy(tabularModel));
     }
 
     public static void mnistEntropy() throws IOException {
@@ -66,8 +61,8 @@ public class Experiments {
                 new ImageNoizyCSVParser(",", "\n", new int[]{0, 4, 100, 200, 3000}, 0, 0.0, "100"));
 
 
-        System.out.println("Records entropy " + entropy.recordsEntropy(tableDataSet));
-        System.out.println("Fields entropy " + entropy.fieldsEntropy(tableDataSet));
+        System.out.println("Records entropy " + Entropy.recordsEntropy(tableDataSet));
+        System.out.println("Fields entropy " + Entropy.fieldsEntropy(tableDataSet));
 
         TabularModel tabularModel = new TabularModel(
                 tableDataSet,
@@ -77,7 +72,7 @@ public class Experiments {
 
         tabularModel.make();
 
-        System.out.println("Model entropy "+entropy.imagesModelEntropy(tabularModel));
+        System.out.println("Model entropy "+ Entropy.imagesModelEntropy(tabularModel));
     }
 
     public static void main(String[] args) throws IOException {
