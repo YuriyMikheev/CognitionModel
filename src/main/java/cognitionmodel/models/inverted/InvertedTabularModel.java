@@ -4,24 +4,19 @@ import cognitionmodel.datasets.TableDataSet;
 import cognitionmodel.datasets.Tuple;
 import cognitionmodel.datasets.TupleElement;
 import cognitionmodel.models.TabularModel;
-import cognitionmodel.models.decomposers.BruteForceDecomposer;
+import cognitionmodel.models.decomposers.BasicDecomposer;
 import cognitionmodel.models.relations.LightRelation;
 import cognitionmodel.predictors.PredictionResults;
 import cognitionmodel.predictors.predictionfunctions.Powerfunction;
 import cognitionmodel.predictors.predictionfunctions.Predictionfunction;
 
 import java.util.*;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.stream.Collectors;
-
-import static java.lang.Double.NaN;
 import static java.lang.Math.*;
 
 public class InvertedTabularModel extends TabularModel {
 
-    public HashMap<String, TreeMap<Object, BitSet>> invertedIndex = new HashMap();// = new HashMap<>();
+    public HashMap<String, TreeMap<Object, BitSet>> invertedIndex = new HashMap();
     private TableDataSet dataSet;
-   // private ArrayList<Point> points = new ArrayList<>();
     public HashMap<String, Agent> agentsindex =  new HashMap<>();
 
 
@@ -37,8 +32,6 @@ public class InvertedTabularModel extends TabularModel {
         this.dataSet = (TableDataSet) dataSet;
         indexInit();
     }
-
-
 
     /**
      * Creates TabularModel object and sets fields from dataset are enabled for usage
@@ -60,7 +53,6 @@ public class InvertedTabularModel extends TabularModel {
         for (int i = 0; i < dataSet.getHeader().size(); i++)
             if (getEnabledFields()[i] == 1)
                 invertedIndex.put(dataSet.getHeader().get(i).getValue().toString(), new TreeMap<Object, BitSet>());
-
 
         int i = 0;
         for (Tuple tuple: dataSet) {
@@ -84,7 +76,6 @@ public class InvertedTabularModel extends TabularModel {
     }
 
 
-
     public boolean canMerge(Agent a1, Agent a2){
         BitSet b = new BitSet();
 
@@ -101,84 +92,6 @@ public class InvertedTabularModel extends TabularModel {
     public void make(){
         predict(null, null, new Powerfunction(null, 0,1));
     }
-
-
- /*   private  LinkedList<Agent> decompose(Tuple record, String predictingfield){
-        LinkedList<Agent> newAgents = new LinkedList<>();
-
-
-        points.clear();
-        if (record == null)
-            initPoints();
-        else
-            initPoints(record, predictingfield);
-
-        for (Map.Entry<Object, BitSet> entry : invertedIndex.get(predictingfield).entrySet())
-            points.add(new Point(predictingfield, entry.getKey()));
-
-        for (Point point : points) {
-            TreeMap<Object, BitSet> tr = invertedIndex.get(point.field);
-            Agent na = new Agent(point, this), nr = null;
-            if (tr.size() * epsilon > 1) {
-                Map.Entry<Object, BitSet> a = tr.ceilingEntry(point.value);
-                Map.Entry<Object, BitSet> b = tr.floorEntry(point.value);
-                while ((na.getConfP() > 1 - epsilon) & (a != null | b != null)) {
-                    if (a != null) a = tr.lowerEntry(a.getKey());
-                    if (b != null) b = tr.higherEntry(b.getKey());
-                    if (a != null) {
-                        na.addPoint(new Point(point.field, a.getKey()));
-                    }
-                    if (b != null) {
-                        na.addPoint(new Point(point.field, b.getKey()));
-                    }
-                    if (na.getConfP() > 1 - epsilon)
-                        nr = na;
-                }
-                if (nr != null)
-                    if (!agentsindex.containsKey(nr.signature)) {
-                        newAgents.add(nr);
-                        agentsindex.put(nr.signature, nr);
-                    }
-            } else
-            {
-                newAgents.add(na);
-                agentsindex.put(na.signature, na);
-            }
-        }
-        double dz , ddz = -1;
-        int it = newAgents.size(), cn = 0;
-
-        HashMap<String, Agent> addagentindex = new HashMap<>();
-
-        do {
-            dz = ddz;
-            cn = 0;
-            LinkedList<Agent> addAgents = new LinkedList<>();
-
-            for (Iterator<Agent> agentIterator = newAgents.descendingIterator(); agentIterator.hasNext() & (it--) > 0; ) {
-                Agent a1 = agentIterator.next();
-                if (a1.getP() > 1.0 / dataSet.size())
-                    if (a1.relationByField.get(predictingfield).size() > 0 & a1.getLength() < d & (a1.relation.size() == 1 | a1.getCondP(predictingfield) < tau))// & a1.getCondP(predictingfield) > 1 - tau )
-                        for (Agent a2 : newAgents)
-                            if (a2.getP() > 1.0 / dataSet.size())
-                                if (a1 != a2 & a2.relationByField.get(predictingfield).size() == 0 & canMerge(a1, a2) & a2.getLength() < d & (a2.relation.size() == 1 | a2.getCondP(predictingfield) < tau)){// & a2.getCondP(predictingfield) > 1 - tau ) {
-                                    Agent na = merge(a1, a2);
-                                    if (!addagentindex.containsKey(na.signature)  & (na.getZ() >= (a1.getZ() + a2.getZ()) * (1 + gamma)) & na.getConfP() >= 1 - epsilon) {
-                                        addAgents.add(na);
-                                        if (!agentsindex.containsKey(na.signature)) agentsindex.put(na.signature, na);
-                                        addagentindex.put(na.signature, na);
-                                        cn++;
-                                    }
-                                }
-            }
-            it = cn;
-            newAgents.addAll(addAgents); //newAgents.sort(Comparator.comparing(a -> -a.iteration));
-
-        } while (cn != 0);
-
-        return newAgents;
-    }
-*/
 
     public PredictionResults predict(List<Tuple> records, String predictingfield, Predictionfunction predictionfunction){
 
@@ -202,7 +115,7 @@ public class InvertedTabularModel extends TabularModel {
 
         int recordIndex = 0;
 
-        BruteForceDecomposer decomposer = new BruteForceDecomposer(this);
+        BasicDecomposer decomposer = new BasicDecomposer(this);
 
         for (Tuple record: records)
          if (record.size() > si){
@@ -229,7 +142,6 @@ public class InvertedTabularModel extends TabularModel {
                 }
             }
 
-
             int i1 = 0;
             for (Object v : predictingvalues) {
                 pa[i1] = exp(pa[i1++]);
@@ -248,9 +160,7 @@ public class InvertedTabularModel extends TabularModel {
         }
 
         return r;
-
     }
-
 
     protected BitSet getIndexes(Point point){
         TreeMap<Object, BitSet> pointinvertedindex = invertedIndex.get(point.field);
@@ -293,12 +203,7 @@ public class InvertedTabularModel extends TabularModel {
 
         r.dZ = r.getZ() - a1.getZ() - a2.getZ();
 
-     //   r.resign();
         return r;
     }
-
-
-
-
 
 }

@@ -2,13 +2,17 @@ package cognitionmodel.models;
 
 import cognitionmodel.datasets.CSVParser;
 import cognitionmodel.datasets.TableDataSet;
+import cognitionmodel.models.inverted.Agent;
 import cognitionmodel.models.inverted.InvertedTabularModel;
+import cognitionmodel.models.inverted.Point;
 import cognitionmodel.predictors.predictionfunctions.Powerfunction;
 import org.junit.Test;
 
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+
+import static org.junit.Assert.assertTrue;
 
 public class InvertedTabularAgentTest {
 
@@ -86,6 +90,28 @@ public class InvertedTabularAgentTest {
 
 
         tabularModel.predict(testDataSet.getRecords(), "lettr", new Powerfunction(null, 0,1)).show(tabularModel.getDataSet().getFieldIndex("lettr"));
+
+    }
+
+    @Test
+    public void indexTets() throws IOException {
+
+        InvertedTabularModel tabularModel = new InvertedTabularModel(
+                new TableDataSet(new FileInputStream(new File("D:\\works\\Data\\adult\\adult.data")),
+                        new CSVParser(",","\n")),
+                (" INCOME,"+
+                        " education-num," +
+                        " marital-status," +
+                        " capital-gain," +
+/*                               " education," +
+                               "age," +
+                               " race," +
+                               " sex," +*/
+                        " capital-loss").split(","));
+
+        Agent agent = new Agent(new Point(tabularModel.getDataSet().getHeader().get(4).getValue().toString(),tabularModel.getDataSet().getRecords().get(0).get(4).getValue()), tabularModel);
+        agent.getIndex();
+        assertTrue(agent.getIndex().size() == agent.getRecords().cardinality());
 
     }
 

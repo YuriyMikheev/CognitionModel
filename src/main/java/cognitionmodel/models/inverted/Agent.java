@@ -16,13 +16,13 @@ public class Agent implements Cloneable {
     public HashMap<String, HashSet<String>> relationByField = new HashMap<String, HashSet<String>>();
     HashMap<String, BitSet> recordsByField = new HashMap<String, BitSet>(); // records common for all points from relation
     BitSet records = new BitSet(); // records common for all points from relation
-    HashMap<Integer, Integer> orRecords = new HashMap<Integer, Integer>(); // records pointed in any any point from relation
     String signature = "";
     private double z = NaN, p = NaN, cp = NaN;
     public BitSet fields = new BitSet();
     public double dZ = NaN;
     private int length = 0;
     private InvertedTabularModel model;
+    private ArrayList<Integer> index = null;
 
     /**
      * Creates Agent for starting point
@@ -61,6 +61,22 @@ public class Agent implements Cloneable {
         return c;
     }
 
+
+    public ArrayList<Integer> getIndex() {
+        if (index == null){
+            index = new ArrayList<>();
+
+            for (int i = records.nextSetBit(0); i >= 0; i = records.nextSetBit(i+1)) {
+                // operate on index i here
+                if (i == Integer.MAX_VALUE) {
+                    break; // or (i+1) would overflow
+                }
+                index.add(i);
+            }
+        }
+
+        return index;
+    }
 
     public String toString(){
         return signature+"\t"+relation.size()+"; "+recordsByField.values().stream().filter(b -> !b.isEmpty()).count()+"; "+getZ();
@@ -231,12 +247,6 @@ public class Agent implements Cloneable {
                             records.and(b);
                 }
             }
-
-        int c = (int) recordsByField.values().stream().filter(bs -> !bs.isEmpty()).count();
-
-        for (Map.Entry<Integer, Integer> orKey: orRecords.entrySet())
-            if (orKey.getValue() == c) records.set(orKey.getKey());
-
 
         resign();
         return records;
