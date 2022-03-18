@@ -141,7 +141,7 @@ public abstract class Model<R extends Relation> {
 
 
     /**
-     * Calculates Z measure = ln(P(relation)/production of all Pj), P(relation) - probability of relation,  Pj - probability of value j
+     * Calculates RM measure = ln(P(relation)/production of all Pj), P(relation) - probability of relation,  Pj - probability of value j
      *
      * @param signature - relation signature from map
      * @return - Z value for the relation
@@ -173,10 +173,10 @@ public abstract class Model<R extends Relation> {
     }
 
     /**
-     * Calculates Z measure = ln(P(relation)/production of all Pj), P(relation) - probability of relation,  Pj - probability of value j
+     * Calculates RM measure = ln(P(relation)/production of all Pj), P(relation) - probability of relation,  Pj - probability of value j
      *
      * @param tuple - set of terminals in relation
-     * @return - Z value for the relation
+     * @return - RM value for the relation
      */
 
 
@@ -190,11 +190,11 @@ public abstract class Model<R extends Relation> {
 
 
     /**
-     * Faster calculation Z measure = ln(P(relation) + const, P(relation) - probability of relation
+     * Faster calculation RM measure = ln(P(relation) + const, P(relation) - probability of relation
      * Is correct if and only if of equal relations length and elements. in this case on prediction stage denominators could be eliminated
      *
      * @param signature - relation signature from map
-     * @return - Z value for the relation
+     * @return - RM value for the relation
      */
 
     public double getMRfast(int[] signature){

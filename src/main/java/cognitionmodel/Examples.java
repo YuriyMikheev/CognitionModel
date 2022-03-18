@@ -238,9 +238,9 @@ public class Examples {
 
         long t = System.currentTimeMillis();
 
-       // adult();
-      //  census();
-        letters();
+      //  adult();
+        census();
+       // letters();
         //mnist();
        // mnistletters();
       //  cifar();

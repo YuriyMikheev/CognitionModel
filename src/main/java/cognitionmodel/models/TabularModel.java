@@ -127,10 +127,10 @@ public class TabularModel extends Model<LightRelation>{
 
 
     /**
-     * Calculates Z measure for dependent values = ln(P(relation)/production of all Pj) + ln(1 - P(relation)/production of all (1 - Pj)), P(relation) - probability of relation,  Pj - probability of value j
+     * Calculates RM measure for dependent values = ln(P(relation)/production of all Pj) + ln(1 - P(relation)/production of all (1 - Pj)), P(relation) - probability of relation,  Pj - probability of value j
      *
      * @param signature - relation signature from map
-     * @return - Z value for the relation
+     * @return - RM value for the relation
      */
 
     public double getMRd(int[] signature){
