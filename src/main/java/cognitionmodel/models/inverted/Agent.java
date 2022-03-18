@@ -1,108 +1,60 @@
 package cognitionmodel.models.inverted;
 
-import java.util.*;
+import java.util.BitSet;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import static java.lang.Double.NaN;
 import static java.lang.Math.log;
 import static java.lang.Math.round;
 
-/**
- * Class Agent performs Z increasing by changing agent's relation
- */
-
-public class Agent implements Cloneable {
+public class Agent {
     public HashMap<String, Point> relation = new HashMap<String, Point>();
     public HashMap<String, HashSet<String>> relationByField = new HashMap<String, HashSet<String>>();
-    HashMap<String, BitSet> recordsByField = new HashMap<String, BitSet>(); // records common for all points from relation
-    BitSet records = new BitSet(); // records common for all points from relation
+    HashMap<String, HashSet<Integer>> recordsByField = new HashMap<String, HashSet<Integer>>(); // records common for all points from relation
+    HashSet<Integer> records = new HashSet<Integer>(); // records common for all points from relation
     String signature = "";
     private double z = NaN, p = NaN, cp = NaN;
     public BitSet fields = new BitSet();
-    public double dZ = NaN;
-    private int length = 0;
+
     private InvertedTabularModel model;
-    private ArrayList<Integer> index = null;
 
-    /**
-     * Creates Agent for starting point
-     * @param startPoint - {integer field index, object representing field value}
-     */
-
-    public Agent(Point startPoint, InvertedTabularModel model){
-
+    public Agent(InvertedTabularModel model, Point point){
         this.model = model;
-
-        for (Map.Entry<String, TreeMap<Object, BitSet>> entry: model.invertedIndex.entrySet()) {
-            recordsByField.put(entry.getKey(), new BitSet());
-            relationByField.put(entry.getKey(), new HashSet<>());
-        }
-        if (startPoint != null) {
-            addPoint(startPoint);
-        }
+        if (point != null)
+            addPoint(point);
     }
 
-    protected void resign(){
-        signature = relation.keySet().stream().sorted().collect(Collectors.joining("\t"));
-/*            for (String s: relation.keySet().stream().sorted().collect(Collectors.toList()))
-                signature = signature + "\t"+s;*/
-        z = NaN; p = NaN; cp = NaN;
-        // getZ(records);
+    public void addPoint(Point point){
+        if (model.getIndexes(point) == null) return;
+        relation.put(point.toString(), point);
+        relationByField.get(point.field).add(point.toString());
 
-    }
+        or(point.getField(), model.getIndexes(point));
 
-    public BitSet getRecords() {
-        return records;
-    }
+        records.clear();
 
-    public Agent clone(){
-        Agent c = new Agent(null, model);
-        c.mergewith(this);
-        return c;
-    }
-
-
-    public ArrayList<Integer> getIndex() {
-        if (index == null){
-            index = new ArrayList<>();
-
-            for (int i = records.nextSetBit(0); i >= 0; i = records.nextSetBit(i+1)) {
-                // operate on index i here
-                if (i == Integer.MAX_VALUE) {
-                    break; // or (i+1) would overflow
-                }
-                index.add(i);
+        String mf = ""; int mc = Integer.MAX_VALUE, fi = 0;
+        for (String f: model.invertedIndex.keySet()) {
+            if (recordsByField.get(f).size() < mc){
+                mc = recordsByField.get(f).size();
+                mf = f;
             }
+            if (!recordsByField.get(f).isEmpty())
+                fields.set(fi++, true);
         }
 
-        return index;
-    }
+        for (Integer i: recordsByField.get(mf))
+            records.add(i);
 
-    public String toString(){
-        return signature+"\t"+relation.size()+"; "+recordsByField.values().stream().filter(b -> !b.isEmpty()).count()+"; "+getZ();
-    }
+        for (String f: model.invertedIndex.keySet())
+            if (!f.equals(mf))
+                and(recordsByField.get(f));
 
-    public int getLength(){
-        return (length == 0? length = fields.cardinality(): length);
-    }
+        resign();
 
-    /**
-     * Gets confidential probability of the agents subspace that equal production of all confidential intervals probabilities included in agent
-     * @return - confidential probability of the agent
-     */
-
-    public double getConfP(){
-        double p = 1, f = 0 ;
-
-        if(!Double.isNaN(cp)) return cp;
-
-        for (Map.Entry<String, BitSet> e: recordsByField.entrySet()) {
-            BitSet b = e.getValue();
-            if (relationByField.get(e.getKey()).size() > 1) //& invertedIndex.get(e.getKey()).size()*epsilon > 1)
-                p = p * (1+((double) b.cardinality() / b.size()));
-        }
-
-        return cp = 1 - (p == 0?0: p - 1);
     }
 
     /**
@@ -110,7 +62,7 @@ public class Agent implements Cloneable {
      * @return
      */
     public double getP(){
-        return (Double.isNaN(p)?(p=(double)records.cardinality()/model.getDataSet().size()): p);
+        return (Double.isNaN(p)?(p=(double)records.size()/model.getDataSet().size()): p);
     }
 
     /**
@@ -123,73 +75,73 @@ public class Agent implements Cloneable {
 
         getP();
 
-        BitSet rc  = new BitSet();
+        HashSet<Integer> rc  = new HashSet<>();
 
-        rc.set(0, (int) round(model.getDataSet().size()), true);
-
-        for (Map.Entry<String, BitSet> e: recordsByField.entrySet()) {
+        for (Map.Entry<String, HashSet<Integer>> e: recordsByField.entrySet()) {
             if (!field.equals(e.getKey()) & !e.getValue().isEmpty()) {
-                rc.and(e.getValue());
+                if (rc.isEmpty()) rc.addAll(e.getValue().stream().collect(Collectors.toList()));
+                    else
+                        if (e.getValue().size() < records.size()){
+                            for (int i:e.getValue())
+                                if (records.contains(i))
+                                    rc.add(i);
+                        } else {
+                            for (int i:records)
+                                if (e.getValue().contains(i))
+                                    rc.add(i);
+                        }
             }
         }
 
-        return (double) records.cardinality() / rc.cardinality();
+        return (double) records.size()/rc.size();
+    }
+
+    public String toString(){
+        return signature+"\t"+relation.size()+"; "+recordsByField.values().stream().filter(b -> !b.isEmpty()).count()+"; "+getMR();
     }
 
 
     /**
-     * Adds new point to agent
-     * @param point  - new point
-     * @return - set of records actual for agent
+     * Gets confidential probability of the agents subspace that equal production of all confidential intervals probabilities included in agent
+     * @return - confidential probability of the agent
      */
 
-    public BitSet addPoint(Point point){
-        records.set(0, (int) round(model.getDataSet().size()), true);
-        relation.put(point.toString(), point);
-        relationByField.get(point.field).add(point.toString());
+    public double getConfP(){
+        double p = 1, f = 0 ;
 
-        if (model.getIndexes(point) != null) {
-            recordsByField.get(point.field).or(model.getIndexes(point));
+        if(!Double.isNaN(cp)) return cp;
 
-            int i = 0;
-            for (BitSet b: recordsByField.values()) {
-                if (!b.isEmpty()) {
-                    if (records != b)
-                        records.and(b);
-                    fields.set(i, true);
-                }
-                i++;
-            }
-            resign();
+        for (Map.Entry<String, HashSet<Integer>> e: recordsByField.entrySet()) {
+            HashSet<Integer> b = e.getValue();
+            if (relationByField.get(e.getKey()).size() > 1) //& invertedIndex.get(e.getKey()).size()*epsilon > 1)
+                p = p * (1+((double) b.size() / model.getDataSet().size()));
         }
-        return records;
+
+        return cp = 1 - (p == 0?0: p - 1);
     }
 
-    public String getSignature() {
-        return signature;
-    }
 
     /**
      * Calculates Z measure = ln(P(relation)/production of all Pj), P(relation) - probability of relation,  Pj - probability of value j
      * @return - Z value for the relation
      */
 
-    public double getZ(){
+    public double getMR(){
         if (Double.isNaN(z))
-            return z = getZ(this.records);
+            return z = getMR(this.records);
         else return z;
     }
 
-    public double getZ(BitSet records){
+    public double getMR(HashSet<Integer> records){
         if (relation.size() < 1) return 0;
         if (records.isEmpty()) return 0;
         if (recordsByField.size() < 2) return 0;
 
-        double z = records.cardinality(), f = 1;
+        double z = records.size(), f = 1;
         int c = 1, l = 0;
-        for (BitSet fieldrecords: recordsByField.values())
+        for (HashSet<Integer> fieldrecords: recordsByField.values())
             if (!fieldrecords.isEmpty()){
-                f = f * fieldrecords.cardinality();
+                f = f * fieldrecords.size();
                 l++;
                 if (f > Double.MAX_VALUE/1000000) { //prevents double value overloading
                     f = f / records.size();
@@ -202,54 +154,34 @@ public class Agent implements Cloneable {
         return z;
     }
 
-    /**
-     * Checks if the relation represented by agent is possible
-     * Relation is impossibli if sum(log(p(cj)) <= log(1/N), N is number of records in dataset
-     * @return true if relation is possible
-     */
 
-    public boolean isPossible(){
-        if (relation.size() < 1) return false;
-        if (records.isEmpty()) return false;
-
-        double f = 1;
-        int c = 1, l = 0;
-        for (BitSet fieldrecords: recordsByField.values())
-            if (!fieldrecords.isEmpty()){
-                f = f * fieldrecords.cardinality();
-                l++;
-                if (f > Double.MAX_VALUE/1000000) { //prevents double value overloading
-                    f = f / records.size();
-                    c++;
-                }
-            }
-
-        double ps = log(f) - (l - c) * log(model.getDataSet().size());
-        return ps >= 0;
+    protected void resign(){
+        signature = relation.keySet().stream().sorted().collect(Collectors.joining("\t"));
+        z = NaN; p = NaN; cp = NaN;
     }
 
-    public BitSet mergewith(Agent agent){
 
-        records.set(0, (int) round(model.getDataSet().size()), true);
-        fields.or(agent.fields);
-        for (Point point: agent.relation.values())
-            if (!relation.containsKey(point.field))
-            {
-
-                relation.put(point.toString(), point);
-                relationByField.get(point.field).add(point.toString());
-
-                if (model.getIndexes(point) != null) {
-                    recordsByField.get(point.field).or(model.getIndexes(point));
-
-                    for (BitSet b: recordsByField.values())
-                        if (!b.isEmpty() & records != b)
-                            records.and(b);
-                }
-            }
-
-        resign();
-        return records;
+    public void or(String field, HashSet<Integer> recordIndices){
+        for (Integer i: recordIndices) {
+            recordsByField.get(field).add(i);
+            records.add(i);
+        }
     }
+
+    public void and(HashSet<Integer> recordIndices){
+        HashSet<Integer> nr = new HashSet<>();
+        if (recordIndices.size() < records.size()){
+            for (int i:recordIndices)
+                if (records.contains(i))
+                    nr.add(i);
+        } else {
+            for (int i:records)
+                if (recordIndices.contains(i))
+                    nr.add(i);
+        }
+
+        records = nr;
+    }
+
 
 }

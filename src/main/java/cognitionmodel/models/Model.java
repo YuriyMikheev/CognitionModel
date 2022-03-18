@@ -147,7 +147,7 @@ public abstract class Model<R extends Relation> {
      * @return - Z value for the relation
      */
 
-    public double getZ(int[] signature){
+    public double getMR(int[] signature){
 
         Integer zf = frequencyMap.get(signature);
         if (zf == null) return 0;
@@ -180,9 +180,9 @@ public abstract class Model<R extends Relation> {
      */
 
 
-    public double getZ(Tuple tuple){
+    public double getMR(Tuple tuple){
         try {
-            return getZ(relationMethods.makeSignature(tuple));
+            return getMR(relationMethods.makeSignature(tuple));
         } catch (IllegalArgumentException e){
             return 0;
         }
@@ -197,7 +197,7 @@ public abstract class Model<R extends Relation> {
      * @return - Z value for the relation
      */
 
-    public double getZfast(int[] signature){
+    public double getMRfast(int[] signature){
 
         Integer zf = frequencyMap.get(signature);
         if (zf == null) return 0;

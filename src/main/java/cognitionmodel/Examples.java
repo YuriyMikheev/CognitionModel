@@ -208,7 +208,7 @@ public class Examples {
         int n = 0;
         while (it.hasNext()) {
             int[] k = it.next().getKey();
-            double dz = tabularModel.getZd(k);//* tabularModel.getFrequency(k)/tabularModel.getDataSet().size();
+            double dz = tabularModel.getMRd(k);//* tabularModel.getFrequency(k)/tabularModel.getDataSet().size();
             sz += dz;
             System.out.println(sz+"\t"+dz);
             n++;

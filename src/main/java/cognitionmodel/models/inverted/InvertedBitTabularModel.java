@@ -5,22 +5,19 @@ import cognitionmodel.datasets.Tuple;
 import cognitionmodel.datasets.TupleElement;
 import cognitionmodel.models.TabularModel;
 import cognitionmodel.models.decomposers.BasicDecomposer;
-import cognitionmodel.models.decomposers.MonteCarloDecomposer;
 import cognitionmodel.models.relations.LightRelation;
 import cognitionmodel.predictors.PredictionResults;
 import cognitionmodel.predictors.predictionfunctions.Powerfunction;
 import cognitionmodel.predictors.predictionfunctions.Predictionfunction;
 
 import java.util.*;
+import static java.lang.Math.*;
 
-import static java.lang.Math.exp;
-import static java.lang.Math.log;
+public class InvertedBitTabularModel extends TabularModel {
 
-public class InvertedTabularModel extends TabularModel {
-
-    public HashMap<String, TreeMap<Object, HashSet<Integer>>> invertedIndex = new HashMap();
+    public HashMap<String, TreeMap<Object, BitSet>> invertedIndex = new HashMap();
     private TableDataSet dataSet;
-    public HashMap<String, Agent> agentsindex =  new HashMap<>();
+    public HashMap<String, BitAgent> agentsindex =  new HashMap<>();
 
 
     /**
@@ -30,7 +27,7 @@ public class InvertedTabularModel extends TabularModel {
      * @param dataSet    - data for model
      * @param relationInstance - the instance of relation for this model
      */
-    public InvertedTabularModel(TableDataSet dataSet, LightRelation relationInstance, String... enabledFieldsNames){
+    public InvertedBitTabularModel(TableDataSet dataSet, LightRelation relationInstance, String... enabledFieldsNames){
         super(dataSet, relationInstance, enabledFieldsNames);
         this.dataSet = (TableDataSet) dataSet;
         indexInit();
@@ -42,7 +39,7 @@ public class InvertedTabularModel extends TabularModel {
      * @param enabledFieldsNames - array of enabled fields names
      * @param dataSet    - data for model
      */
-    public InvertedTabularModel(TableDataSet dataSet, String... enabledFieldsNames) {
+    public InvertedBitTabularModel(TableDataSet dataSet, String... enabledFieldsNames) {
         this(dataSet, new LightRelation(), enabledFieldsNames);
     }
 
@@ -55,7 +52,7 @@ public class InvertedTabularModel extends TabularModel {
 
         for (int i = 0; i < dataSet.getHeader().size(); i++)
             if (getEnabledFields()[i] == 1)
-                invertedIndex.put(dataSet.getHeader().get(i).getValue().toString(), new TreeMap<Object, HashSet<Integer>>());
+                invertedIndex.put(dataSet.getHeader().get(i).getValue().toString(), new TreeMap<Object, BitSet>());
 
         int i = 0;
         for (Tuple tuple: dataSet) {
@@ -63,14 +60,14 @@ public class InvertedTabularModel extends TabularModel {
             for (TupleElement tupleElement: tuple){
                 if (getEnabledFields()[j] == 1) {
                     String fieldName = dataSet.getHeader().get(j).getValue().toString();
-                    HashSet<Integer> idx;
+                    BitSet idx;
                     if (invertedIndex.get(fieldName).containsKey(tupleElement.getValue()))
                         idx = invertedIndex.get(fieldName).get(tupleElement.getValue());
                     else {
-                        idx = new HashSet<>();
+                        idx = new BitSet();
                         invertedIndex.get(fieldName).put(tupleElement.getValue(), idx);
                     }
-                    idx.add(i);
+                    idx.set(i);
                 }
                 j++;
             }
@@ -79,7 +76,7 @@ public class InvertedTabularModel extends TabularModel {
     }
 
 
-    public boolean canMerge(Agent a1, Agent a2){
+    public boolean canMerge(BitAgent a1, BitAgent a2){
         BitSet b = new BitSet();
 
         b.or(a1.fields);
@@ -118,7 +115,7 @@ public class InvertedTabularModel extends TabularModel {
 
         int recordIndex = 0;
 
-        MonteCarloDecomposer decomposer = new MonteCarloDecomposer(this);
+        BasicDecomposer decomposer = new BasicDecomposer(this);
 
         for (Tuple record: records)
          if (record.size() > si){
@@ -165,13 +162,13 @@ public class InvertedTabularModel extends TabularModel {
         return r;
     }
 
-    protected HashSet<Integer> getIndexes(Point point){
-        TreeMap<Object, HashSet<Integer>> pointinvertedindex = invertedIndex.get(point.field);
+    protected BitSet getIndexes(Point point){
+        TreeMap<Object, BitSet> pointinvertedindex = invertedIndex.get(point.field);
         return pointinvertedindex.get(point.value);
     }
 
-    public Agent merge(Agent a1, Agent a2) {
-        Agent r = new Agent(this, null);
+    public BitAgent merge(BitAgent a1, BitAgent a2) {
+        BitAgent r = new BitAgent(null, this);
 
         for (Point p: a1.relation.values()) {
             r.relation.put(p.toString(), p);
@@ -188,25 +185,23 @@ public class InvertedTabularModel extends TabularModel {
         if (agentsindex.containsKey(r.signature))
             return agentsindex.get(r.signature);
 
-        String mf = ""; int mc = Integer.MAX_VALUE;
         for (String f: invertedIndex.keySet()) {
-            r.or(f, a1.recordsByField.get(f));
-            r.or(f, a2.recordsByField.get(f));
-            if (r.recordsByField.get(f).size() < mc){
-                mc = r.recordsByField.get(f).size();
-                mf = f;
-            }
+            BitSet bs = r.recordsByField.get(f);
+            bs.or(a1.recordsByField.get(f));
+            bs.or(a2.recordsByField.get(f));
         }
 
         r.fields.or(a1.fields);
         r.fields.or(a2.fields);
 
-        for (Integer i: r.recordsByField.get(mf))
-            r.records.add(i);
+        int i=0;
+        for (BitSet bs: (r.recordsByField.values()))
+            if (!bs.isEmpty())
+                if (i++ == 0) r.records.or(bs);
+                else
+                    r.records.and(bs);
 
-        for (String f: invertedIndex.keySet())
-            if (!f.equals(mf))
-                r.and(r.recordsByField.get(f));
+        r.dZ = r.getMR() - a1.getMR() - a2.getMR();
 
         return r;
     }

@@ -1,7 +1,6 @@
 package cognitionmodel.predictors.predictionfunctions;
 
-import cognitionmodel.models.inverted.Agent;
-import cognitionmodel.models.inverted.InvertedTabularModel;
+import cognitionmodel.models.inverted.BitAgent;
 import cognitionmodel.models.Model;
 
 /**
@@ -30,12 +29,12 @@ public class Imagefunction implements Predictionfunction {
     @Override
     public double predictionfunction(int[] signature, int index) {
 
-        return model.getZfast(signature);
+        return model.getMRfast(signature);
     }
 
     @Override
-    public double predictionfunction(Agent agent, String predictionfield){
-        return agent.getZ();
+    public double predictionfunction(BitAgent agent, String predictionfield){
+        return agent.getMR();
     }
 
 }

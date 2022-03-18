@@ -2,21 +2,21 @@ package cognitionmodel.models.decomposers;
 
 import cognitionmodel.datasets.Tuple;
 import cognitionmodel.datasets.TupleElement;
-import cognitionmodel.models.inverted.Agent;
-import cognitionmodel.models.inverted.InvertedTabularModel;
+import cognitionmodel.models.inverted.BitAgent;
+import cognitionmodel.models.inverted.InvertedBitTabularModel;
 import cognitionmodel.models.inverted.Point;
 
 import java.util.*;
 
 public class BasicDecomposer implements Decomposer{
 
-    private InvertedTabularModel model;
+    private InvertedBitTabularModel model;
 
-    public BasicDecomposer(InvertedTabularModel model){
+    public BasicDecomposer(InvertedBitTabularModel model){
         this.model = model;
     }
 
-    public BasicDecomposer(InvertedTabularModel model, double gamma, double epsilon, double tau, int d, int minFreq) {
+    public BasicDecomposer(InvertedBitTabularModel model, double gamma, double epsilon, double tau, int d, int minFreq) {
         this.model = model;
         this.gamma = gamma;
         this.epsilon = epsilon;
@@ -71,10 +71,10 @@ public class BasicDecomposer implements Decomposer{
         this.minFreq = minFreq;
     }
 
-    private LinkedList<Agent> initAgents(Tuple record, String predictingfield) {
+    private LinkedList<BitAgent> initAgents(Tuple record, String predictingfield) {
         if (record == null) return null;
 
-        LinkedList<Agent> newAgents = new LinkedList<>();
+        LinkedList<BitAgent> newAgents = new LinkedList<>();
 
         LinkedList<Point> points = new LinkedList<>();
 
@@ -93,7 +93,7 @@ public class BasicDecomposer implements Decomposer{
 
         for (Point point : points) {
             TreeMap<Object, BitSet> tr = model.invertedIndex.get(point.getField());
-            Agent na = new Agent(point, model), nr = null;
+            BitAgent na = new BitAgent(point, model), nr = null;
             if (tr.size() * epsilon > 1) {
                 Map.Entry<Object, BitSet> a = tr.ceilingEntry(point.getValue());
                 Map.Entry<Object, BitSet> b = tr.floorEntry(point.getValue());
@@ -125,24 +125,24 @@ public class BasicDecomposer implements Decomposer{
     }
 
 
-    private LinkedList<Agent> doDecompose(LinkedList<Agent> agents, String predictingfield){
+    private LinkedList<BitAgent> doDecompose(LinkedList<BitAgent> agents, String predictingfield){
         int it = agents.size(), cn = 0;
 
-        HashMap<String, Agent> addagentindex = new HashMap<>();
+        HashMap<String, BitAgent> addagentindex = new HashMap<>();
 
         do {
             cn = 0;
-            LinkedList<Agent> addAgents = new LinkedList<>();
+            LinkedList<BitAgent> addAgents = new LinkedList<>();
 
-            for (Iterator<Agent> agentIterator = agents.descendingIterator(); agentIterator.hasNext() & (it--) > 0; ) {
-                Agent a1 = agentIterator.next();
+            for (Iterator<BitAgent> agentIterator = agents.descendingIterator(); agentIterator.hasNext() & (it--) > 0; ) {
+                BitAgent a1 = agentIterator.next();
                 if (a1.getP() > 1.0 / model.getDataSet().size())
                     if (a1.relationByField.get(predictingfield).size() > 0 & a1.getLength() < d & (a1.relation.size() == 1 | a1.getCondP(predictingfield) < tau))// & a1.getCondP(predictingfield) > 1 - tau )
-                        for (Agent a2 : agents)
+                        for (BitAgent a2 : agents)
                             if (a2.getP() > 1.0 / model.getDataSet().size())
                                 if (a1 != a2 & a2.relationByField.get(predictingfield).size() == 0 & model.canMerge(a1, a2) & a2.getLength() < d & (a2.relation.size() == 1 | a2.getCondP(predictingfield) < tau)){// & a2.getCondP(predictingfield) > 1 - tau ) {
-                                    Agent na = model.merge(a1, a2);
-                                    if (!addagentindex.containsKey(na.getSignature())  & (na.getZ() >= (a1.getZ() + a2.getZ()) * (1 + gamma)) & na.getConfP() >= 1 - epsilon) {
+                                    BitAgent na = model.merge(a1, a2);
+                                    if (!addagentindex.containsKey(na.getSignature())  & (na.getMR() >= (a1.getMR() + a2.getMR()) * (1 + gamma)) & na.getConfP() >= 1 - epsilon) {
                                         addAgents.add(na);
                                         if (!model.agentsindex.containsKey(na.getSignature())) model.agentsindex.put(na.getSignature(), na);
                                         addagentindex.put(na.getSignature(), na);
@@ -159,7 +159,7 @@ public class BasicDecomposer implements Decomposer{
     }
 
     @Override
-    public LinkedList<Agent> decompose(Tuple record, String predictingfield) {
+    public LinkedList<BitAgent> decompose(Tuple record, String predictingfield) {
         return doDecompose(initAgents(record, predictingfield), predictingfield);
     }
 }

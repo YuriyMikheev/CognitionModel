@@ -133,7 +133,7 @@ public class TabularModel extends Model<LightRelation>{
      * @return - Z value for the relation
      */
 
-    public double getZd(int[] signature){
+    public double getMRd(int[] signature){
 
         Integer zf = frequencyMap.get(signature);
         if (zf == null) return 0;

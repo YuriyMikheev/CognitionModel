@@ -2,8 +2,8 @@ package cognitionmodel.models;
 
 import cognitionmodel.datasets.CSVParser;
 import cognitionmodel.datasets.TableDataSet;
-import cognitionmodel.models.inverted.Agent;
-import cognitionmodel.models.inverted.InvertedTabularModel;
+import cognitionmodel.models.inverted.BitAgent;
+import cognitionmodel.models.inverted.InvertedBitTabularModel;
 import cognitionmodel.models.inverted.Point;
 import cognitionmodel.predictors.predictionfunctions.Powerfunction;
 import org.junit.Test;
@@ -19,7 +19,7 @@ public class InvertedTabularAgentTest {
     @Test
     public void createTestAdult() throws IOException {
 
-        InvertedTabularModel tabularModel = new InvertedTabularModel(
+        InvertedBitTabularModel tabularModel = new InvertedBitTabularModel(
                 new TableDataSet(new FileInputStream(new File("D:\\works\\Data\\adult\\adult.data")),
                         new CSVParser(",","\n")),
                        (" INCOME,"+
@@ -54,7 +54,7 @@ public class InvertedTabularAgentTest {
     @Test
     public void createTestCensus() throws IOException {
 
-        InvertedTabularModel tabularModel = new InvertedTabularModel(
+        InvertedBitTabularModel tabularModel = new InvertedBitTabularModel(
                 new TableDataSet(new FileInputStream(new File("D:\\works\\Data\\Census\\census-income.data")),
                         new CSVParser(",","\n")),
                 (" AHGA, AWKSTAT, CAPLOSS, TAXINC, CAPGAIN").split(","));
@@ -80,7 +80,7 @@ public class InvertedTabularAgentTest {
     @Test
     public void createTestLetters() throws IOException {
 
-        InvertedTabularModel  tabularModel = new InvertedTabularModel(
+        InvertedBitTabularModel tabularModel = new InvertedBitTabularModel(
                 new TableDataSet(new FileInputStream(new File("D:\\works\\Data\\letter\\letter-recognition.data.train.csv")),
                         new CSVParser(";","\r\n")));
 
@@ -96,7 +96,7 @@ public class InvertedTabularAgentTest {
     @Test
     public void indexTets() throws IOException {
 
-        InvertedTabularModel tabularModel = new InvertedTabularModel(
+        InvertedBitTabularModel tabularModel = new InvertedBitTabularModel(
                 new TableDataSet(new FileInputStream(new File("D:\\works\\Data\\adult\\adult.data")),
                         new CSVParser(",","\n")),
                 (" INCOME,"+
@@ -109,7 +109,7 @@ public class InvertedTabularAgentTest {
                                " sex," +*/
                         " capital-loss").split(","));
 
-        Agent agent = new Agent(new Point(tabularModel.getDataSet().getHeader().get(4).getValue().toString(),tabularModel.getDataSet().getRecords().get(0).get(4).getValue()), tabularModel);
+        BitAgent agent = new BitAgent(new Point(tabularModel.getDataSet().getHeader().get(4).getValue().toString(),tabularModel.getDataSet().getRecords().get(0).get(4).getValue()), tabularModel);
         agent.getIndex();
         assertTrue(agent.getIndex().size() == agent.getRecords().cardinality());
 

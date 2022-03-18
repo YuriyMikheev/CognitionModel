@@ -1,7 +1,9 @@
 package cognitionmodel.models.decomposers;
 
 import cognitionmodel.datasets.Tuple;
-import cognitionmodel.models.inverted.Agent;
+import cognitionmodel.models.Model;
+import cognitionmodel.models.inverted.BitAgent;
+import cognitionmodel.models.inverted.InvertedBitTabularModel;
 import cognitionmodel.models.inverted.InvertedTabularModel;
 import cognitionmodel.models.inverted.Point;
 
@@ -9,20 +11,33 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Random;
 
-public class MonteCarloDecomposer extends BasicDecomposer {
+public class MonteCarloDecomposer implements Decomposer {
 
     private int mostProbablePointsAmount = 3; //amount of most probable points found for generating new relations
     private Random random = new Random();
+    private InvertedTabularModel model;
 
     public MonteCarloDecomposer(InvertedTabularModel model) {
-        super(model);
+        this.model = model;
     }
 
     public MonteCarloDecomposer(InvertedTabularModel model, double gamma, double epsilon, double tau, int d, int minFreq) {
-        super(model, gamma, epsilon, tau, d, minFreq);
+        this.model = model;
+        this.gamma = gamma;
+        this.epsilon = epsilon;
+        this.tau = tau;
+        this.d = d;
+        this.minFreq = minFreq;
     }
 
-    public LinkedList<Agent> doDecompose(LinkedList<Agent> agents, String predictingfield) {
+    public double gamma = 000000000.0; //
+    public double epsilon = 0.00; //probability of confidential interval
+    public double tau =  0.9999; // maximal conditional probability
+    public int d = 3; //max depth
+    public int minFreq = 1; //minimal frequency to decade that we have enough data
+
+
+    public LinkedList<BitAgent> doDecompose(LinkedList<BitAgent> agents, String predictingfield) {
 
         /*
             1. инициализируем точки (+интервалы + инвертированные?)
@@ -32,10 +47,10 @@ public class MonteCarloDecomposer extends BasicDecomposer {
             5. если были созданые новые агенты повтояем с п 3.
          */
 
-        LinkedList<Agent> dagents = new LinkedList<>();
+        LinkedList<BitAgent> dagents = new LinkedList<>();
 
-        for (Iterator<Agent> agentIterator = agents.descendingIterator(); agentIterator.hasNext(); ) {
-            Agent a = agentIterator.next();
+        for (Iterator<BitAgent> agentIterator = agents.descendingIterator(); agentIterator.hasNext(); ) {
+            BitAgent a = agentIterator.next();
             if (!a.relationByField.get(predictingfield).isEmpty()) {
                 dagents.add(a);
                 agentIterator.remove();
@@ -44,9 +59,9 @@ public class MonteCarloDecomposer extends BasicDecomposer {
 
         int cn = 0;
         do {
-            LinkedList<Agent> newAgents = new LinkedList<>();
+            LinkedList<BitAgent> newAgents = new LinkedList<>();
 
-            for (Agent da: dagents){
+            for (BitAgent da: dagents){
                 newAgents.add(da.clone());
                 for (Point p: mostProbablePoints(da)){
 
@@ -61,7 +76,7 @@ public class MonteCarloDecomposer extends BasicDecomposer {
         return agents;
     }
 
-    private LinkedList<Point> mostProbablePoints(Agent agent){
+    private LinkedList<Point> mostProbablePoints(BitAgent agent){
         LinkedList<Point> r = new LinkedList<>();
 
         for (int i = 0; i < mostProbablePointsAmount; i++){
@@ -71,5 +86,10 @@ public class MonteCarloDecomposer extends BasicDecomposer {
 
 
         return r;
+    }
+
+    @Override
+    public LinkedList<BitAgent> decompose(Tuple record, String predictingfield) {
+        return null;
     }
 }

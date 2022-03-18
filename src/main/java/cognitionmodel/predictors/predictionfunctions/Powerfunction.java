@@ -1,7 +1,6 @@
 package cognitionmodel.predictors.predictionfunctions;
 
-import cognitionmodel.models.inverted.Agent;
-import cognitionmodel.models.inverted.InvertedTabularModel;
+import cognitionmodel.models.inverted.BitAgent;
 import cognitionmodel.models.Model;
 
 import static java.lang.StrictMath.pow;
@@ -38,7 +37,7 @@ public class Powerfunction implements Predictionfunction {
         double p = model.getFrequency(signature);
         if (p == 0) return 0;
 
-        double z = model.getZ(signature);
+        double z = model.getMR(signature);
         if (z == 0) return 0;
 
         model.getRelationMethods().addTermToRelation(signature, index, 0);
@@ -49,7 +48,7 @@ public class Powerfunction implements Predictionfunction {
     }
 
     @Override
-    public double predictionfunction(Agent agent, String predictingfield) {
-        return  pow(agent.getCondP(predictingfield), wp) * pow(agent.getZ(),wz);
+    public double predictionfunction(BitAgent agent, String predictingfield) {
+        return  pow(agent.getCondP(predictingfield), wp) * pow(agent.getMR(),wz);
     }
 }

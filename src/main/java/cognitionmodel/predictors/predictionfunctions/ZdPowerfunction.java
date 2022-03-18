@@ -1,7 +1,6 @@
 package cognitionmodel.predictors.predictionfunctions;
 
-import cognitionmodel.models.inverted.Agent;
-import cognitionmodel.models.inverted.InvertedTabularModel;
+import cognitionmodel.models.inverted.BitAgent;
 import cognitionmodel.models.TabularModel;
 
 /**
@@ -37,7 +36,7 @@ public class ZdPowerfunction implements Predictionfunction {
         double p = model.getFrequency(signature);
         if (p == 0) return 0;
 
-        double z = model.getZd(signature);
+        double z = model.getMRd(signature);
         if (z == 0) return 0;
 
         model.getRelationMethods().addTermToRelation(signature, index, 0);
@@ -53,8 +52,8 @@ public class ZdPowerfunction implements Predictionfunction {
     }
 
     @Override
-    public double predictionfunction(Agent agent, String predictionfield){
-        return agent.getZ();
+    public double predictionfunction(BitAgent agent, String predictionfield){
+        return agent.getMR();
     }
 
 }

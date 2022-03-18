@@ -2,7 +2,7 @@ package cognitionmodel.models;
 
 import cognitionmodel.datasets.CSVParser;
 import cognitionmodel.datasets.TableDataSet;
-import cognitionmodel.models.inverted.InvertedTabularModel;
+import cognitionmodel.models.inverted.InvertedBitTabularModel;
 import org.junit.Test;
 
 import java.io.File;
@@ -14,7 +14,7 @@ public class InvertedTabularModelTest {
     @Test
     public void createTest() throws IOException {
 
-        InvertedTabularModel tabularModel = new InvertedTabularModel(
+        InvertedBitTabularModel tabularModel = new InvertedBitTabularModel(
                 new TableDataSet(new FileInputStream(new File("D:\\works\\Data\\adult\\adult.data")),
                         new CSVParser(",","\n")),
                        (" INCOME,"+
