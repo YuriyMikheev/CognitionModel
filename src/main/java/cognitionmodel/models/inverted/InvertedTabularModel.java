@@ -4,13 +4,13 @@ import cognitionmodel.datasets.TableDataSet;
 import cognitionmodel.datasets.Tuple;
 import cognitionmodel.datasets.TupleElement;
 import cognitionmodel.models.TabularModel;
-import cognitionmodel.models.decomposers.BasicDecomposer;
-import cognitionmodel.models.decomposers.MonteCarloDecomposer;
 import cognitionmodel.models.relations.LightRelation;
 import cognitionmodel.predictors.PredictionResults;
 import cognitionmodel.predictors.predictionfunctions.Powerfunction;
 import cognitionmodel.predictors.predictionfunctions.Predictionfunction;
+import org.roaringbitmap.RoaringBitmap;
 
+import java.lang.reflect.ParameterizedType;
 import java.util.*;
 
 import static java.lang.Math.exp;
@@ -18,9 +18,9 @@ import static java.lang.Math.log;
 
 public class InvertedTabularModel extends TabularModel {
 
-    public HashMap<String, TreeMap<Object, HashSet<Integer>>> invertedIndex = new HashMap();
     private TableDataSet dataSet;
-    public HashMap<String, Agent> agentsindex =  new HashMap<>();
+    //public HashMap<String, Agent> agentsindex =  new HashMap<String, Agent>();
+    public InvertedIndex invertedIndex;
 
 
     /**
@@ -33,7 +33,9 @@ public class InvertedTabularModel extends TabularModel {
     public InvertedTabularModel(TableDataSet dataSet, LightRelation relationInstance, String... enabledFieldsNames){
         super(dataSet, relationInstance, enabledFieldsNames);
         this.dataSet = (TableDataSet) dataSet;
-        indexInit();
+
+        invertedIndex = new BitInvertedIndex(this);
+       // indexInit();
     }
 
     /**
@@ -46,51 +48,14 @@ public class InvertedTabularModel extends TabularModel {
         this(dataSet, new LightRelation(), enabledFieldsNames);
     }
 
+
+
+
     private HashSet<Integer> addToSet(Object set, Integer value){
         ((HashSet<Integer>)set).add(value);
         return ((HashSet<Integer>)set);
     }
 
-    protected void indexInit() {
-
-        for (int i = 0; i < dataSet.getHeader().size(); i++)
-            if (getEnabledFields()[i] == 1)
-                invertedIndex.put(dataSet.getHeader().get(i).getValue().toString(), new TreeMap<Object, HashSet<Integer>>());
-
-        int i = 0;
-        for (Tuple tuple: dataSet) {
-            int j = 0;
-            for (TupleElement tupleElement: tuple){
-                if (getEnabledFields()[j] == 1) {
-                    String fieldName = dataSet.getHeader().get(j).getValue().toString();
-                    HashSet<Integer> idx;
-                    if (invertedIndex.get(fieldName).containsKey(tupleElement.getValue()))
-                        idx = invertedIndex.get(fieldName).get(tupleElement.getValue());
-                    else {
-                        idx = new HashSet<>();
-                        invertedIndex.get(fieldName).put(tupleElement.getValue(), idx);
-                    }
-                    idx.add(i);
-                }
-                j++;
-            }
-            i++;
-        }
-    }
-
-
-    public boolean canMerge(Agent a1, Agent a2){
-        BitSet b = new BitSet();
-
-        b.or(a1.fields);
-        b.and(a2.fields);
-
-        if (b.isEmpty())
-            if (log(a1.getP()*a2.getP()*dataSet.size()) < (a1.getMR()+a2.getMR()))
-                return false;
-
-        return b.isEmpty();
-    }
 
     public void make(){
         predict(null, null, new Powerfunction(null, 0,1));
@@ -118,41 +83,42 @@ public class InvertedTabularModel extends TabularModel {
 
         int recordIndex = 0;
 
-        MonteCarloDecomposer decomposer = new MonteCarloDecomposer(this);
+//        MonteCarloDecomposer decomposer = new MonteCarloDecomposer(this);
+        BasicDecomposer decomposer = new BasicDecomposer(this);
+
+
+        LinkedList<Object> predictingvalues = new LinkedList<>();
+        predictingvalues.addAll(invertedIndex.getAllValues(predictingfield));
+
+        HashMap<Object, Integer> pvi = new HashMap<>();
+
+        int i=0;
+        for (Iterator<Object> iterator = predictingvalues.iterator(); iterator.hasNext(); pvi.put(predictingfield+":"+iterator.next(), i++));
 
         for (Tuple record: records)
          if (record.size() > si){
-            LinkedList<Object> predictingvalues = new LinkedList<>();
-            predictingvalues.addAll(invertedIndex.get(predictingfield).keySet());
-
             double[] pa = new double[predictingvalues.size()];
             double[] pc = new double[predictingvalues.size()];
             int c[] = new int[predictingvalues.size()];
 
-            BitSet f = new BitSet();
 
-            for (BitAgent a : decomposer.decompose(record, predictingfield)) {
-                int i = 0;
-                if (a.relation.size() > 1)
-                    if (!f.intersects(a.fields))
-                         for (Object v : predictingvalues) {
-                            if (a.relation.containsKey(predictingfield + ":" + v)) {
-                                pa[i] += predictionfunction.predictionfunction(a, predictingfield);
-                                pc[i] += (a.getConfP());
-                                c[i]++;
-                            }
-                    i++;
+            for (Agent a : decomposer.decompose(record, predictingfield)) {
+                if (a.hasPerdictingField()) {
+                    i = pvi.get(a.relationByField.get(predictingfield).toArray(new Object[]{})[0]);
+                    pa[i] += predictionfunction.predictionfunction(a, predictingfield);
+                    pc[i] += (a.getConfP());
+                    c[i]++;
                 }
             }
 
-            int i1 = 0;
+/*            int i1 = 0;
             for (Object v : predictingvalues) {
                 pa[i1] = exp(pa[i1++]);
-            }
+            }*/
 
             int mi = 0;
             double[] pr = new double[c.length];
-            for (int i = 0; i < c.length; i++)
+            for (i = 0; i < c.length; i++)
                 if ((pr[i] = pa[i]  ) > pa[mi] )
                     mi = i;
 
@@ -165,50 +131,10 @@ public class InvertedTabularModel extends TabularModel {
         return r;
     }
 
-    protected HashSet<Integer> getIndexes(Point point){
-        TreeMap<Object, HashSet<Integer>> pointinvertedindex = invertedIndex.get(point.field);
-        return pointinvertedindex.get(point.value);
+    protected InvertedIndex getIndexes(){
+        return invertedIndex;
     }
 
-    public Agent merge(Agent a1, Agent a2) {
-        Agent r = new Agent(this, null);
 
-        for (Point p: a1.relation.values()) {
-            r.relation.put(p.toString(), p);
-            r.relationByField.get(p.field).add(p.toString());
-        }
-
-        for (Point p: a2.relation.values()) {
-            r.relation.put(p.toString(), p);
-            r.relationByField.get(p.field).add(p.toString());
-        }
-
-        r.resign();
-
-        if (agentsindex.containsKey(r.signature))
-            return agentsindex.get(r.signature);
-
-        String mf = ""; int mc = Integer.MAX_VALUE;
-        for (String f: invertedIndex.keySet()) {
-            r.or(f, a1.recordsByField.get(f));
-            r.or(f, a2.recordsByField.get(f));
-            if (r.recordsByField.get(f).size() < mc){
-                mc = r.recordsByField.get(f).size();
-                mf = f;
-            }
-        }
-
-        r.fields.or(a1.fields);
-        r.fields.or(a2.fields);
-
-        for (Integer i: r.recordsByField.get(mf))
-            r.records.add(i);
-
-        for (String f: invertedIndex.keySet())
-            if (!f.equals(mf))
-                r.and(r.recordsByField.get(f));
-
-        return r;
-    }
 
 }

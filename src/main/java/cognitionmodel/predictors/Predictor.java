@@ -22,9 +22,8 @@ public interface Predictor {
 
     public static PredictionResults predict(Model model, DataSet dataSet, int signatureIndex){
 
+        throw new AbstractMethodError("Method is not implemented in the interface");
 
-
-        return null;
     }
 
 

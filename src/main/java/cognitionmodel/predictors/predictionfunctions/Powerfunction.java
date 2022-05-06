@@ -1,7 +1,7 @@
 package cognitionmodel.predictors.predictionfunctions;
 
-import cognitionmodel.models.inverted.BitAgent;
 import cognitionmodel.models.Model;
+import cognitionmodel.models.inverted.Agent;
 
 import static java.lang.StrictMath.pow;
 
@@ -48,7 +48,8 @@ public class Powerfunction implements Predictionfunction {
     }
 
     @Override
-    public double predictionfunction(BitAgent agent, String predictingfield) {
+    public double predictionfunction(Agent agent, String predictingfield) {
+        if (wp == 0) return pow(agent.getMR(),wz);
         return  pow(agent.getCondP(predictingfield), wp) * pow(agent.getMR(),wz);
     }
 }

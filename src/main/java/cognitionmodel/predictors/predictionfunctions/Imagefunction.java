@@ -1,7 +1,7 @@
 package cognitionmodel.predictors.predictionfunctions;
 
-import cognitionmodel.models.inverted.BitAgent;
 import cognitionmodel.models.Model;
+import cognitionmodel.models.inverted.Agent;
 
 /**
  * Class represents prediction function for images
@@ -33,7 +33,7 @@ public class Imagefunction implements Predictionfunction {
     }
 
     @Override
-    public double predictionfunction(BitAgent agent, String predictionfield){
+    public double predictionfunction(Agent agent, String predictionfield){
         return agent.getMR();
     }
 

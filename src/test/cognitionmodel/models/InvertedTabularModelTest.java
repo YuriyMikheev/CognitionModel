@@ -2,7 +2,8 @@ package cognitionmodel.models;
 
 import cognitionmodel.datasets.CSVParser;
 import cognitionmodel.datasets.TableDataSet;
-import cognitionmodel.models.inverted.InvertedBitTabularModel;
+import cognitionmodel.models.inverted.Agent;
+import cognitionmodel.models.inverted.InvertedTabularModel;
 import org.junit.Test;
 
 import java.io.File;
@@ -14,7 +15,7 @@ public class InvertedTabularModelTest {
     @Test
     public void createTest() throws IOException {
 
-        InvertedBitTabularModel tabularModel = new InvertedBitTabularModel(
+        InvertedTabularModel tabularModel = new InvertedTabularModel(
                 new TableDataSet(new FileInputStream(new File("D:\\works\\Data\\adult\\adult.data")),
                         new CSVParser(",","\n")),
                        (" INCOME,"+
@@ -28,7 +29,7 @@ public class InvertedTabularModelTest {
                         " capital-loss").split(","));
 
 
-        tabularModel.make();
+       // tabularModel.make();
 
 
         System.out.println("Model initialized");

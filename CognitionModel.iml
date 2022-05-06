@@ -28,5 +28,7 @@
         <SOURCES />
       </library>
     </orderEntry>
+    <orderEntry type="library" name="org.roaringbitmap:RoaringBitmap:0.9.10" level="project" />
+    <orderEntry type="library" name="org.slf4j:slf4j-ext:1.7.12" level="project" />
   </component>
 </module>

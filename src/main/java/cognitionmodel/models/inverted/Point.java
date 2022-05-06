@@ -3,7 +3,7 @@ package cognitionmodel.models.inverted;
 public class Point{
     String field;
     Object value;
-    BitAgent agent;
+    Agent agent;
 
     public Point(String field, Object value) {
         this.field = field;
@@ -22,7 +22,7 @@ public class Point{
         return value;
     }
 
-    public BitAgent getAgent() {
+    public Agent getAgent() {
         return agent;
     }
 }

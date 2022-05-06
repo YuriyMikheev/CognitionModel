@@ -74,7 +74,6 @@ public class Examples {
         PredictionResults predictionResults = TabularDataPredictor.predict(tabularModel,TabularDataPredictor.fit2model(tabularModel, new TableDataSet(new FileInputStream(new File("D:\\works\\Data\\letter\\letter-recognition.data.test.csv")),
                 new CSVParser(";","\r\n"))), "lettr" ,new Powerfunction(tabularModel, 0 ,1));
 
-
         predictionResults.show(tabularModel.getDataSet().getFieldIndex("lettr"));
         tabularModel.close();
     }
@@ -239,8 +238,8 @@ public class Examples {
         long t = System.currentTimeMillis();
 
       //  adult();
-        census();
-       // letters();
+       // census();
+        letters();
         //mnist();
        // mnistletters();
       //  cifar();
