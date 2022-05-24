@@ -68,8 +68,6 @@ public class TabularDataPredictor implements Predictor{
                        for (int j = 0; j < altTerminals.length; j++) {
                            double da = predictionfunction.predictionfunction(model.getRelationMethods().addTermToRelation(relation, signatureIndex, altTerminals[j]), signatureIndex);
                            if (!Double.isNaN(da))altP[j] += da;
-                                else
-                                    da = da;//(Double.isNaN(da)? 0: da);
                            if (da == 0) c++;
                        }
                        if (c == altTerminals.length)
@@ -88,8 +86,7 @@ public class TabularDataPredictor implements Predictor{
                    }
 
                    r.put(finalRecordIndex, signatureIndex, new Tuple().add(maxi != -1 ? altTermNames[maxi] : "Prediction failed").add(stored).addAll(Arrays.stream(altP).collect(Collectors.toList())));
-                   if (maxi == -1)
-                       maxi = maxi/1;
+
                    return null;
                }));
 

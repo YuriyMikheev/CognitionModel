@@ -3,13 +3,12 @@ package cognitionmodel.models.inverted;
 
 import cognitionmodel.datasets.Tuple;
 import cognitionmodel.datasets.TupleElement;
-import cognitionmodel.models.inverted.*;
+import org.roaringbitmap.RoaringBitmap;
 
 import java.util.*;
 
-import static java.lang.Math.log;
 
-public class BasicDecomposer {
+public class BasicDecomposer implements Decomposer {
 
     private InvertedTabularModel model;
 
@@ -31,7 +30,7 @@ public class BasicDecomposer {
     private double mrdelta = -Double.MAX_VALUE;
     private double epsilon = 0.00; //probability of confidential interval
     private double tau = 0.9999; // maximal conditional probability
-    private int d = 5; //max depth
+    private int d = 3; //max depth
     private int minFreq = 1; //minimal frequency to decade that we have enough data
 
     public double getGamma() {
@@ -96,7 +95,7 @@ public class BasicDecomposer {
 
         for (Point point : points) {
             TreeMap tr = model.invertedIndex.getMap(point.getField());
-            Agent na = new Agent(point, model), nr = null; na.setPerdictingField(na.relationByField.containsKey(predictingfield));
+            Agent na = new Agent(point, model), nr = null; na.setPerdictingField(na.getRelationValue(predictingfield) != null);
             if (tr.size() * epsilon > 1) {
                 Map.Entry a = tr.ceilingEntry(point.getValue());
                 Map.Entry b = tr.floorEntry(point.getValue());
@@ -112,14 +111,14 @@ public class BasicDecomposer {
                     if (na.getConfP() > 1 - epsilon)
                         nr = na;
                 }
-/*                if (nr != null)
+                if (nr != null)
                     if (!model.agentsindex.containsKey(nr.getSignature())) {
                         newAgents.add(nr);
                         model.agentsindex.put(nr.getSignature(), nr);
-                    }*/
+                    }
             } else {
                 newAgents.add(na);
-           // model.agentsindex.put(na.getSignature(), na);
+                model.agentsindex.put(na.getSignature(), na);
             }
         }
 
@@ -129,24 +128,19 @@ public class BasicDecomposer {
 
     private boolean canMerge(Agent a1, Agent a2){
         if (a1.records == null | a2.records == null) return false;
-        BitSet b = new BitSet();
 
+        for (String p: a1.relation.keySet())
+            if (a2.relation.containsKey(p)) return false;
 
-        b.or(a1.fields);
-        b.and(a2.fields);
-
-/*        if (b.isEmpty())
-            if (log(a1.getP()*a2.getP()*model.getDataSet().size()) < (a1.getMR()+a2.getMR()))
-                return false;*/
-
-        return b.isEmpty();
+        return true;
     }
 
 
-    private LinkedList<Agent> doDecompose(LinkedList<Agent> agents, String predictingfield) {
+    private HashMap<Object, LinkedList<Agent>> doDecompose(LinkedList<Agent> agents, String predictingfield) {
         int it = agents.size(), cn = 0;
 
         HashMap<String, Agent> addagentindex = new HashMap<>();
+
 
         do {
             cn = 0;
@@ -154,19 +148,19 @@ public class BasicDecomposer {
 
             for (Iterator<Agent> agentIterator = agents.descendingIterator(); agentIterator.hasNext() & (it--) > 0; ) {
                 Agent a1 = agentIterator.next();
-                //if (a1.getP() > 1.0 / model.getDataSet().size())
-                    if (a1.hasPerdictingField() & a1.getLength() < d)// & (a1.relation.size() == 1 | a1.getCondP(predictingfield) < tau))// & a1.getCondP(predictingfield) > 1 - tau )
+               //   if (a1.getP() > 1.0 / model.getDataSet().size())
+                    if (a1.hasPerdictingField() & a1.relation.size()  < d)// & (a1.relation.size() == 1 | a1.getCondP(predictingfield) < tau))// & a1.getCondP(predictingfield) > 1 - tau )
                         for (Agent a2 : agents)
                          if (a1.relation.size() + a2.relation.size() <= d){
-                            if (a1.relation.size() + a2.relation.size() > model.getIndexes().getEntrySet().size()) break;
-                            //if (a2.getP() > 1.0 / model.getDataSet().size())
-                             if (a1 != a2 & !a2.hasPerdictingField() & canMerge(a1, a2) & a2.getLength() < d) {// & (a2.relation.size() == 1 | a2.getCondP(predictingfield) < tau)) {// & a2.getCondP(predictingfield) > 1 - tau ) {
+                            if (a1.relation.size() + a2.relation.size() > model.getInvertedIndex().getFieldsAmount()) break;
+                     //       if (a2.getP() > 1.0 / model.getDataSet().size())
+                             if (a1 != a2 & !a2.hasPerdictingField() & canMerge(a1, a2) & a2.relation.size() < d) {// & (a2.relation.size() == 1 | a2.getCondP(predictingfield) < tau)) {// & a2.getCondP(predictingfield) > 1 - tau ) {
                                 Agent na = Agent.merge(a1, a2, model);
                                 na.setPerdictingField(a1.hasPerdictingField() | a2.hasPerdictingField());
-                                if (!addagentindex.containsKey(na.getSignature()) & (na.getMR() >= (a1.getMR() + a2.getMR()) * (1 + gamma) + mrdelta) & na.getConfP() >= 1 - epsilon) {
+                                if (!na.records.isEmpty() & !addagentindex.containsKey(na.getSignature()) & (na.getMR() >= (a1.getMR() + a2.getMR()) * (1 + gamma) + mrdelta) & na.getConfP() >= 1 - epsilon) {
                                     addAgents.add(na);
-/*                                    if (!model.agentsindex.containsKey(na.getSignature()))
-                                        model.agentsindex.put(na.getSignature(), na);*/
+                                    if (!model.agentsindex.containsKey(na.getSignature()))
+                                        model.agentsindex.put(na.getSignature(), na);
                                     addagentindex.put(na.getSignature(), na);
                                     cn++;
                                 }
@@ -177,13 +171,25 @@ public class BasicDecomposer {
             agents.addAll(addAgents);
 
         } while (cn != 0);
-        //System.out.println(agents.size());
+     //   System.out.println(agents.size());
 
-        return agents;
+        HashMap<Object, LinkedList<Agent>> r = new HashMap<>();
+        for (Agent a: agents) {
+            //TO-DO сделать наполнение
+
+        }
+
+
+        return r;
     }
 
-
-    public LinkedList<Agent> decompose(Tuple record, String predictingfield) {
+    @Override
+    public HashMap<Object, LinkedList<Agent>> decompose(Tuple record, String predictingfield) {
         return doDecompose(initAgents(record, predictingfield), predictingfield);
     }
+
+    public RoaringBitmap getRecords(String field, Object value){
+        return null;
+    };
+
 }

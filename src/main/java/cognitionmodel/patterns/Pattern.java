@@ -15,11 +15,15 @@ public class Pattern {
 
     public Pattern(byte[] pattern) {
 
-        bitSet = BitSet.valueOf(pattern);
+        bitSet = new BitSet();
         int c = 0;
-        indices = new int[bitSet.stream().toArray().length];
+        indices = new int[pattern.length];
         for (int i = 0; i < pattern.length; i++)
-            if (pattern[i] != 0) indices[c++] = i;
+            if (pattern[i] != 0) {
+                bitSet.set(i);
+                indices[c++] = i;
+            }
+        indices = Arrays.copyOf(indices, c);
     }
 
 
@@ -30,13 +34,19 @@ public class Pattern {
 
     public Pattern(int[] patternIndices) {
 
-        indices = patternIndices;
         byte[] b = new byte[Arrays.stream(indices).max().getAsInt()+1];
 
-        for (int i: indices)
-            b[i] = 1;
+        for (int i: indices) {
+            bitSet.set(i);
+        }
 
-        bitSet = BitSet.valueOf(b);
+        indices = new int[bitSet.cardinality()];
+        int n = 0;
+        for (int i = 0; i < indices.length; i++){
+            n = indices[i] = bitSet.nextSetBit(n+1);
+        }
+
+        //bitSet = BitSet.valueOf(b);
     }
 
 
@@ -63,7 +73,7 @@ public class Pattern {
 
     public String toString(){
 
-        return Arrays.toString(get());
+        return bitSet.toString();
     }
 
     /**
@@ -72,7 +82,7 @@ public class Pattern {
      */
 
     public int getSetAmount(){
-        return indices.length;
+        return bitSet.cardinality();
     }
 
     /**
@@ -88,4 +98,8 @@ public class Pattern {
         return this;
     }
 
+
+    public BitSet getBitSet() {
+        return bitSet;
+    }
 }

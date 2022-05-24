@@ -4,8 +4,10 @@ import cognitionmodel.datasets.TableDataSet;
 import cognitionmodel.models.TabularModel;
 
 import java.util.Arrays;
+import java.util.Iterator;
 import java.util.Spliterator;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
 /**
  * Set of patterns for table data processing consists from
@@ -75,12 +77,19 @@ public class FullGridRecursivePatterns extends PatternSet {
         if (start != -1) patterns.add(new Pattern(actual));
 
         if (depth <= maxDepth)
-            for (int i = start + 1; i < length ; i++)
+            for (int i = start + 1; i < length; i++)
                 if (enabled[i] != 0) {
                     actual[i] = 1;
                     generate(length, i, actual.clone(),  maxDepth, depth, enabled);
                     actual[i] = 0;
             }
+
+       // patterns = patterns.stream().filter(p -> p.getSetAmount() > 1).collect(Collectors.toList());
+
+        for (Iterator<Pattern> it = patterns.iterator(); it.hasNext();){
+            Pattern pattern = it.next();
+            if (pattern.getSetAmount() < 2) it.remove();
+        }
     }
 
 

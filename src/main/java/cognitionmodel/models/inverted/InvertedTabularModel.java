@@ -5,6 +5,7 @@ import cognitionmodel.datasets.Tuple;
 import cognitionmodel.datasets.TupleElement;
 import cognitionmodel.models.TabularModel;
 import cognitionmodel.models.relations.LightRelation;
+import cognitionmodel.patterns.FullGridRecursivePatterns;
 import cognitionmodel.predictors.PredictionResults;
 import cognitionmodel.predictors.predictionfunctions.Powerfunction;
 import cognitionmodel.predictors.predictionfunctions.Predictionfunction;
@@ -21,6 +22,7 @@ public class InvertedTabularModel extends TabularModel {
     private TableDataSet dataSet;
     //public HashMap<String, Agent> agentsindex =  new HashMap<String, Agent>();
     public InvertedIndex invertedIndex;
+    HashMap<String, Agent> agentsindex = new HashMap<>();
 
 
     /**
@@ -63,28 +65,11 @@ public class InvertedTabularModel extends TabularModel {
 
     public PredictionResults predict(List<Tuple> records, String predictingfield, Predictionfunction predictionfunction){
 
-        int si = 0;
-        for (TupleElement t:dataSet.getHeader())
-            if (t.getValue().toString().equals(predictingfield)) break;
-            else si++;
 
-        if (si == dataSet.getHeader().size() | !getDataSet().getHeader().get(si).getValue().toString().equals(predictingfield)) {
+        int si = dataSet.getFieldIndex(predictingfield);
+
+        if (si == -1)
             throw new IllegalArgumentException(predictingfield + " is not found in model data set");
-        }
-
-        int[] altTerminals = termsByField(si);
-        String[] altTermNames = new String[altTerminals.length];
-
-        for (int i = 0; i < altTerminals.length; i++)
-            altTermNames[i] = getRelationMethods().getTerminalsArray().get(altTerminals[i]);
-
-        PredictionResults r = new PredictionResults();
-        r.addPredictedDataHeader(si,new Tuple().add(dataSet.getHeader().get(si).getValue()+" Predicted").add(dataSet.getHeader().get(si).getValue()+" From data").addAll(altTermNames));
-
-        int recordIndex = 0;
-
-//        MonteCarloDecomposer decomposer = new MonteCarloDecomposer(this);
-        BasicDecomposer decomposer = new BasicDecomposer(this);
 
 
         LinkedList<Object> predictingvalues = new LinkedList<>();
@@ -92,8 +77,17 @@ public class InvertedTabularModel extends TabularModel {
 
         HashMap<Object, Integer> pvi = new HashMap<>();
 
-        int i=0;
-        for (Iterator<Object> iterator = predictingvalues.iterator(); iterator.hasNext(); pvi.put(predictingfield+":"+iterator.next(), i++));
+        for (Iterator<Object> iterator = predictingvalues.iterator(); iterator.hasNext(); pvi.put(predictingfield+":"+iterator.next(), pvi.size()));
+
+        PredictionResults r = new PredictionResults();
+        r.addPredictedDataHeader(si,new Tuple().add(dataSet.getHeader().get(si).getValue()+" Predicted").add(dataSet.getHeader().get(si).getValue()+" From data").addAll(predictingvalues));
+
+        int recordIndex = 0;
+
+//        MonteCarloDecomposer decomposer = new MonteCarloDecomposer(this);
+  //      BasicDecomposer decomposer = new BasicDecomposer(this);
+        PatternDecomposer decomposer = new PatternDecomposer(new FullGridRecursivePatterns(this, 5).getPatterns(), this, predictingfield, false);//, a -> a.getMR() > -.005);
+
 
         for (Tuple record: records)
          if (record.size() > si){
@@ -102,23 +96,17 @@ public class InvertedTabularModel extends TabularModel {
             int c[] = new int[predictingvalues.size()];
 
 
-            for (Agent a : decomposer.decompose(record, predictingfield)) {
-                if (a.hasPerdictingField()) {
-                    i = pvi.get(a.relationByField.get(predictingfield).toArray(new Object[]{})[0]);
+             for (List<Agent> la : decomposer.decompose(record, predictingfield).values())
+                 for (Agent a : la) {
+                    int i = pvi.get(a.getRelationValue(predictingfield));
                     pa[i] += predictionfunction.predictionfunction(a, predictingfield);
-                    pc[i] += (a.getConfP());
+                    //pc[i] += (a.getConfP());
                     c[i]++;
-                }
             }
-
-/*            int i1 = 0;
-            for (Object v : predictingvalues) {
-                pa[i1] = exp(pa[i1++]);
-            }*/
 
             int mi = 0;
             double[] pr = new double[c.length];
-            for (i = 0; i < c.length; i++)
+            for (int i = 0; i < c.length; i++)
                 if ((pr[i] = pa[i]  ) > pa[mi] )
                     mi = i;
 
@@ -131,7 +119,7 @@ public class InvertedTabularModel extends TabularModel {
         return r;
     }
 
-    protected InvertedIndex getIndexes(){
+    protected InvertedIndex getInvertedIndex(){
         return invertedIndex;
     }
 

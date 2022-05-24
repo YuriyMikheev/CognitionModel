@@ -1,4 +1,4 @@
-package cognitionmodel.models;
+package cognitionmodel.models.inverted;
 
 import cognitionmodel.datasets.CSVParser;
 import cognitionmodel.datasets.TableDataSet;

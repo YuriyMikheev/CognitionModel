@@ -48,7 +48,8 @@ public class Examples {
         TabularModel tabularModel = new TabularModel(
                 new TableDataSet(new FileInputStream(new File("D:\\works\\Data\\Census\\census-income.data")),
                         new CSVParser(",","\n")),
-                            (" AHGA, AWKSTAT, CAPLOSS, TAXINC, CAPGAIN").split(","));
+                            (" AHGA, AWKSTAT, CAPLOSS, TAXINC, CAPGAIN").split(",")
+        );
 
         tabularModel.setPatternSet(new FullGridIterativePatterns(tabularModel,3));
 
@@ -67,7 +68,7 @@ public class Examples {
                 new TableDataSet(new FileInputStream(new File("D:\\works\\Data\\letter\\letter-recognition.data.train.csv")),
                         new CSVParser(";","\r\n")));
 
-        tabularModel.setPatternSet(new FullGridRecursivePatterns(tabularModel,6));
+        tabularModel.setPatternSet(new FullGridRecursivePatterns(tabularModel,5));
 
         tabularModel.make();
 
@@ -237,7 +238,7 @@ public class Examples {
 
         long t = System.currentTimeMillis();
 
-      //  adult();
+       // adult();
        // census();
         letters();
         //mnist();

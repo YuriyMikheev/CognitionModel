@@ -1,8 +1,9 @@
-package cognitionmodel.models;
+package cognitionmodel.models.inverted;
 
 import cognitionmodel.datasets.CSVParser;
 import cognitionmodel.datasets.TableDataSet;
 import cognitionmodel.models.inverted.*;
+import cognitionmodel.predictors.TabularDataPredictor;
 import cognitionmodel.predictors.predictionfunctions.Powerfunction;
 import org.junit.Test;
 
@@ -23,12 +24,18 @@ public class InvertedTabularAgentTest {
                        (" INCOME,"+
                         " education-num," +
                         " marital-status," +
-                               " capital-gain," +
+                        " capital-gain," +
 /*                               " education," +
                                "age," +
                                " race," +
-                               " sex," +*/
-                        " capital-loss").split(","));
+                               " sex," +
+                               " race" +
+                               " native-country" +
+                               " workclass" +
+                               " e-gov" +
+                               " occupation" +*/
+                        " capital-loss").split(",")
+        );
 
 
       //  tabularModel.make();
@@ -83,8 +90,8 @@ public class InvertedTabularAgentTest {
                         new CSVParser(";","\r\n")));
 
 
-        TableDataSet testDataSet = new TableDataSet(new FileInputStream(new File("D:\\works\\Data\\letter\\letter-recognition.data.test.csv")),
-                new CSVParser(";","\r\n"));
+        TableDataSet testDataSet = TabularDataPredictor.fit2model(tabularModel, new TableDataSet(new FileInputStream(new File("D:\\works\\Data\\letter\\letter-recognition.data.test.csv")),
+                new CSVParser(";","\r\n")));
 
 
         tabularModel.predict(testDataSet.getRecords(), "lettr", new Powerfunction(null, 0,1)).show(tabularModel.getDataSet().getFieldIndex("lettr"));
@@ -108,11 +115,7 @@ public class InvertedTabularAgentTest {
                         " capital-loss").split(","));
 
         Agent agent = new Agent(new Point(tabularModel.getDataSet().getHeader().get(4).getValue().toString(),tabularModel.getDataSet().getRecords().get(0).get(4).getValue()), tabularModel);
-        agent.getIndex();
-        assertTrue(agent.getIndex().size() == agent.getRecords().getCardinality());
 
-        agent.addPoint(new Point(tabularModel.getDataSet().getHeader().get(14).getValue().toString(),tabularModel.getDataSet().getRecords().get(0).get(14).getValue()));
-        assertTrue(agent.getIndex().size() == 3134);
 
         assertTrue(agent.getCondP(tabularModel.getDataSet().getHeader().get(14).getValue().toString()) == 3134.0/5355);
 
@@ -137,10 +140,7 @@ public class InvertedTabularAgentTest {
                         " capital-loss").split(","));
 
         Agent agent = new Agent(new Point(tabularModel.getDataSet().getHeader().get(4).getValue().toString(),tabularModel.getDataSet().getRecords().get(0).get(4).getValue()), tabularModel);
-        assertTrue(agent.getIndex().size() == 5355);
 
-        agent.addPoint(new Point(tabularModel.getDataSet().getHeader().get(14).getValue().toString(),tabularModel.getDataSet().getRecords().get(0).get(14).getValue()));
-        assertTrue(agent.getIndex().size() == 3134);
 
         assertTrue(agent.getMR() == -0.26021793936194193);
 
