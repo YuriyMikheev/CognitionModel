@@ -14,8 +14,7 @@ import org.roaringbitmap.RoaringBitmap;
 import java.lang.reflect.ParameterizedType;
 import java.util.*;
 
-import static java.lang.Math.exp;
-import static java.lang.Math.log;
+import static java.lang.Math.*;
 
 public class InvertedTabularModel extends TabularModel {
 
@@ -50,15 +49,6 @@ public class InvertedTabularModel extends TabularModel {
         this(dataSet, new LightRelation(), enabledFieldsNames);
     }
 
-
-
-
-    private HashSet<Integer> addToSet(Object set, Integer value){
-        ((HashSet<Integer>)set).add(value);
-        return ((HashSet<Integer>)set);
-    }
-
-
     public void make(){
         predict(null, null, new Powerfunction(null, 0,1));
     }
@@ -84,24 +74,41 @@ public class InvertedTabularModel extends TabularModel {
 
         int recordIndex = 0;
 
-//        MonteCarloDecomposer decomposer = new MonteCarloDecomposer(this);
   //      BasicDecomposer decomposer = new BasicDecomposer(this);
-        PatternDecomposer decomposer = new PatternDecomposer(new FullGridRecursivePatterns(this, 5).getPatterns(), this, predictingfield, false);//, a -> a.getMR() > -.005);
+ //       PatternDecomposer decomposer = new PatternDecomposer(new FullGridRecursivePatterns(this, 10).getPatterns(), this, predictingfield, false, a -> a.getMR() > 0);
+//       RecursiveDecomposer decomposer = new RecursiveDecomposer(this, predictingfield, false, 3,  a -> a.getMR() > 0);
+        RecursiveLevelDecomposer decomposer = new RecursiveLevelDecomposer(this, predictingfield, false, 6, null);// a -> a.getMR() > 0);
 
+        HashMap<String, Agent> zeroAgents = new HashMap<>();
 
         for (Tuple record: records)
          if (record.size() > si){
+
             double[] pa = new double[predictingvalues.size()];
             double[] pc = new double[predictingvalues.size()];
             int c[] = new int[predictingvalues.size()];
 
-
-             for (List<Agent> la : decomposer.decompose(record, predictingfield).values())
-                 for (Agent a : la) {
-                    int i = pvi.get(a.getRelationValue(predictingfield));
-                    pa[i] += predictionfunction.predictionfunction(a, predictingfield);
-                    //pc[i] += (a.getConfP());
-                    c[i]++;
+            for (List<Agent> la : decomposer.decompose(record, predictingfield).values())
+                for (Agent a : la) {
+/*
+                    Agent za = null;
+                    if (((Powerfunction)predictionfunction).getWp() != 0) {
+                         LinkedList<Point>  zpl = new LinkedList<>();
+                         for (Point p : a.relation.values())
+                             if (!p.getField().equals(predictingfield))
+                                 zpl.add(p);
+                         if (zeroAgents.containsKey(zpl.toString())) za = zeroAgents.get(zpl.toString());
+                            else zeroAgents.put(zpl.toString(), za = new Agent(zpl, this));
+                    }
+*/
+                    for (Object pv: predictingvalues) {
+                        Agent pva = new Agent(new Point(predictingfield, pv), this);
+                        pva = Agent.merge(pva, a, this);
+                        int i = pvi.get(predictingfield+":"+pv);//pvi.get(a.getRelationValue(predictingfield));
+                        pa[i] += predictionfunction.predictionfunction(pva, a);
+                        //pc[i] += (a.getConfP());
+                        c[i]++;
+                    }
             }
 
             int mi = 0;

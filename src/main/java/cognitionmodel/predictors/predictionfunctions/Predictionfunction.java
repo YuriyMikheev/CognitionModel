@@ -11,5 +11,6 @@ public interface Predictionfunction {
 
     public double predictionfunction(int[] signature, int index);
     public double predictionfunction(Agent agent, String predictionfield);
+    public double predictionfunction(Agent agent, Agent agentWithoutPredictionfield);
 
 }

@@ -31,6 +31,14 @@ public class Powerfunction implements Predictionfunction {
         this.model = model;
     }
 
+    public double getWp() {
+        return wp;
+    }
+
+    public double getWz() {
+        return wz;
+    }
+
     @Override
     public double predictionfunction(int[] signature, int index) {
 
@@ -51,5 +59,11 @@ public class Powerfunction implements Predictionfunction {
     public double predictionfunction(Agent agent, String predictingfield) {
         if (wp == 0) return pow(agent.getMR(),wz);
         return  pow(agent.getCondP(predictingfield), wp) * pow(agent.getMR(),wz);
+    }
+
+    @Override
+    public double predictionfunction(Agent agent, Agent agentWithoutPredictionfield) {
+        if (wp == 0 | agentWithoutPredictionfield == null) return pow(agent.getMR(),wz);
+        return pow((double) agent.getRecords().getCardinality() / agentWithoutPredictionfield.getRecords().getCardinality(), wp) * pow(agent.getMR(),wz);
     }
 }

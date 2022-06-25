@@ -62,7 +62,10 @@ public class InvertedTabularAgentTest {
         InvertedTabularModel tabularModel = new InvertedTabularModel(
                 new TableDataSet(new FileInputStream(new File("D:\\works\\Data\\Census\\census-income.data")),
                         new CSVParser(",","\n")),
-                (" AHGA, AWKSTAT, CAPLOSS, TAXINC, CAPGAIN").split(","));
+               // (" AHGA, AWKSTAT, CAPLOSS, TAXINC, CAPGAIN")
+//                ("AAGE, ACLSWKR, ADTIND, ADTOCC, AGI, AHRSPAY, AHSCOL, AMJIND, AMJOCC, ARACE, AREORGN, ASEX, AUNMEM, AUNTYPE, DIVVAL, FEDTAX, FILESTAT, GRINREG, GRINST, HHDFMX, HHDREL, MARSUPWT, MIGMTR1, MIGMTR3, MIGMTR4, MIGSAME, MIGSUN, NOEMP, PARENT, PEARNVAL, PEFNTVTY, PEMNTVTY, PENATVTY, PRCITSHP, PTOTVAL, SEOTR, VETQVA, VETYN, WKSWORK, AMARITL, TAXINC")
+        (" ACLSWKR, ADTOCC, AGI, AHRSPAY, AHSCOL, AMJIND, AMJOCC, ARACE, AREORGN, ASEX, AUNMEM, AUNTYPE, DIVVAL, FEDTAX, FILESTAT, GRINREG, GRINST, HHDREL, MARSUPWT, MIGMTR1, MIGMTR3, MIGMTR4, MIGSUN, NOEMP, PARENT, PEARNVAL, PEFNTVTY, PEMNTVTY, PENATVTY, PRCITSHP, AMARITL, TAXINC")
+                        .split(","));
 
 
         //  tabularModel.make();
@@ -97,6 +100,23 @@ public class InvertedTabularAgentTest {
         tabularModel.predict(testDataSet.getRecords(), "lettr", new Powerfunction(null, 0,1)).show(tabularModel.getDataSet().getFieldIndex("lettr"));
 
     }
+
+    @Test
+    public void createTestMush() throws IOException {
+
+        InvertedTabularModel tabularModel = new InvertedTabularModel(
+                new TableDataSet(new FileInputStream(new File("D:\\works\\Data\\mush\\mush.data")),
+                        new CSVParser(",","\n")));
+
+
+        TableDataSet testDataSet = TabularDataPredictor.fit2model(tabularModel, new TableDataSet(new FileInputStream(new File("D:\\works\\Data\\mush\\mush.test")),
+                new CSVParser(",","\n")));
+
+
+        tabularModel.predict(testDataSet.getRecords(), "class", new Powerfunction(null, 0,1)).show(tabularModel.getDataSet().getFieldIndex("class"));
+
+    }
+
 
     @Test
     public void bitIndexTets() throws IOException {

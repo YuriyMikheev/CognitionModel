@@ -37,4 +37,9 @@ public class Imagefunction implements Predictionfunction {
         return agent.getMR();
     }
 
+    @Override
+    public double predictionfunction(Agent agent, Agent agentWithoutPredictionfield) {
+        return agent.getMR();
+    }
+
 }

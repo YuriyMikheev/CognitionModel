@@ -61,6 +61,10 @@ public class CSVParser implements TabularParser {
 
         for (int i = 1; i < lines.length; i++) {
             Tuple tuple = new Tuple().addAll(lines[i].split(delimiter,-1));
+            if (tuple.size() < header.size())
+                for (int j = tuple.size(); j < header.size(); j++)
+                    tuple.add(new TupleElement(""));
+
             r.add(tuple);
 
             for (int j = 0; j < tuple.size(); j++)

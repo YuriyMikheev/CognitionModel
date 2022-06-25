@@ -26,6 +26,22 @@ public class Pattern {
         indices = Arrays.copyOf(indices, c);
     }
 
+    /**
+     * Create pattern from bit set
+     * @param bitSet
+     */
+
+    public Pattern(BitSet bitSet) {
+
+        this.bitSet = bitSet;
+        indices = new int[bitSet.cardinality()];
+        int i = 0, c = 0;
+
+        while ((i = bitSet.nextSetBit(i+1)) != -1){
+            indices[c++] = i;
+        }
+
+    }
 
     /**
      * Creates pattern form int array of set bytes indices

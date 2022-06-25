@@ -146,7 +146,7 @@ public class PatternDecomposer implements Decomposer{
                 }
 
 
-                if (a.records.isEmpty() | !(agentFilter == null ? true: agentFilter.apply(a))) {//agent checking
+                if (a.records.isEmpty()){// | !(agentFilter == null ? true: agentFilter.apply(a))) {//agent checking
                     patternSet.setInActive(pattern, true);
                 } else {
                     if (agentFilter == null ? true: agentFilter.apply(a)) {

@@ -10,4 +10,5 @@ public interface Decomposer {
 
     public HashMap<Object, LinkedList<Agent>> decompose(Tuple record, String predictingfield);
 
+
 }

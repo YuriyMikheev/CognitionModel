@@ -54,7 +54,7 @@ public class LinkedPatternSet extends PatternSet{
             inclusion[(int)i] = new BitSet();
             for (long j = 0; j < patterns.size(); j++)
                 if (i != j) {
-                    BitSet c = BitSet.valueOf(patterns.get((int)i).getBitSet().toByteArray());
+                    BitSet c = BitSet.valueOf(patterns.get((int)i).getBitSet().toLongArray());
                     c.and(patterns.get((int)j).getBitSet());
                     inclusion[(int)i].set((int)j, c.cardinality() == patterns.get((int)i).getBitSet().cardinality());
             }

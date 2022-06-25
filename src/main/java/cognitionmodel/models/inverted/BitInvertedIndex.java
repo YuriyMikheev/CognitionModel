@@ -17,8 +17,9 @@ public class BitInvertedIndex implements InvertedIndex{
     private HashMap<String, TreeMap<Object, RoaringBitmap>> invertedIndex = new HashMap();
     private HashMap<String, TreeMap<Object, RoaringBitmap>> indexWithIntervals = new HashMap();
     private TreeMap<String, Integer> fields = new TreeMap<>();
-    private LinkedList<String> fieldsList;
+    private ArrayList<String> fieldsList;
     private double[] confidenceLevels = null;
+    private int[] di2i, i2di;
 
     public BitInvertedIndex(InvertedTabularModel model){
         this.dataSet = model.getDataSet();
@@ -28,12 +29,16 @@ public class BitInvertedIndex implements InvertedIndex{
 
     protected void init() {
 
+        di2i = new int[dataSet.getHeader().size()];
+        i2di = new int[dataSet.getHeader().size()];
         for (int i = 0; i < dataSet.getHeader().size(); i++)
             if (model.getEnabledFields()[i] == 1) {
                 invertedIndex.put(dataSet.getHeader().get(i).getValue().toString(), new TreeMap<Object, RoaringBitmap>());
+                di2i[i] = fields.size(); i2di[fields.size()] = i;
                 fields.put(dataSet.getHeader().get(i).getValue().toString(), fields.size());
             }
 
+        i2di = Arrays.copyOf(i2di, fields.size());
         int i = 0;
         for (Tuple tuple: dataSet) {
             int j = 0;
@@ -41,20 +46,42 @@ public class BitInvertedIndex implements InvertedIndex{
                 if (model.getEnabledFields()[j] == 1) {
                     String fieldName = dataSet.getHeader().get(j).getValue().toString();
                     RoaringBitmap idx;
-                    if (invertedIndex.get(fieldName).containsKey(tupleElement.getValue()))
-                        idx = invertedIndex.get(fieldName).get(tupleElement.getValue());
-                    else {
-                        idx = RoaringBitmap.bitmapOf(i);
-                        invertedIndex.get(fieldName).put(tupleElement.getValue(), idx);
-                    }
-                    idx.add(i);
+                    Object val;
+
+                    if (tupleElement.getType() == TupleElement.Type.Int) val = (int)tupleElement.getValue() * 1.0;
+                        else val = tupleElement.getValue();
+                    if (tupleElement.getType() != TupleElement.Type.Empty)
+                        try {
+                            if (invertedIndex.get(fieldName).containsKey(val))
+                                idx = invertedIndex.get(fieldName).get(val);
+                            else {
+                                idx = RoaringBitmap.bitmapOf(i);
+                                invertedIndex.get(fieldName).put(val, idx);
+                            }
+                            idx.add(i);
+                        } catch (ClassCastException e){
+                            System.err.println("line "+i+" field "+fieldName+" has inconsistent data "+tupleElement+" "+e.getMessage());
+                        }
                 }
                 j++;
             }
             i++;
         }
 
-        fieldsList = new LinkedList<>(); fieldsList.addAll(fields.keySet().stream().collect(Collectors.toList()));
+        fieldsList = new ArrayList<>(); fieldsList.addAll(fields.keySet().stream().collect(Collectors.toList()));
+    }
+
+    public RoaringBitmap getValueIndex(String field, Object value){
+        if (value.getClass() == Integer.class) value = (int)value * 1.0;
+        return (RoaringBitmap) getMap(field).get(value);
+    }
+
+    public int dataSetFieldIndexToInvertedFieldIndex(int index){
+        return di2i[index];
+    }
+
+    public int invertedIndexToDatasetFieldIndex(int index){
+        return i2di[index];
     }
 
     /**
@@ -89,7 +116,7 @@ public class BitInvertedIndex implements InvertedIndex{
     @Override
     public TreeMap getMap(String field) {
         if (!invertedIndex.containsKey(field))
-            throw new IllegalArgumentException("Field" + field + " do not contained in index") ;
+            throw new IllegalArgumentException("Field " + field + " do not contained in index") ;
         return invertedIndex.get(field);
     }
 
@@ -130,7 +157,7 @@ public class BitInvertedIndex implements InvertedIndex{
             a = values.ceilingEntry(value);
             b = values.floorEntry(value);
         } catch (ClassCastException e) {
-            throw new IllegalArgumentException(value + " "+ value.getClass()+ " not fit to type of data set field \""+field+"\"");
+            throw new IllegalArgumentException(value + " "+ value.getClass()+ " do not fit to type of data set field \""+field+"\"");
         }
 
         if (values.containsKey(value)){

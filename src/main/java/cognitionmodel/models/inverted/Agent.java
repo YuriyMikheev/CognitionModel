@@ -22,6 +22,7 @@ public class Agent implements Cloneable {
     private InvertedTabularModel model;
     private boolean hasPerdictingField = false;
     private HashMap<String, Double> condPcashe = new HashMap<>();
+    private BitSet fields = new BitSet();
 
 
 
@@ -44,6 +45,15 @@ public class Agent implements Cloneable {
         this.model = model;
 
         if (points.length > 0) {
+            addPoint(points);
+        }
+
+    }
+
+    public Agent (Collection<Point> points, InvertedTabularModel model) {
+        this.model = model;
+
+        if (points.size() > 0) {
             addPoint(points);
         }
 
@@ -125,7 +135,7 @@ public class Agent implements Cloneable {
 
         for (Map.Entry<String, Point> e: relation.entrySet())
             if (!field.equals(e.getValue().getField())) {
-                RoaringBitmap fv =  (RoaringBitmap) model.getInvertedIndex().getMap(e.getValue().getField()).get(e.getValue().getValue());
+                RoaringBitmap fv =  ((BitInvertedIndex)model.getInvertedIndex()).getValueIndex(e.getValue().getField(), e.getValue().getValue());//(RoaringBitmap) model.getInvertedIndex().getMap(e.getValue().getField()).get(e.getValue().getValue());
                 if (fv != null)
                     rc.and(fv);
             }
@@ -145,14 +155,15 @@ public class Agent implements Cloneable {
 
     public void addPoint(Point point){
         relation.put(point.toString(), point);
+        fields.set(model.getInvertedIndex().getFieldIndex(point.getField()), true);
+        records = new RoaringBitmap();
 
-        if (model.getInvertedIndex().getMap(point.getField()).get(point.getValue()) != null) {
-            if (records == null) {
-                records = new RoaringBitmap();
-                records.or(((RoaringBitmap) model.getInvertedIndex().getMap(point.getField()).get(point.getValue())));
+        RoaringBitmap rb;
+        if ((rb = ((BitInvertedIndex)model.getInvertedIndex()).getValueIndex(point.getField(), point.getValue())) != null) {
+            if (relation.size() == 1) {
+                records.or(rb);
             } else
-                records.and(((RoaringBitmap) model.getInvertedIndex().getMap(point.getField()).get(point.getValue())));
-
+                records.and(rb);
             resign();
         }
     }
@@ -168,16 +179,45 @@ public class Agent implements Cloneable {
 
         for (Point point: points) {
             relation.put(point.toString(), point);
-            RoaringBitmap rb = (RoaringBitmap) model.getInvertedIndex().getMap(point.getField()).get(point.getValue());
+            fields.set(model.getInvertedIndex().getFieldIndex(point.getField()), true);
+
+            RoaringBitmap rb =  ((BitInvertedIndex)model.getInvertedIndex()).getValueIndex(point.getField(), point.getValue());
             if (rb != null) {
                 roaringBitmaps.add(rb);
-            }
+            }/* else
+                    System.err.println(point + " do not exist in model");*/
+
         }
 
         records = RoaringBitmap.and(roaringBitmaps.listIterator(), 0, round(model.getDataSet().size()));
         resign();
     }
 
+
+    /**
+     * Adds new points to agent
+     * @param points  - array of new point
+     */
+
+    public void addPoint(Collection<Point> points){
+
+        LinkedList<RoaringBitmap> roaringBitmaps = new LinkedList<>();
+
+        for (Point point: points) {
+            relation.put(point.toString(), point);
+            fields.set(model.getInvertedIndex().getFieldIndex(point.getField()), true);
+
+            RoaringBitmap rb =  ((BitInvertedIndex)model.getInvertedIndex()).getValueIndex(point.getField(), point.getValue());
+            if (rb != null) {
+                roaringBitmaps.add(rb);
+            }/* else
+                    System.err.println(point + " do not exist in model");*/
+
+        }
+
+        records = RoaringBitmap.and(roaringBitmaps.listIterator(), 0, round(model.getDataSet().size()));
+        resign();
+    }
 
     public String getSignature() {
         return signature;
@@ -203,7 +243,7 @@ public class Agent implements Cloneable {
         double z = records.getCardinality(), f = 1;
         int c = 1, l = 0;
         for (Point point: relation.values()) {
-            RoaringBitmap fieldrecords = ((RoaringBitmap) model.getInvertedIndex().getMap(point.getField()).get(point.getValue()));
+            RoaringBitmap fieldrecords = ((BitInvertedIndex)model.getInvertedIndex()).getValueIndex(point.getField(), point.getValue());
             if (fieldrecords != null) {
                 f = f * fieldrecords.getCardinality();
                 l++;
@@ -219,6 +259,10 @@ public class Agent implements Cloneable {
         return z;
     }
 
+    public BitSet getFields() {
+        return fields;
+    }
+
     /**
      * Checks if the relation represented by agent is possible
      * Relation is impossibli if sum(log(p(cj)) <= log(1/N), N is number of records in dataset
@@ -232,7 +276,7 @@ public class Agent implements Cloneable {
         double f = 1;
         int c = 1, l = 0;
         for (Point point: relation.values()) {
-            RoaringBitmap fieldrecords = ((RoaringBitmap) model.getInvertedIndex().getMap(point.getField()).get(point.getValue()));
+            RoaringBitmap fieldrecords = ((BitInvertedIndex)model.getInvertedIndex()).getValueIndex(point.getField(), point.getValue());
             if (!fieldrecords.isEmpty()) {
                 f = f * fieldrecords.getCardinality();
                 l++;
@@ -248,6 +292,11 @@ public class Agent implements Cloneable {
     }
 
     public static Agent merge(Agent a1, Agent a2, InvertedTabularModel model) {
+        if (a1 == null & a2 == null) throw new IllegalArgumentException("Can't merge two null agents");
+
+        if (a1 == null) return a2;
+        if (a2 == null) return a1;
+
         Agent r = new Agent((Point) null, model);
 
         for (Point p: a1.relation.values()) {
@@ -258,11 +307,14 @@ public class Agent implements Cloneable {
             r.relation.put(p.toString(), p);
         }
 
+        r.fields.or(a1.fields);
+        r.fields.or(a2.fields);
+
         r.resign();
 
         r.records = new RoaringBitmap();
-        r.records.or(a1.records);
-        r.records.and(a2.records);
+        if (a1.records != null) r.records.or(a1.records);
+        if (a2.records != null) r.records.and(a2.records);
 
         return r;
     }
