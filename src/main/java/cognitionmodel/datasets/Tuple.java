@@ -62,7 +62,13 @@ public class Tuple implements Iterable<TupleElement>, Serializable, Cloneable {
         return tupleElements.get(index);
     }
 
+    public TupleElement set(int index, TupleElement element){
+        if (index >= tupleElements.size()) throw new IllegalArgumentException(index + " is out of range "+tupleElements.size());
+        TupleElement te = get(index);
+        tupleElements.set(index, element);
 
+        return te;
+    }
 
     /**
      * Adds object to the end of tuple. Integer, Double, String, Char are allowed

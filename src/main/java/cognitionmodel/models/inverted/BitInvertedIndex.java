@@ -71,14 +71,32 @@ public class BitInvertedIndex implements InvertedIndex{
         fieldsList = new ArrayList<>(); fieldsList.addAll(fields.keySet().stream().collect(Collectors.toList()));
     }
 
+
     public RoaringBitmap getValueIndex(String field, Object value){
         if (value.getClass() == Integer.class) value = (int)value * 1.0;
-        return (RoaringBitmap) getMap(field).get(value);
+        try {
+            return (RoaringBitmap) getMap(field).get(value);
+        } catch (ClassCastException e){
+            return null;
+        }
     }
+
+
+    /**
+     * Returns field index in Data Set object corresponded with filed index in Inverted Index object
+     * @param index
+     * @return
+     */
 
     public int dataSetFieldIndexToInvertedFieldIndex(int index){
         return di2i[index];
     }
+
+    /**
+     * Returns field index in Inverted Index object corresponded with filed index in Data Set object
+     * @param index
+     * @return
+     */
 
     public int invertedIndexToDatasetFieldIndex(int index){
         return i2di[index];
@@ -94,6 +112,12 @@ public class BitInvertedIndex implements InvertedIndex{
     public Integer getFieldIndex(String field){
         return (fields.containsKey(field)?fields.get(field):-1);
     }
+
+
+    /**
+     * Gets the list of inverted index fields. Inverted index have all indexed fields and does not include fields that not enabled in data set
+     * @return
+     */
 
     @Override
     public List<String> getFields() {
@@ -113,6 +137,12 @@ public class BitInvertedIndex implements InvertedIndex{
         return invertedIndex.get(field).keySet().stream().collect(Collectors.toList());
     }
 
+    /**
+     * Returns Tree map object that contains all values and indexes of the field
+     * @param field - field in index
+     * @return
+     */
+
     @Override
     public TreeMap getMap(String field) {
         if (!invertedIndex.containsKey(field))
@@ -125,6 +155,10 @@ public class BitInvertedIndex implements InvertedIndex{
         return invertedIndex.entrySet().size();
     }
 
+    /**
+     * Sets level of confidence for all fields
+     * @param confidenceLevel - level of confidence (90%, 95%, 99% or any other) for fields in data set order. if equal NaN it throw off the interval
+     */
     @Override
     public void setConfidenceIntervals(double confidenceLevel) {
         if (Double.isNaN(confidenceLevel)) confidenceLevels = null;
@@ -135,11 +169,23 @@ public class BitInvertedIndex implements InvertedIndex{
                 }
     }
 
+    /**
+     * Sets levels of confidence for fields according to their number
+     * @param confidenceLevels - levels of confidence (90%, 95%, 99% or any other) for fields in data set order. if equal NaN it throw off the interval
+     */
+
     @Override
     public void setConfidenceIntervals(double[] confidenceLevels) {
         this.confidenceLevels = confidenceLevels;
     }
 
+
+    /**
+     * Gets set of records from index. if field level of confidence is not NaN calculates record set according it.
+     * @param field - enabled field from data set
+     * @param value - value of the field
+     * @return
+     */
     public RoaringBitmap getRecords(String field, Object value){
         if (confidenceLevels == null) return getIndexedRecords(field, value);
         if (Double.isNaN(confidenceLevels[getFieldIndex(field)])) return getIndexedRecords(field, value);
@@ -167,7 +213,7 @@ public class BitInvertedIndex implements InvertedIndex{
         }
 
         double thr = dataSet.size() * (1 - confidenceLevels[getFieldIndex(field)]);
-        long ro = r.getCardinality();
+        long ro;// = r.getCardinality();
 
         do {
             ro = r.getCardinality();
@@ -198,6 +244,7 @@ public class BitInvertedIndex implements InvertedIndex{
 
         return r;
     }
+
 
     private RoaringBitmap getIndexedRecords(String field, Object value){
         return (RoaringBitmap) model.getInvertedIndex().getMap(field).get(value);

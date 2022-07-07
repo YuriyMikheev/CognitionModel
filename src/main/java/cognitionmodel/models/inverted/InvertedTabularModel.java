@@ -65,6 +65,9 @@ public class InvertedTabularModel extends TabularModel {
         LinkedList<Object> predictingvalues = new LinkedList<>();
         predictingvalues.addAll(invertedIndex.getAllValues(predictingfield));
 
+        int predictingFieldIndex = getDataSet().getFieldIndex(predictingfield);
+        predictingFieldIndex = ((BitInvertedIndex)getInvertedIndex()).dataSetFieldIndexToInvertedFieldIndex(predictingFieldIndex);
+
         HashMap<Object, Integer> pvi = new HashMap<>();
 
         for (Iterator<Object> iterator = predictingvalues.iterator(); iterator.hasNext(); pvi.put(predictingfield+":"+iterator.next(), pvi.size()));
@@ -77,7 +80,7 @@ public class InvertedTabularModel extends TabularModel {
   //      BasicDecomposer decomposer = new BasicDecomposer(this);
  //       PatternDecomposer decomposer = new PatternDecomposer(new FullGridRecursivePatterns(this, 10).getPatterns(), this, predictingfield, false, a -> a.getMR() > 0);
 //       RecursiveDecomposer decomposer = new RecursiveDecomposer(this, predictingfield, false, 3,  a -> a.getMR() > 0);
-        RecursiveLevelDecomposer decomposer = new RecursiveLevelDecomposer(this, predictingfield, false, 6, null);// a -> a.getMR() > 0);
+        RecursiveLevelDecomposer decomposer = new RecursiveLevelDecomposer(this, predictingfield, false, 7,  a -> a.relation.size() <= 1 || a.getMR() > 0);
 
         HashMap<String, Agent> zeroAgents = new HashMap<>();
 
@@ -104,10 +107,12 @@ public class InvertedTabularModel extends TabularModel {
                     for (Object pv: predictingvalues) {
                         Agent pva = new Agent(new Point(predictingfield, pv), this);
                         pva = Agent.merge(pva, a, this);
-                        int i = pvi.get(predictingfield+":"+pv);//pvi.get(a.getRelationValue(predictingfield));
-                        pa[i] += predictionfunction.predictionfunction(pva, a);
-                        //pc[i] += (a.getConfP());
-                        c[i]++;
+                        if (decomposer.getAgentFilter().apply(pva)) {
+                            int i = pvi.get(predictingfield + ":" + pv);//pvi.get(a.getRelationValue(predictingfield));
+                            pa[i] += predictionfunction.predictionfunction(pva, a);
+                            //pc[i] += (a.getConfP());
+                            c[i]++;
+                        }
                     }
             }
 

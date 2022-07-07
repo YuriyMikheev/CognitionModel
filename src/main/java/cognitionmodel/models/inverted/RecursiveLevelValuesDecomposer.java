@@ -2,14 +2,11 @@ package cognitionmodel.models.inverted;
 
 import cognitionmodel.datasets.Tuple;
 import cognitionmodel.datasets.TupleElement;
-import cognitionmodel.patterns.Pattern;
-import org.roaringbitmap.PeekableIntIterator;
-import org.roaringbitmap.RoaringBitmap;
 
 import java.util.*;
 import java.util.function.Function;
 
-public class RecursiveLevelDecomposer implements Decomposer{
+public class RecursiveLevelValuesDecomposer implements Decomposer{
 
     private InvertedTabularModel model;
     private String fields[];
@@ -20,12 +17,12 @@ public class RecursiveLevelDecomposer implements Decomposer{
     private Function<Agent, Boolean> agentFilter;
     private int maxDepth = 3;
 
-    public RecursiveLevelDecomposer(InvertedTabularModel model, String predictingField, boolean modelcashed) {
+    public RecursiveLevelValuesDecomposer(InvertedTabularModel model, String predictingField, boolean modelcashed) {
         this( model, predictingField, modelcashed, 3, null);
 
     }
 
-    public RecursiveLevelDecomposer(InvertedTabularModel model, String predictingField, boolean modelcashed, int maxDepth, Function<Agent, Boolean> agentFilter){
+    public RecursiveLevelValuesDecomposer(InvertedTabularModel model, String predictingField, boolean modelcashed, int maxDepth, Function<Agent, Boolean> agentFilter){
 
         this.maxDepth = maxDepth;
         this.modelcashed = modelcashed;
@@ -61,49 +58,24 @@ public class RecursiveLevelDecomposer implements Decomposer{
 
         HashMap<Object, LinkedList<Agent>> r = new HashMap<>();
         HashMap<String, Agent> agentMap = new HashMap<>();
+        TupleElement ote = record.set(predictingFieldIndex, null);
 
         LinkedList<Agent> al  = new LinkedList<>();
 
-/*
-        for (int i = 0; i < record.size(); i++){
-            if (model.getEnabledFields()[i] != 0 & i != predictingFieldIndex){
-                Agent a = new Agent(new Point(model.getDataSet().getHeader().get(i).getValue().toString(), record.get(i).getValue()), model);
-                if (a.getRecords() != null)
-                    al.add(a);
-            }
-        }
-*/
+        al.add(new Agent((Point) null, model));
+        doDecompose(al, record, agentMap, r);
 
-        al.add(new Agent((Point) null, model)); //al.get(0).getFields().set(predictingFieldInvertedIndex, true);
-        LinkedList<Agent> agents = doDecompose(al, record, agentMap, new int[model.getInvertedIndex().getFieldsAmount()]);
-        agents.pollFirst();
-        r.put("", agents);
-/*
-        for (Object pv: model.getInvertedIndex().getAllValues(predictingfield)) {
-            if (!modelcashed) agentMap = new HashMap<>();
-            LinkedList<Agent> al  = new LinkedList<>(); al.add(new Agent(new Point(predictingfield, pv), model)); al.get(0).getFields().set(predictingFieldInvertedIndex, false);
-            LinkedList<Agent> agents = doDecompose(al, record, agentMap, new int[model.getInvertedIndex().getFieldsAmount()]);
-
-            agents.pollFirst();
-            r.put(pv, agents);
-        }
-*/
-
+        record.set(predictingFieldIndex, ote);
         return r;
     }
 
-    private LinkedList<Agent> doDecompose(LinkedList<Agent> agents, Tuple record, HashMap<String, Agent> agentMap, int[] pf){
+    private void doDecompose(LinkedList<Agent> agents, Tuple record, HashMap<String, Agent> agentMap, HashMap<Object,  LinkedList<Agent>> resultMap){
 
         LinkedList<Agent> newlevel  = new LinkedList<>(), badAgents = new LinkedList<>();
 
         for (Agent a: agents){
-            int ifi = a.getFields().isEmpty()? -1: a.getFields().stream().max().getAsInt();
-            while ((ifi = a.getFields().nextClearBit(ifi+1)) != -1 & ifi < model.getInvertedIndex().getFieldsAmount()) {
-                if (ifi == predictingFieldInvertedIndex) continue;
-                int fi = ((BitInvertedIndex)model.getInvertedIndex()).invertedIndexToDatasetFieldIndex(ifi);
-                String field = model.getDataSet().getHeader().get(fi).getValue().toString();
-                Point p = new Point(field, record.get(fi).getValue());
-
+            for (Iterator<Point> pointIterator = getAgentFieldsIterator(a, record); pointIterator.hasNext();) {
+                Point p = pointIterator.next();
                 String s = sign(a, p.getField());
                 if (!agentMap.containsKey(s)){
                     Agent na = new Agent(p, model);
@@ -113,6 +85,7 @@ public class RecursiveLevelDecomposer implements Decomposer{
                         if (agentFilter == null ? true: agentFilter.apply(ca)) {
                             newlevel.add(ca);
                             agentMap.put(s, ca);
+                            //if (ca.getFields().get(p))
                         }
                     } else {
                         badAgents.add(ca);
@@ -127,10 +100,8 @@ public class RecursiveLevelDecomposer implements Decomposer{
 
         if (!newlevel.isEmpty())
             if (newlevel.peek().relation.size() < maxDepth)
-                doDecompose(newlevel, record, agentMap, pf);
+                doDecompose(newlevel, record, agentMap, resultMap);
 
-        agents.addAll(newlevel);
-        return agents;
     }
 
     private void checkAgents(Agent agent, LinkedList<Agent> level){
@@ -148,5 +119,58 @@ public class RecursiveLevelDecomposer implements Decomposer{
         b.set(model.getInvertedIndex().getFieldIndex(field), true);
         return b.toString();
     }
+
+    private Iterator<Point> getAgentFieldsIterator(Agent agent, Tuple record){
+
+        return new Iterator<Point>() {
+
+            Tuple rec = record;
+            Agent ag = agent;
+            int fi = ag.getFields().stream().max().getAsInt() , vi = -1;
+            List<Object> values = null;
+
+            @Override
+            public boolean hasNext() {
+                if (record.get(fi) != null) {
+                    int n = ag.getFields().nextClearBit(fi + 1);
+                    if (n == -1 || n >= rec.size()) return false;
+                    return true;
+                } else {
+                    if (values == null) return false;
+                        else
+                            return vi < values.size() - 1;
+                }
+            }
+
+            @Override
+            public Point next() {
+                int ifi = ((BitInvertedIndex)model.getInvertedIndex()).invertedIndexToDatasetFieldIndex(fi);
+
+                if (record.get(ifi) != null) {
+                    int n = ag.getFields().nextClearBit(fi + 1);
+                    if (n == -1 || n >= rec.size()) return null;
+                    fi = n;
+                    ifi = ((BitInvertedIndex)model.getInvertedIndex()).invertedIndexToDatasetFieldIndex(fi);
+                    if (rec.get(ifi) != null)
+                        return new Point(model.getDataSet().getHeader().get(ifi).getValue().toString(), rec.get(ifi).getValue());
+                }
+
+                String field = model.getInvertedIndex().getFields().get(fi);
+
+                if (values == null) {
+                    values = model.getInvertedIndex().getAllValues(field);
+                    vi = -1;
+                }
+                vi++;
+
+                if (vi  <  values.size()){
+                    return new Point(field, values.get(vi));
+                }
+
+                return null;
+            }
+        };
+    }
+
 
 }

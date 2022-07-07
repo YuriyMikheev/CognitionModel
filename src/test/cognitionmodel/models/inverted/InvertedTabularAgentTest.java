@@ -2,7 +2,6 @@ package cognitionmodel.models.inverted;
 
 import cognitionmodel.datasets.CSVParser;
 import cognitionmodel.datasets.TableDataSet;
-import cognitionmodel.models.inverted.*;
 import cognitionmodel.predictors.TabularDataPredictor;
 import cognitionmodel.predictors.predictionfunctions.Powerfunction;
 import org.junit.Test;
@@ -62,9 +61,9 @@ public class InvertedTabularAgentTest {
         InvertedTabularModel tabularModel = new InvertedTabularModel(
                 new TableDataSet(new FileInputStream(new File("D:\\works\\Data\\Census\\census-income.data")),
                         new CSVParser(",","\n")),
-               // (" AHGA, AWKSTAT, CAPLOSS, TAXINC, CAPGAIN")
+                (" AHGA, AWKSTAT, CAPLOSS, TAXINC, CAPGAIN")
 //                ("AAGE, ACLSWKR, ADTIND, ADTOCC, AGI, AHRSPAY, AHSCOL, AMJIND, AMJOCC, ARACE, AREORGN, ASEX, AUNMEM, AUNTYPE, DIVVAL, FEDTAX, FILESTAT, GRINREG, GRINST, HHDFMX, HHDREL, MARSUPWT, MIGMTR1, MIGMTR3, MIGMTR4, MIGSAME, MIGSUN, NOEMP, PARENT, PEARNVAL, PEFNTVTY, PEMNTVTY, PENATVTY, PRCITSHP, PTOTVAL, SEOTR, VETQVA, VETYN, WKSWORK, AMARITL, TAXINC")
-        (" ACLSWKR, ADTOCC, AGI, AHRSPAY, AHSCOL, AMJIND, AMJOCC, ARACE, AREORGN, ASEX, AUNMEM, AUNTYPE, DIVVAL, FEDTAX, FILESTAT, GRINREG, GRINST, HHDREL, MARSUPWT, MIGMTR1, MIGMTR3, MIGMTR4, MIGSUN, NOEMP, PARENT, PEARNVAL, PEFNTVTY, PEMNTVTY, PENATVTY, PRCITSHP, AMARITL, TAXINC")
+    //    (" ACLSWKR, ADTOCC, AGI, AHRSPAY, AHSCOL, AMJIND, AMJOCC, ARACE, AREORGN, ASEX, AUNMEM, AUNTYPE, DIVVAL, FEDTAX, FILESTAT, GRINREG, GRINST, HHDREL, MARSUPWT, MIGMTR1, MIGMTR3, MIGMTR4, MIGSUN, NOEMP, PARENT, PEARNVAL, PEFNTVTY, PEMNTVTY, PENATVTY, PRCITSHP, AMARITL, TAXINC")
                         .split(","));
 
 
@@ -119,7 +118,7 @@ public class InvertedTabularAgentTest {
 
 
     @Test
-    public void bitIndexTets() throws IOException {
+    public void bitIndexTest() throws IOException {
 
         InvertedTabularModel tabularModel = new InvertedTabularModel(
                 new TableDataSet(new FileInputStream(new File("D:\\works\\Data\\adult\\adult.data")),
@@ -144,7 +143,7 @@ public class InvertedTabularAgentTest {
 
 
     @Test
-    public void indexTets() throws IOException {
+    public void indexTest() throws IOException {
 
         InvertedTabularModel tabularModel = new InvertedTabularModel(
                 new TableDataSet(new FileInputStream(new File("D:\\works\\Data\\adult\\adult.data")),

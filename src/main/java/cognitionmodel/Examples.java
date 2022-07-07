@@ -8,16 +8,17 @@ import cognitionmodel.predictors.PredictionResults;
 import cognitionmodel.predictors.TabularDataPredictor;
 import cognitionmodel.predictors.predictionfunctions.Imagefunction;
 import cognitionmodel.predictors.predictionfunctions.Powerfunction;
-import cognitionmodel.predictors.predictionfunctions.ZdPowerfunction;
 
-import java.io.*;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
-import static java.lang.Math.log;
 import static java.lang.Math.round;
+
 
 public class Examples {
 
