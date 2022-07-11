@@ -20,9 +20,12 @@ public class Agent implements Cloneable {
     String signature = "";
     private double z = NaN, p = NaN, cp = NaN;
     private InvertedTabularModel model;
-    private boolean hasPerdictingField = false;
+    private Object predictingValue = null;
+    private boolean hasPredictingField = false;
     private HashMap<String, Double> condPcashe = new HashMap<>();
+    private BitSet fields4view = new BitSet();
     private BitSet fields = new BitSet();
+    private RoaringBitmap values = new RoaringBitmap();
 
 
 
@@ -59,6 +62,14 @@ public class Agent implements Cloneable {
 
     }
 
+    public boolean hasPerdictingField() {
+        return hasPredictingField;
+    }
+
+    public void setPerdictingField(boolean hasPredictingField) {
+        this.hasPredictingField = hasPredictingField;
+    }
+
     protected void resign(){
         signature = relation.keySet().toString();
         z = NaN; p = NaN; cp = NaN;
@@ -71,16 +82,26 @@ public class Agent implements Cloneable {
         return null;
     }
 
+
+
     public RoaringBitmap getRecords() {
         return records;
     }
 
-    public boolean hasPerdictingField() {
-        return hasPerdictingField;
+    public Object getPerdictingValue() {
+        return predictingValue;
     }
 
-    public void setPerdictingField(boolean hasPerdictingField) {
-        this.hasPerdictingField = hasPerdictingField;
+    public RoaringBitmap getValues() {
+        return values;
+    }
+
+    public void setValues(int index) {
+        values.add(index);
+    }
+
+    public void setPerdictingValue(Object predictingValue) {
+        this.predictingValue = predictingValue;
     }
 
     public String toString(){
@@ -155,6 +176,7 @@ public class Agent implements Cloneable {
 
     public void addPoint(Point point){
         relation.put(point.toString(), point);
+        fields4view.set(model.getInvertedIndex().getFieldIndex(point.getField()), true);
         fields.set(model.getInvertedIndex().getFieldIndex(point.getField()), true);
         records = new RoaringBitmap();
 
@@ -179,6 +201,7 @@ public class Agent implements Cloneable {
 
         for (Point point: points) {
             relation.put(point.toString(), point);
+            fields4view.set(model.getInvertedIndex().getFieldIndex(point.getField()), true);
             fields.set(model.getInvertedIndex().getFieldIndex(point.getField()), true);
 
             RoaringBitmap rb =  ((BitInvertedIndex)model.getInvertedIndex()).getValueIndex(point.getField(), point.getValue());
@@ -205,6 +228,7 @@ public class Agent implements Cloneable {
 
         for (Point point: points) {
             relation.put(point.toString(), point);
+            fields4view.set(model.getInvertedIndex().getFieldIndex(point.getField()), true);
             fields.set(model.getInvertedIndex().getFieldIndex(point.getField()), true);
 
             RoaringBitmap rb =  ((BitInvertedIndex)model.getInvertedIndex()).getValueIndex(point.getField(), point.getValue());
@@ -259,6 +283,11 @@ public class Agent implements Cloneable {
         return z;
     }
 
+    public BitSet getFields4view() {
+        return fields4view;
+    }
+
+
     public BitSet getFields() {
         return fields;
     }
@@ -309,8 +338,13 @@ public class Agent implements Cloneable {
 
         r.fields.or(a1.fields);
         r.fields.or(a2.fields);
+        r.fields4view.or(a1.fields4view);
+        r.fields4view.or(a2.fields4view);
+        r.getValues().or(a1.getValues());
+        r.getValues().or(a2.getValues());
 
         r.resign();
+        r.predictingValue = a1.predictingValue != null ? a1.predictingValue: a2.predictingValue != null ? a2.predictingValue: null;
 
         r.records = new RoaringBitmap();
         if (a1.records != null) r.records.or(a1.records);

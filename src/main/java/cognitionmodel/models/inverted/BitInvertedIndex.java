@@ -28,6 +28,7 @@ public class BitInvertedIndex implements InvertedIndex{
     }
 
     protected void init() {
+        fieldsList = new ArrayList<>(); //fieldsList.addAll(fields.keySet().stream().collect(Collectors.toList()));
 
         di2i = new int[dataSet.getHeader().size()];
         i2di = new int[dataSet.getHeader().size()];
@@ -36,6 +37,7 @@ public class BitInvertedIndex implements InvertedIndex{
                 invertedIndex.put(dataSet.getHeader().get(i).getValue().toString(), new TreeMap<Object, RoaringBitmap>());
                 di2i[i] = fields.size(); i2di[fields.size()] = i;
                 fields.put(dataSet.getHeader().get(i).getValue().toString(), fields.size());
+                fieldsList.add(dataSet.getHeader().get(i).getValue().toString());
             }
 
         i2di = Arrays.copyOf(i2di, fields.size());
@@ -68,7 +70,6 @@ public class BitInvertedIndex implements InvertedIndex{
             i++;
         }
 
-        fieldsList = new ArrayList<>(); fieldsList.addAll(fields.keySet().stream().collect(Collectors.toList()));
     }
 
 

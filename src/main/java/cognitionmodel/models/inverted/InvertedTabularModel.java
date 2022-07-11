@@ -2,19 +2,13 @@ package cognitionmodel.models.inverted;
 
 import cognitionmodel.datasets.TableDataSet;
 import cognitionmodel.datasets.Tuple;
-import cognitionmodel.datasets.TupleElement;
 import cognitionmodel.models.TabularModel;
 import cognitionmodel.models.relations.LightRelation;
-import cognitionmodel.patterns.FullGridRecursivePatterns;
 import cognitionmodel.predictors.PredictionResults;
 import cognitionmodel.predictors.predictionfunctions.Powerfunction;
 import cognitionmodel.predictors.predictionfunctions.Predictionfunction;
-import org.roaringbitmap.RoaringBitmap;
 
-import java.lang.reflect.ParameterizedType;
 import java.util.*;
-
-import static java.lang.Math.*;
 
 public class InvertedTabularModel extends TabularModel {
 
@@ -80,7 +74,7 @@ public class InvertedTabularModel extends TabularModel {
   //      BasicDecomposer decomposer = new BasicDecomposer(this);
  //       PatternDecomposer decomposer = new PatternDecomposer(new FullGridRecursivePatterns(this, 10).getPatterns(), this, predictingfield, false, a -> a.getMR() > 0);
 //       RecursiveDecomposer decomposer = new RecursiveDecomposer(this, predictingfield, false, 3,  a -> a.getMR() > 0);
-        RecursiveLevelDecomposer decomposer = new RecursiveLevelDecomposer(this, predictingfield, false, 7,  a -> a.relation.size() <= 1 || a.getMR() > 0);
+        RecursiveLevelValuesDecomposer decomposer = new RecursiveLevelValuesDecomposer(this, predictingfield, false, 17, null);//  a -> a.getMR() >= 0);
 
         HashMap<String, Agent> zeroAgents = new HashMap<>();
 
@@ -91,8 +85,31 @@ public class InvertedTabularModel extends TabularModel {
             double[] pc = new double[predictingvalues.size()];
             int c[] = new int[predictingvalues.size()];
 
-            for (List<Agent> la : decomposer.decompose(record, predictingfield).values())
-                for (Agent a : la) {
+            HashMap<Object, LinkedList<Agent>> d = decomposer.decompose(record, predictingfield);
+            HashMap<String, Agent> zeroMap = new HashMap<>();
+
+            LinkedList<Agent> zl = d.remove("null");
+            if (zl != null){
+                for (Agent a: zl)
+                    zeroMap.put(a.getFields().toString(), a);
+            }
+
+
+            for (Map.Entry<Object, LinkedList<Agent>> re : d.entrySet()) {
+                int i = pvi.get(predictingfield + ":" + re.getKey());//pvi.get(a.getRelationValue(predictingfield));
+                for (Agent a : re.getValue()) {
+                    if (a.relation.size() > 1) {
+                        Agent pva = null;
+                        if (zl != null) {
+                            BitSet fs = a.getFields();
+                            fs.set(predictingFieldIndex, false);
+                            pva = zeroMap.get(fs.toString());
+                        }
+
+                        pa[i] += predictionfunction.predictionfunction(a, pva);
+                        //pc[i] += (a.getConfP());
+                        c[i]++;
+                    }
 /*
                     Agent za = null;
                     if (((Powerfunction)predictionfunction).getWp() != 0) {
@@ -104,7 +121,7 @@ public class InvertedTabularModel extends TabularModel {
                             else zeroAgents.put(zpl.toString(), za = new Agent(zpl, this));
                     }
 */
-                    for (Object pv: predictingvalues) {
+/*                    for (Object pv: predictingvalues) {
                         Agent pva = new Agent(new Point(predictingfield, pv), this);
                         pva = Agent.merge(pva, a, this);
                         if (decomposer.getAgentFilter().apply(pva)) {
@@ -113,9 +130,9 @@ public class InvertedTabularModel extends TabularModel {
                             //pc[i] += (a.getConfP());
                             c[i]++;
                         }
-                    }
+                    }*/
+                }
             }
-
             int mi = 0;
             double[] pr = new double[c.length];
             for (int i = 0; i < c.length; i++)

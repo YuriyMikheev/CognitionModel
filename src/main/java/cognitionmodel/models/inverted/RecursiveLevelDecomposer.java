@@ -1,10 +1,6 @@
 package cognitionmodel.models.inverted;
 
 import cognitionmodel.datasets.Tuple;
-import cognitionmodel.datasets.TupleElement;
-import cognitionmodel.patterns.Pattern;
-import org.roaringbitmap.PeekableIntIterator;
-import org.roaringbitmap.RoaringBitmap;
 
 import java.util.*;
 import java.util.function.Function;
@@ -97,8 +93,8 @@ public class RecursiveLevelDecomposer implements Decomposer{
         LinkedList<Agent> newlevel  = new LinkedList<>(), badAgents = new LinkedList<>();
 
         for (Agent a: agents){
-            int ifi = a.getFields().isEmpty()? -1: a.getFields().stream().max().getAsInt();
-            while ((ifi = a.getFields().nextClearBit(ifi+1)) != -1 & ifi < model.getInvertedIndex().getFieldsAmount()) {
+            int ifi = a.getFields4view().isEmpty()? -1: a.getFields4view().stream().max().getAsInt();
+            while ((ifi = a.getFields4view().nextClearBit(ifi+1)) != -1 & ifi < model.getInvertedIndex().getFieldsAmount()) {
                 if (ifi == predictingFieldInvertedIndex) continue;
                 int fi = ((BitInvertedIndex)model.getInvertedIndex()).invertedIndexToDatasetFieldIndex(ifi);
                 String field = model.getDataSet().getHeader().get(fi).getValue().toString();
@@ -134,17 +130,17 @@ public class RecursiveLevelDecomposer implements Decomposer{
     }
 
     private void checkAgents(Agent agent, LinkedList<Agent> level){
-        BitSet b = BitSet.valueOf(agent.getFields().toLongArray()); //b.set(model.getInvertedIndex().getFieldIndex(field));
+        BitSet b = BitSet.valueOf(agent.getFields4view().toLongArray()); //b.set(model.getInvertedIndex().getFieldIndex(field));
         for (Agent a: level){
             BitSet bt = BitSet.valueOf(b.toLongArray());
-            bt.andNot(a.getFields());
+            bt.andNot(a.getFields4view());
             if (bt.cardinality() == 1)
-                a.getFields().set(bt.nextSetBit(0));
+                a.getFields4view().set(bt.nextSetBit(0));
         }
     }
 
     private String sign(Agent a, String field){
-        BitSet b = (BitSet) a.getFields().clone();
+        BitSet b = (BitSet) a.getFields4view().clone();
         b.set(model.getInvertedIndex().getFieldIndex(field), true);
         return b.toString();
     }

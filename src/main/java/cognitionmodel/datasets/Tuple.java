@@ -185,4 +185,12 @@ public class Tuple implements Iterable<TupleElement>, Serializable, Cloneable {
         return tupleElements.set(index, new TupleElement(object));
     }
 
+    public static Tuple copy(Tuple tuple, int start, int length) {
+        Tuple t = new Tuple();
+
+        for (int i = start; i < tuple.size() | i < start+length; i++)
+            t.add(tuple.get(i));
+        return t;
+    }
+
 }

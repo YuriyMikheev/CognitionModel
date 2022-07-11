@@ -41,7 +41,7 @@ public class InvertedTabularAgentTest {
         TableDataSet testDataSet = new TableDataSet(new FileInputStream(new File("D:\\works\\Data\\adult\\adult.test")),
                 new CSVParser(",","\n"));
 
-        tabularModel.predict(testDataSet.getRecords(), " INCOME", new Powerfunction(null, 10,1)).show(tabularModel.getDataSet().getFieldIndex(" INCOME"));
+        tabularModel.predict(testDataSet.getRecords(), " INCOME", new Powerfunction(null, 10, 1)).show(tabularModel.getDataSet().getFieldIndex(" INCOME"));
 
 /*        for (InvertedTabularModel.Agent a: tabularModel.getAgents().stream().sorted((a1, a2) -> (a1.getZ() > a2.getZ())?1:-1).collect(Collectors.toList()))
             System.out.println(a);*/
