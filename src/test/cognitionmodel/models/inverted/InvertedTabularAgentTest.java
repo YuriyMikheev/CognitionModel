@@ -41,7 +41,7 @@ public class InvertedTabularAgentTest {
         TableDataSet testDataSet = new TableDataSet(new FileInputStream(new File("D:\\works\\Data\\adult\\adult.test")),
                 new CSVParser(",","\n"));
 
-        tabularModel.predict(testDataSet.getRecords(), " INCOME", new Powerfunction(null, 10, 1)).show(tabularModel.getDataSet().getFieldIndex(" INCOME"));
+        tabularModel.predict(testDataSet.getRecords(), " INCOME", new Powerfunction(null, 10, 1), false, 4,  a -> a.getMR() > 0).show(tabularModel.getDataSet().getFieldIndex(" INCOME"));
 
 /*        for (InvertedTabularModel.Agent a: tabularModel.getAgents().stream().sorted((a1, a2) -> (a1.getZ() > a2.getZ())?1:-1).collect(Collectors.toList()))
             System.out.println(a);*/
@@ -71,7 +71,7 @@ public class InvertedTabularAgentTest {
         TableDataSet testDataSet = new TableDataSet(new FileInputStream(new File("D:\\works\\Data\\Census\\census-income.test")),
                 new CSVParser(",","\n"));
 
-        tabularModel.predict(testDataSet.getRecords(), " TAXINC", new Powerfunction(null, 7,1)).show(tabularModel.getDataSet().getFieldIndex(" TAXINC"));
+        tabularModel.predict(testDataSet.getRecords(), " TAXINC", new Powerfunction(null, 7,1), false, 4,  a -> a.getMR() > 0).show(tabularModel.getDataSet().getFieldIndex(" TAXINC"));
 
 /*        for (InvertedTabularModel.Agent a: tabularModel.getAgents().stream().sorted((a1, a2) -> (a1.getZ() > a2.getZ())?1:-1).collect(Collectors.toList()))
             System.out.println(a);*/
@@ -96,7 +96,7 @@ public class InvertedTabularAgentTest {
                 new CSVParser(";","\r\n")));
 
 
-        tabularModel.predict(testDataSet.getRecords(), "lettr", new Powerfunction(null, 0,1)).show(tabularModel.getDataSet().getFieldIndex("lettr"));
+        tabularModel.predict(testDataSet.getRecords(), "lettr", new Powerfunction(null, 0,1), false, 17, null).show(tabularModel.getDataSet().getFieldIndex("lettr"));
 
     }
 
@@ -112,7 +112,7 @@ public class InvertedTabularAgentTest {
                 new CSVParser(",","\n")));
 
 
-        tabularModel.predict(testDataSet.getRecords(), "class", new Powerfunction(null, 0,1)).show(tabularModel.getDataSet().getFieldIndex("class"));
+        tabularModel.predict(testDataSet.getRecords(), "class", new Powerfunction(null, 0,1), false, 4,  a -> a.getMR() > 0).show(tabularModel.getDataSet().getFieldIndex("class"));
 
     }
 

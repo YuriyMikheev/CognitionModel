@@ -6,6 +6,8 @@ import cognitionmodel.datasets.TupleElement;
 import java.util.*;
 import java.util.function.Function;
 
+import static java.lang.Math.min;
+
 public class RecursiveLevelValuesDecomposer implements Decomposer{
 
     private InvertedTabularModel model;
@@ -64,6 +66,18 @@ public class RecursiveLevelValuesDecomposer implements Decomposer{
 
         al.add(new Agent((Point) null, model));
         doDecompose(al, record, agentMap, r);
+        HashMap<Object, LinkedList<Agent>> nr = new HashMap<>();
+
+     //   if (agentFilter != null)
+/*
+            for (Map.Entry<Object, LinkedList<Agent>> e: r.entrySet()){
+                //for (Iterator<Agent> iterator = agl.listIterator(); iterator.hasNext();)
+                   // if (!agentFilter.apply(iterator.next())) iterator.remove();
+                if (e.getKey().toString().equals("null")) nr.put("null", e.getValue());
+                    else
+                        nr.put(e.getKey(), minimize1(e.getValue()));
+            }
+*/
 
         record.set(predictingFieldIndex, ote);
         return r;
@@ -76,28 +90,23 @@ public class RecursiveLevelValuesDecomposer implements Decomposer{
         for (Agent a: agents){
             for (Iterator<Point> pointIterator = getAgentFieldsIterator(a, record); pointIterator.hasNext();) {
                 Point p = pointIterator.next();
-              //  String s = sign(a, p);
-              //  if (!agentMap.containsKey(s))
-                {
-                    Agent na = new Agent(p, model);
-                    if (p.field.equals(predicttingField))
-                        na.setPerdictingValue(p.getValue());
 
-                    Agent ca = a.relation.size() == 0 ? na: Agent.merge(a, na, model);
-                    if (!ca.records.isEmpty() ) {
-                        if (agentFilter == null ? true: agentFilter.apply(ca)) {
-                            newlevel.add(ca);
-                        //    agentMap.put(s, ca);
+                Agent na = new Agent(p, model);
+                if (p.field.equals(predicttingField))
+                    na.setPerdictingValue(p.getValue());
 
-                            Object co = ca.getPerdictingValue();
-                            if (co == null) co = "null";
-
-                            if (!resultMap.containsKey(co)) resultMap.put(co, new LinkedList<>());
-                            resultMap.get(co).add(ca);
-                        }
-                    } else {
-                        badAgents.add(ca);
+                Agent ca = a.relation.size() == 0 ? na: Agent.merge(a, na, model);
+             //   if (ca.records.getCardinality() > 5 ) {
+                if (!ca.records.isEmpty() ) {
+                    if (agentFilter != null ? agentFilter.apply(ca) | (ca.relation.size() == 1): true) {
+                        newlevel.add(ca);
+                        Object co = ca.getPerdictingValue();
+                        if (co == null) co = "null";
+                        if (!resultMap.containsKey(co)) resultMap.put(co, new LinkedList<>());
+                        resultMap.get(co).add(ca);
                     }
+                } else {
+                    badAgents.add(ca);
                 }
             }
         }
@@ -189,6 +198,123 @@ public class RecursiveLevelValuesDecomposer implements Decomposer{
             }
         };
     }
+
+    private class Node implements Cloneable {
+        LinkedList<Agent> agents = new LinkedList<>();
+        double mr = 0;
+        private BitSet fields = new BitSet();
+        private BitSet havagents = new BitSet();
+
+        public Node(){
+
+        }
+        public Node(Agent agent) {
+            addAgent(agent);
+        }
+
+        private void addAgent(Agent agent){
+            agents.add(agent);
+            mr += agent.getMR();
+            fields.or(agent.getFields());
+            fields.clear(predictingFieldInvertedIndex);
+
+        }
+
+        public double getMr() {
+            return mr;
+        }
+
+        public boolean canAdd(Agent agent){
+            boolean y = agent.getFields().get(predictingFieldInvertedIndex) ? agents.size() > 0 ? agent.getPerdictingValue().equals(agents.get(0).getPerdictingValue()): true: true;
+            return !fields.intersects(agent.getFields()) & y;
+        }
+
+        public Node clone(){
+            Node node = new Node();
+            for (Agent a: agents)
+                node.addAgent(a);
+
+            node.havagents = (BitSet) havagents.clone();
+            return node;
+        }
+
+        public String toString(){
+            return mr+"\t"+agents;
+        }
+
+    }
+
+    private LinkedList<Agent> minimize(LinkedList<Agent> agents){
+
+        agents.sort(Comparator.comparing(Agent::getMR, Comparator.reverseOrder()));
+
+        LinkedList<Agent> nagents = new LinkedList<>();
+
+        for (int i = 0; i < min(5, agents.size()); i++)
+            nagents.add(agents.poll());
+
+
+        return nagents;
+    }
+
+    private LinkedList<Agent> minimize1(LinkedList<Agent> agents){
+
+        agents.sort(Comparator.comparing(Agent::getMR, Comparator.reverseOrder()));
+
+        Node node = new Node();
+
+
+        for (Iterator<Agent> agentIterator = agents.listIterator(); node.agents.size() <  agents.size() & agentIterator.hasNext();){
+            Agent a = agentIterator.next();
+            if (node.canAdd(a) & a.relation.size() > 1) node.addAgent(a);
+        }
+
+        return node.agents;
+    }
+
+/*    private LinkedList<Agent> minimize(LinkedList<Agent> agentslist){
+
+        ArrayList<Agent> agents = new ArrayList<>(agentslist);
+        agents.sort(Comparator.comparing(Agent::getMR, Comparator.reverseOrder()));
+
+        PriorityQueue<Node> nodes = new PriorityQueue(Comparator.comparing(Node::getMr).reversed());
+
+        nodes.add(new Node());
+        int c = 1, k = 1;
+
+        while (k != 0) {
+            PriorityQueue<Node> nnodes = new PriorityQueue(Comparator.comparing(Node::getMr).reversed());
+            k = 0;
+
+            while (!nodes.isEmpty() & c != 0) {
+                Node node = nodes.poll();
+                c = 0;
+                for (int i = node.havagents.isEmpty() ? 0: node.havagents.stream().max().getAsInt(); i < agents.size(); i = node.havagents.nextClearBit(i+1)) {
+                    Agent a = agents.get(i);
+                    if (a.getMR() > 0 & node.canAdd(a)) {
+                        Node nn = node.clone();
+                        nn.addAgent(a);
+                        nnodes.add(nn);
+                        nn.havagents.set(i);
+                        c++;
+                    }
+                }
+                if (node.agents.size() > 0) nnodes.add(node);
+                if (c != 0) k++;
+            }
+            if (nnodes.size() != 0) {
+                nodes = new PriorityQueue(Comparator.comparing(Node::getMr).reversed());
+                for (int i = 0; i < min(nnodes.size(), agents.size()*2); i++)
+                    nodes.add(nnodes.poll());
+
+  //              nodes = nnodes;
+            }
+        }
+        if (nodes.size() > 0)
+            return nodes.peek().agents;
+        else
+            return new LinkedList<>(agents);
+    }*/
 
 
 }

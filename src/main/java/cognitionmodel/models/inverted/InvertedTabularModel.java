@@ -4,11 +4,13 @@ import cognitionmodel.datasets.TableDataSet;
 import cognitionmodel.datasets.Tuple;
 import cognitionmodel.models.TabularModel;
 import cognitionmodel.models.relations.LightRelation;
+import cognitionmodel.patterns.FullGridRecursivePatterns;
 import cognitionmodel.predictors.PredictionResults;
 import cognitionmodel.predictors.predictionfunctions.Powerfunction;
 import cognitionmodel.predictors.predictionfunctions.Predictionfunction;
 
 import java.util.*;
+import java.util.function.Function;
 
 public class InvertedTabularModel extends TabularModel {
 
@@ -44,10 +46,10 @@ public class InvertedTabularModel extends TabularModel {
     }
 
     public void make(){
-        predict(null, null, new Powerfunction(null, 0,1));
+        predict(null, null, new Powerfunction(null, 0,1), false, 4,  a -> a.getMR() > 0);
     }
 
-    public PredictionResults predict(List<Tuple> records, String predictingfield, Predictionfunction predictionfunction){
+    public PredictionResults predict(List<Tuple> records, String predictingfield, Predictionfunction predictionfunction, boolean modelcashed, int maxDepth, Function<Agent, Boolean> agentFilter){
 
 
         int si = dataSet.getFieldIndex(predictingfield);
@@ -72,11 +74,9 @@ public class InvertedTabularModel extends TabularModel {
         int recordIndex = 0;
 
   //      BasicDecomposer decomposer = new BasicDecomposer(this);
- //       PatternDecomposer decomposer = new PatternDecomposer(new FullGridRecursivePatterns(this, 10).getPatterns(), this, predictingfield, false, a -> a.getMR() > 0);
+  //      PatternDecomposer decomposer = new PatternDecomposer(new FullGridRecursivePatterns(this, 3).getPatterns(), this, predictingfield, false, a -> a.getMR() > 0);
 //       RecursiveDecomposer decomposer = new RecursiveDecomposer(this, predictingfield, false, 3,  a -> a.getMR() > 0);
-        RecursiveLevelValuesDecomposer decomposer = new RecursiveLevelValuesDecomposer(this, predictingfield, false, 17, null);//  a -> a.getMR() >= 0);
-
-        HashMap<String, Agent> zeroAgents = new HashMap<>();
+        RecursiveLevelValuesDecomposer decomposer = new RecursiveLevelValuesDecomposer(this, predictingfield, modelcashed, maxDepth,  agentFilter);
 
         for (Tuple record: records)
          if (record.size() > si){
@@ -110,27 +110,6 @@ public class InvertedTabularModel extends TabularModel {
                         //pc[i] += (a.getConfP());
                         c[i]++;
                     }
-/*
-                    Agent za = null;
-                    if (((Powerfunction)predictionfunction).getWp() != 0) {
-                         LinkedList<Point>  zpl = new LinkedList<>();
-                         for (Point p : a.relation.values())
-                             if (!p.getField().equals(predictingfield))
-                                 zpl.add(p);
-                         if (zeroAgents.containsKey(zpl.toString())) za = zeroAgents.get(zpl.toString());
-                            else zeroAgents.put(zpl.toString(), za = new Agent(zpl, this));
-                    }
-*/
-/*                    for (Object pv: predictingvalues) {
-                        Agent pva = new Agent(new Point(predictingfield, pv), this);
-                        pva = Agent.merge(pva, a, this);
-                        if (decomposer.getAgentFilter().apply(pva)) {
-                            int i = pvi.get(predictingfield + ":" + pv);//pvi.get(a.getRelationValue(predictingfield));
-                            pa[i] += predictionfunction.predictionfunction(pva, a);
-                            //pc[i] += (a.getConfP());
-                            c[i]++;
-                        }
-                    }*/
                 }
             }
             int mi = 0;

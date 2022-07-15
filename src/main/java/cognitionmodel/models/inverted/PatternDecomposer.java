@@ -42,7 +42,9 @@ public class PatternDecomposer implements Decomposer{
             if (p.getBitSet().get(predictingFieldIndex))
                 np.add(p);
 
-        this.patternSet = new LinkedPatternSet(np);
+
+
+        this.patternSet = new LinkedPatternSet(patterns);
         this.agentFilter = agentFilter;
     }
 
@@ -83,10 +85,15 @@ public class PatternDecomposer implements Decomposer{
 
         HashMap<Object, LinkedList<Agent>> r = new HashMap<>();
 
-        for (Object pv: model.getInvertedIndex().getAllValues(predictingfield)) {
+        List<Object> values  =  model.getInvertedIndex().getAllValues(predictingfield);
+        values.add("null");
+
+        for (Object pv: values) {
             patternSet.reactivate();
             if (!modelcashed) agentMap = new HashMap<>();
             LinkedList<Agent> agents = new LinkedList<>();
+
+            boolean isNull = (pv.toString().equals("null"));
 
             Iterator<Pattern> it = patternSet.iterator();
             while (it.hasNext()) {
@@ -100,9 +107,10 @@ public class PatternDecomposer implements Decomposer{
                 }
 
                 points[points.length - 1] = pl.get(predictingfield + ":" + pv);
+
                 Agent a = null;
 
-                if (points.length > 2) {
+                if (points.length > 1) {
                     TreeSet<String> treeSet = new TreeSet<>();
 
                     treeSet.add(points[points.length - 1].toString());
