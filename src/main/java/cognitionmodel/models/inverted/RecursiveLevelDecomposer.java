@@ -70,7 +70,7 @@ public class RecursiveLevelDecomposer implements Decomposer{
         }
 */
 
-        al.add(new Agent((Point) null, model)); //al.get(0).getFields().set(predictingFieldInvertedIndex, true);
+        al.add(new Agent((Point) null, model.getInvertedIndex())); //al.get(0).getFields().set(predictingFieldInvertedIndex, true);
         LinkedList<Agent> agents = doDecompose(al, record, agentMap, new int[model.getInvertedIndex().getFieldsAmount()]);
         agents.pollFirst();
         r.put("", agents);
@@ -102,9 +102,9 @@ public class RecursiveLevelDecomposer implements Decomposer{
 
                 String s = sign(a, p.getField());
                 if (!agentMap.containsKey(s)){
-                    Agent na = new Agent(p, model);
+                    Agent na = new Agent(p, model.getInvertedIndex());
 
-                    Agent ca = a.relation.size() == 0 ? na: Agent.merge(a, na, model);
+                    Agent ca = a.relation.size() == 0 ? na: Agent.merge(a, na, model.getInvertedIndex());
                     if (!ca.records.isEmpty() ) {
                         if (agentFilter == null ? true: agentFilter.apply(ca)) {
                             newlevel.add(ca);

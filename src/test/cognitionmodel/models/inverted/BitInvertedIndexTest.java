@@ -2,16 +2,12 @@ package cognitionmodel.models.inverted;
 
 import cognitionmodel.datasets.CSVParser;
 import cognitionmodel.datasets.TableDataSet;
-import cognitionmodel.predictors.predictionfunctions.Powerfunction;
 import org.junit.Test;
 import org.roaringbitmap.RoaringBitmap;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
-
-import static org.junit.Assert.*;
 
 public class BitInvertedIndexTest {
 

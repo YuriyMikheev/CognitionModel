@@ -12,14 +12,18 @@ import static java.lang.Math.abs;
 
 public class BitInvertedIndex implements InvertedIndex{
 
-    private InvertedTabularModel model;
-    private TableDataSet dataSet;
-    private HashMap<String, TreeMap<Object, RoaringBitmap>> invertedIndex = new HashMap();
-    private HashMap<String, TreeMap<Object, RoaringBitmap>> indexWithIntervals = new HashMap();
-    private TreeMap<String, Integer> fields = new TreeMap<>();
-    private ArrayList<String> fieldsList;
-    private double[] confidenceLevels = null;
-    private int[] di2i, i2di;
+    protected InvertedTabularModel model;
+    protected TableDataSet dataSet;
+    protected HashMap<String, TreeMap<Object, RoaringBitmap>> invertedIndex = new HashMap();
+    protected TreeMap<String, Integer> fields = new TreeMap<>();
+    protected ArrayList<String> fieldsList;
+    protected double[] confidenceLevels = null;
+    protected int[] di2i, i2di;
+
+
+    protected BitInvertedIndex(){
+
+    }
 
     public BitInvertedIndex(InvertedTabularModel model){
         this.dataSet = model.getDataSet();
@@ -27,7 +31,7 @@ public class BitInvertedIndex implements InvertedIndex{
         init();
     }
 
-    protected void init() {
+    private void init() {
         fieldsList = new ArrayList<>(); //fieldsList.addAll(fields.keySet().stream().collect(Collectors.toList()));
 
         di2i = new int[dataSet.getHeader().size()];
@@ -70,16 +74,6 @@ public class BitInvertedIndex implements InvertedIndex{
             i++;
         }
 
-    }
-
-
-    public RoaringBitmap getValueIndex(String field, Object value){
-        if (value.getClass() == Integer.class) value = (int)value * 1.0;
-        try {
-            return (RoaringBitmap) getMap(field).get(value);
-        } catch (ClassCastException e){
-            return null;
-        }
     }
 
 
@@ -170,6 +164,11 @@ public class BitInvertedIndex implements InvertedIndex{
                 }
     }
 
+    @Override
+    public double[] getConfidenceIntervals() {
+        return confidenceLevels;
+    }
+
     /**
      * Sets levels of confidence for fields according to their number
      * @param confidenceLevels - levels of confidence (90%, 95%, 99% or any other) for fields in data set order. if equal NaN it throw off the interval
@@ -188,68 +187,17 @@ public class BitInvertedIndex implements InvertedIndex{
      * @return
      */
     public RoaringBitmap getRecords(String field, Object value){
-        if (confidenceLevels == null) return getIndexedRecords(field, value);
-        if (Double.isNaN(confidenceLevels[getFieldIndex(field)])) return getIndexedRecords(field, value);
-
-
-
-        RoaringBitmap r = new RoaringBitmap(), ra = new RoaringBitmap(), rb = new RoaringBitmap();
-
-        TreeMap<Object, RoaringBitmap> values = invertedIndex.get(field);
-
-        Map.Entry<Object, RoaringBitmap> a; // = values.ceilingEntry(value);
-        Map.Entry<Object, RoaringBitmap> b;// = values.floorEntry(value);
-
+        if (value.getClass().getSuperclass() == Number.class) value = Double.parseDouble(value.toString());
         try {
-            a = values.ceilingEntry(value);
-            b = values.floorEntry(value);
-        } catch (ClassCastException e) {
-            throw new IllegalArgumentException(value + " "+ value.getClass()+ " do not fit to type of data set field \""+field+"\"");
+            return (RoaringBitmap) getMap(field).get(value);
+        } catch (ClassCastException e){
+            return null;
         }
-
-        if (values.containsKey(value)){
-            r = values.get(value);
-            a = values.lowerEntry(a.getKey()); ra.or(r);
-            b = values.higherEntry(b.getKey()); rb.or(r);
-        }
-
-        double thr = dataSet.size() * (1 - confidenceLevels[getFieldIndex(field)]);
-        long ro;// = r.getCardinality();
-
-        do {
-            ro = r.getCardinality();
-            if (a != null) {
-                ra.or(a.getValue());
-            }
-            if (b != null) {
-                rb.or(b.getValue());
-            }
-            if (abs(ra.getCardinality() - thr) < abs(rb.getCardinality() - thr))
-            {
-                if (a != null & abs(r.getCardinality() - thr) > abs(ra.getCardinality() - thr)) {
-                    a = values.higherEntry(a.getKey());
-                    r.or(ra);
-                    rb.or(ra);
-                } //else a = (ra.getCardinality() > thr? null: a);
-            } else {
-                if (b!=null & abs(r.getCardinality() - thr) > abs(rb.getCardinality() - thr)) {
-                    r.or(rb);
-                    ra.or(rb);
-                    b = values.lowerEntry(b.getKey());
-                } //else b = (rb.getCardinality() > thr? null: b);
-            }
-
-        } while (!(r.getCardinality() > thr) & r.getCardinality() != ro);
-
-        confidenceLevels[getFieldIndex(field)] = 1 - (double)r.getCardinality() / dataSet.size();
-
-        return r;
     }
 
-
-    private RoaringBitmap getIndexedRecords(String field, Object value){
-        return (RoaringBitmap) model.getInvertedIndex().getMap(field).get(value);
+    @Override
+    public double getDataSetSize() {
+        return dataSet.size();
     }
-
 
 }

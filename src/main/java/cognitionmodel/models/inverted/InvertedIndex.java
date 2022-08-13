@@ -61,6 +61,12 @@ public interface InvertedIndex {
 
 
     /**
+     * Gets confidence intervals for fields in data set
+     */
+
+    public double[] getConfidenceIntervals();
+
+    /**
      * Sets confidence intervals for fields in data set
      * @param confidenceLevels - the levels of confidence (90%, 95%, 99% or any other) for fields in data set order. if equal NaN it throw off the interval
      */
@@ -75,4 +81,12 @@ public interface InvertedIndex {
      * @return - map of records
      */
     public RoaringBitmap getRecords(String field, Object value);
+
+    /**
+     * Gets number of records in data set that is source of the index
+     * @return - amount of records
+     */
+
+    public double getDataSetSize();
+
 }

@@ -19,7 +19,7 @@ public class Agent implements Cloneable {
     RoaringBitmap records = null;//new RoaringBitmap(); // records common for all points from relation
     String signature = "";
     private double z = NaN, p = NaN, cp = NaN;
-    private InvertedTabularModel model;
+    private InvertedIndex invertedIndex;
     private Object predictingValue = null;
     private boolean hasPredictingField = false;
     private HashMap<String, Double> condPcashe = new HashMap<>();
@@ -34,9 +34,9 @@ public class Agent implements Cloneable {
      * @param startPoint - {integer field index, object representing field value}
      */
 
-    public Agent(Point startPoint, InvertedTabularModel model) {
+    public Agent(Point startPoint, InvertedIndex invertedIndex) {
 
-        this.model = model;
+        this.invertedIndex = invertedIndex;
 
         if (startPoint != null) {
             addPoint(startPoint);
@@ -44,8 +44,8 @@ public class Agent implements Cloneable {
     }
 
 
-    public Agent (Point points[], InvertedTabularModel model) {
-        this.model = model;
+    public Agent (Point points[], InvertedIndex invertedIndex) {
+        this.invertedIndex = invertedIndex;
 
         if (points.length > 0) {
             addPoint(points);
@@ -53,8 +53,8 @@ public class Agent implements Cloneable {
 
     }
 
-    public Agent (Collection<Point> points, InvertedTabularModel model) {
-        this.model = model;
+    public Agent (Collection<Point> points, InvertedIndex invertedIndex) {
+        this.invertedIndex = invertedIndex;
 
         if (points.size() > 0) {
             addPoint(points);
@@ -114,18 +114,17 @@ public class Agent implements Cloneable {
      */
 
     public double getConfP(){
-/*        double p = 1, f = 0 ;
+        double p = 1;
+        if (invertedIndex.getConfidenceIntervals() == null) return 1.0;
 
         if(!Double.isNaN(cp)) return cp;
 
-        for (Map.Entry<String, RoaringBitmap> e: recordsByField.entrySet()) {
-            RoaringBitmap b = e.getValue();
-            if (relationByField.get(e.getKey()).size() > 1) //& invertedIndex.get(e.getKey()).size()*epsilon > 1)
-                p = p * (1+((double) b.getCardinality() / model.getDataSet().size()));
+        for (Map.Entry<String, Point> e: relation.entrySet()) {
+            int pi = invertedIndex.getFieldIndex(e.getValue().getField());
+            p = p * invertedIndex.getConfidenceIntervals()[pi];
         }
 
-        return cp = 1 - (p == 0?0: p - 1);*/
-        return 0;
+        return cp = p;
     }
 
     /**
@@ -134,8 +133,17 @@ public class Agent implements Cloneable {
      */
     public double getP(){
         if (records == null) return 0;
-        return (Double.isNaN(p)?(p=(double)records.getCardinality()/model.getDataSet().size()): p);
+        return (Double.isNaN(p)?(p=(double)records.getCardinality()/invertedIndex.getDataSetSize()): p);
     }
+
+    /**
+     * Gets frequency of the relation
+     * @return
+     */
+    public double getFr(){
+        return (getP()*invertedIndex.getDataSetSize());
+    }
+
 
     /**
      * Gets conditional probability of field value if agent relation was appeared
@@ -152,11 +160,11 @@ public class Agent implements Cloneable {
 
         RoaringBitmap rc  = new RoaringBitmap();
 
-        rc.add(0, round(model.getDataSet().size()));
+        rc.add(0, round(invertedIndex.getDataSetSize()));
 
         for (Map.Entry<String, Point> e: relation.entrySet())
             if (!field.equals(e.getValue().getField())) {
-                RoaringBitmap fv =  ((BitInvertedIndex)model.getInvertedIndex()).getValueIndex(e.getValue().getField(), e.getValue().getValue());//(RoaringBitmap) model.getInvertedIndex().getMap(e.getValue().getField()).get(e.getValue().getValue());
+                RoaringBitmap fv =  invertedIndex.getRecords(e.getValue().getField(), e.getValue().getValue());//(RoaringBitmap) model.getInvertedIndex().getMap(e.getValue().getField()).get(e.getValue().getValue());
                 if (fv != null)
                     rc.and(fv);
             }
@@ -176,12 +184,12 @@ public class Agent implements Cloneable {
 
     public void addPoint(Point point){
         relation.put(point.toString(), point);
-        fields4view.set(model.getInvertedIndex().getFieldIndex(point.getField()), true);
-        fields.set(model.getInvertedIndex().getFieldIndex(point.getField()), true);
+        fields4view.set(invertedIndex.getFieldIndex(point.getField()), true);
+        fields.set(invertedIndex.getFieldIndex(point.getField()), true);
         records = new RoaringBitmap();
 
         RoaringBitmap rb;
-        if ((rb = ((BitInvertedIndex)model.getInvertedIndex()).getValueIndex(point.getField(), point.getValue())) != null) {
+        if ((rb = invertedIndex.getRecords(point.getField(), point.getValue())) != null) {
             if (relation.size() == 1) {
                 records.or(rb);
             } else
@@ -201,10 +209,10 @@ public class Agent implements Cloneable {
 
         for (Point point: points) {
             relation.put(point.toString(), point);
-            fields4view.set(model.getInvertedIndex().getFieldIndex(point.getField()), true);
-            fields.set(model.getInvertedIndex().getFieldIndex(point.getField()), true);
+            fields4view.set(invertedIndex.getFieldIndex(point.getField()), true);
+            fields.set(invertedIndex.getFieldIndex(point.getField()), true);
 
-            RoaringBitmap rb =  ((BitInvertedIndex)model.getInvertedIndex()).getValueIndex(point.getField(), point.getValue());
+            RoaringBitmap rb =  invertedIndex.getRecords(point.getField(), point.getValue());
             if (rb != null) {
                 roaringBitmaps.add(rb);
             }/* else
@@ -212,7 +220,7 @@ public class Agent implements Cloneable {
 
         }
 
-        records = RoaringBitmap.and(roaringBitmaps.listIterator(), 0, round(model.getDataSet().size()));
+        records = RoaringBitmap.and(roaringBitmaps.listIterator(), 0, round(invertedIndex.getDataSetSize()));
         resign();
     }
 
@@ -228,10 +236,10 @@ public class Agent implements Cloneable {
 
         for (Point point: points) {
             relation.put(point.toString(), point);
-            fields4view.set(model.getInvertedIndex().getFieldIndex(point.getField()), true);
-            fields.set(model.getInvertedIndex().getFieldIndex(point.getField()), true);
+            fields4view.set(invertedIndex.getFieldIndex(point.getField()), true);
+            fields.set(invertedIndex.getFieldIndex(point.getField()), true);
 
-            RoaringBitmap rb =  ((BitInvertedIndex)model.getInvertedIndex()).getValueIndex(point.getField(), point.getValue());
+            RoaringBitmap rb =  invertedIndex.getRecords(point.getField(), point.getValue());
             if (rb != null) {
                 roaringBitmaps.add(rb);
             }/* else
@@ -239,7 +247,7 @@ public class Agent implements Cloneable {
 
         }
 
-        records = RoaringBitmap.and(roaringBitmaps.listIterator(), 0, round(model.getDataSet().size()));
+        records = RoaringBitmap.and(roaringBitmaps.listIterator(), 0, round(invertedIndex.getDataSetSize()));
         resign();
     }
 
@@ -267,18 +275,18 @@ public class Agent implements Cloneable {
         double z = records.getCardinality(), f = 1;
         int c = 1, l = 0;
         for (Point point: relation.values()) {
-            RoaringBitmap fieldrecords = ((BitInvertedIndex)model.getInvertedIndex()).getValueIndex(point.getField(), point.getValue());
+            RoaringBitmap fieldrecords = invertedIndex.getRecords(point.getField(), point.getValue());
             if (fieldrecords != null) {
                 f = f * fieldrecords.getCardinality();
                 l++;
                 if (f > Double.MAX_VALUE / 1000000) { //prevents double value overloading
-                    f = f / model.getDataSet().size();
+                    f = f / invertedIndex.getDataSetSize();
                     c++;
                 }
             }
         }
 
-        z = log(z / f) + (l - c) * log(model.getDataSet().size());
+        z = log(z / f) + (l - c) * log(invertedIndex.getDataSetSize());
 
         return z;
     }
@@ -305,28 +313,28 @@ public class Agent implements Cloneable {
         double f = 1;
         int c = 1, l = 0;
         for (Point point: relation.values()) {
-            RoaringBitmap fieldrecords = ((BitInvertedIndex)model.getInvertedIndex()).getValueIndex(point.getField(), point.getValue());
+            RoaringBitmap fieldrecords = invertedIndex.getRecords(point.getField(), point.getValue());
             if (!fieldrecords.isEmpty()) {
                 f = f * fieldrecords.getCardinality();
                 l++;
                 if (f > Double.MAX_VALUE / 1000000) { //prevents double value overloading
-                    f = f / model.getDataSet().size();
+                    f = f / invertedIndex.getDataSetSize();
                     c++;
                 }
             }
         }
 
-        double ps = log(f) - (l - c) * log(model.getDataSet().size());
+        double ps = log(f) - (l - c) * log(invertedIndex.getDataSetSize());
         return ps >= 0;
     }
 
-    public static Agent merge(Agent a1, Agent a2, InvertedTabularModel model) {
+    public static Agent merge(Agent a1, Agent a2, InvertedIndex invertedIndex) {
         if (a1 == null & a2 == null) throw new IllegalArgumentException("Can't merge two null agents");
 
         if (a1 == null) return a2;
         if (a2 == null) return a1;
 
-        Agent r = new Agent((Point) null, model);
+        Agent r = new Agent((Point) null, invertedIndex);
 
         for (Point p: a1.relation.values()) {
             r.relation.put(p.toString(), p);

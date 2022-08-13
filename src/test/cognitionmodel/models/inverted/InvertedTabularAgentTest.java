@@ -1,8 +1,11 @@
 package cognitionmodel.models.inverted;
 
+import cognitionmodel.datasets.ArffParser;
 import cognitionmodel.datasets.CSVParser;
 import cognitionmodel.datasets.TableDataSet;
+import cognitionmodel.predictors.PredictionResults;
 import cognitionmodel.predictors.TabularDataPredictor;
+import cognitionmodel.predictors.predictionfunctions.LogPowerfunction;
 import cognitionmodel.predictors.predictionfunctions.Powerfunction;
 import org.junit.Test;
 
@@ -28,29 +31,26 @@ public class InvertedTabularAgentTest {
                                "age," +
                                " race," +
                                " sex," +
-                               " race" +
                                " native-country" +
                                " workclass" +
                                " e-gov" +
                                " occupation" +*/
-                        " capital-loss").split(",")
+                        " capital-loss")
+            //    ("age, workclass, education, education-num, marital-status, occupation, relationship, race, sex, capital-gain, capital-loss, hours-per-week, native-country, INCOME")
+/*                (" INCOME,"+
+                        " native-country," +
+                        " marital-status," +
+                        " capital-loss," +
+                        " capital-gain," +
+                        " workclass")*/
+                .split(",")
         );
 
-
-      //  tabularModel.make();
+       // tabularModel.getInvertedIndex().setConfidenceIntervals(0.95);
         TableDataSet testDataSet = new TableDataSet(new FileInputStream(new File("D:\\works\\Data\\adult\\adult.test")),
                 new CSVParser(",","\n"));
 
-        tabularModel.predict(testDataSet.getRecords(), " INCOME", new Powerfunction(null, 10, 1), false, 4,  a -> a.getMR() > 0).show(tabularModel.getDataSet().getFieldIndex(" INCOME"));
-
-/*        for (InvertedTabularModel.Agent a: tabularModel.getAgents().stream().sorted((a1, a2) -> (a1.getZ() > a2.getZ())?1:-1).collect(Collectors.toList()))
-            System.out.println(a);*/
-
-
-      //  tabularModel.getAgents().get(35).addPoint(tabularModel.getAgents().get(36).relation.get(" capital-loss:1735"));
-      //  tabularModel.getAgents().get(35).addPoint(tabularModel.getAgents().get(195).relation.get(" capital-gain:11678"));
-
-        System.out.println("Model initialized");
+        tabularModel.predict(testDataSet.getRecords(), " INCOME", new Powerfunction(null, 10, 1), false, 4, a -> a.getMR() > 0).show(tabularModel.getDataSet().getFieldIndex(" INCOME"));
 
     }
 
@@ -63,23 +63,14 @@ public class InvertedTabularAgentTest {
                         new CSVParser(",","\n")),
                 (" AHGA, AWKSTAT, CAPLOSS, TAXINC, CAPGAIN")
 //                ("AAGE, ACLSWKR, ADTIND, ADTOCC, AGI, AHRSPAY, AHSCOL, AMJIND, AMJOCC, ARACE, AREORGN, ASEX, AUNMEM, AUNTYPE, DIVVAL, FEDTAX, FILESTAT, GRINREG, GRINST, HHDFMX, HHDREL, MARSUPWT, MIGMTR1, MIGMTR3, MIGMTR4, MIGSAME, MIGSUN, NOEMP, PARENT, PEARNVAL, PEFNTVTY, PEMNTVTY, PENATVTY, PRCITSHP, PTOTVAL, SEOTR, VETQVA, VETYN, WKSWORK, AMARITL, TAXINC")
-    //    (" ACLSWKR, ADTOCC, AGI, AHRSPAY, AHSCOL, AMJIND, AMJOCC, ARACE, AREORGN, ASEX, AUNMEM, AUNTYPE, DIVVAL, FEDTAX, FILESTAT, GRINREG, GRINST, HHDREL, MARSUPWT, MIGMTR1, MIGMTR3, MIGMTR4, MIGSUN, NOEMP, PARENT, PEARNVAL, PEFNTVTY, PEMNTVTY, PENATVTY, PRCITSHP, AMARITL, TAXINC")
+ //      (" ACLSWKR, ADTOCC, AGI, AHRSPAY, AHSCOL, AMJIND, AMJOCC, ARACE, AREORGN, ASEX, AUNMEM, AUNTYPE, DIVVAL, FEDTAX, FILESTAT, GRINREG, GRINST, HHDREL, MARSUPWT, MIGMTR1, MIGMTR3, MIGMTR4, MIGSUN, NOEMP, PARENT, PEARNVAL, PEFNTVTY, PEMNTVTY, PENATVTY, PRCITSHP, AMARITL, TAXINC")
                         .split(","));
 
 
-        //  tabularModel.make();
         TableDataSet testDataSet = new TableDataSet(new FileInputStream(new File("D:\\works\\Data\\Census\\census-income.test")),
                 new CSVParser(",","\n"));
 
         tabularModel.predict(testDataSet.getRecords(), " TAXINC", new Powerfunction(null, 7,1), false, 4,  a -> a.getMR() > 0).show(tabularModel.getDataSet().getFieldIndex(" TAXINC"));
-
-/*        for (InvertedTabularModel.Agent a: tabularModel.getAgents().stream().sorted((a1, a2) -> (a1.getZ() > a2.getZ())?1:-1).collect(Collectors.toList()))
-            System.out.println(a);*/
-
-
-        //  tabularModel.getAgents().get(35).addPoint(tabularModel.getAgents().get(36).relation.get(" capital-loss:1735"));
-        //  tabularModel.getAgents().get(35).addPoint(tabularModel.getAgents().get(195).relation.get(" capital-gain:11678"));
-
 
     }
 
@@ -92,11 +83,70 @@ public class InvertedTabularAgentTest {
                         new CSVParser(";","\r\n")));
 
 
-        TableDataSet testDataSet = TabularDataPredictor.fit2model(tabularModel, new TableDataSet(new FileInputStream(new File("D:\\works\\Data\\letter\\letter-recognition.data.test.csv")),
-                new CSVParser(";","\r\n")));
+        //TableDataSet testDataSet = TabularDataPredictor.fit2model(tabularModel, new TableDataSet(new FileInputStream(new File("D:\\works\\Data\\letter\\letter-recognition.data.test.csv")),
+        //        new CSVParser(";","\r\n")));
+        TableDataSet testDataSet = new TableDataSet(new FileInputStream(new File("D:\\works\\Data\\letter\\letter-recognition.data.test.csv")),
+                new CSVParser(";","\r\n"));
+
+        tabularModel.getInvertedIndex().setConfidenceIntervals(0.90);
+
+        tabularModel.predict(testDataSet.getRecords(), "lettr", new Powerfunction(null, 0,1), false, 5, null).show(tabularModel.getDataSet().getFieldIndex("lettr"));
+
+    }
+
+    @Test
+    public void featuresTestLetters() throws IOException {
+
+        InvertedTabularModel tabularModel = new InvertedTabularModel(
+                new TableDataSet(new FileInputStream(new File("D:\\works\\Data\\letter\\letter-recognition.data.train.csv")),
+                        new CSVParser(";","\r\n")));
+
+        //TableDataSet testDataSet = TabularDataPredictor.fit2model(tabularModel, new TableDataSet(new FileInputStream(new File("D:\\works\\Data\\letter\\letter-recognition.data.test.csv")),
+        //        new CSVParser(";","\r\n")));
+        TableDataSet testDataSet = new TableDataSet(new FileInputStream(new File("D:\\works\\Data\\letter\\letter-recognition.data.train.csv")),
+                new CSVParser(";","\r\n"));
+
+        tabularModel.predict(testDataSet.getRecords(), "lettr", new Powerfunction(null, 0,1), false, 7, null).show(tabularModel.getDataSet().getFieldIndex("lettr"));
+
+    }
 
 
-        tabularModel.predict(testDataSet.getRecords(), "lettr", new Powerfunction(null, 0,1), false, 17, null).show(tabularModel.getDataSet().getFieldIndex("lettr"));
+    @Test
+    public void createTestSegment() throws IOException {
+
+        InvertedTabularModel tabularModel = new InvertedTabularModel(
+                new TableDataSet(new FileInputStream(new File("D:\\works\\Data\\segment\\segment.test")),
+                        new CSVParser("\t","\r\n")),
+                (
+                        "region-centroid-col\n" +
+                                "region-centroid-row\n" +
+                                "intensity-mean\n" +
+                                "rawred-mean\n" +
+                                "rawblue-mean\n" +
+                                "rawgreen-mean\n" +
+                                "exred-mean\n" +
+                                "exblue-mean\n" +
+                                "exgreen-mean\n" +
+                                "value-mean\n" +
+                                "saturatoin-mean\n" +
+                                "hue-mean\n" +
+                                "class"
+
+                )
+                        .split("\n")
+
+        );
+
+
+        //TableDataSet testDataSet = TabularDataPredictor.fit2model(tabularModel, new TableDataSet(new FileInputStream(new File("D:\\works\\Data\\letter\\letter-recognition.data.test.csv")),
+        //        new CSVParser(";","\r\n")));
+        TableDataSet testDataSet = new TableDataSet(new FileInputStream(new File("D:\\works\\Data\\segment\\segment.train")),
+                new CSVParser("\t","\r\n"));
+
+      //  tabularModel.getInvertedIndex().setConfidenceIntervals(0.92);
+        tabularModel.setInvertedIndex(new StaticIntervaledBitInvertedIndex((BitInvertedIndex) tabularModel.getInvertedIndex(),"class",35));
+
+        tabularModel.predict(testDataSet.getRecords(), "class", new Powerfunction(null, 0.01,0), false, 20, null).show(tabularModel.getDataSet().getFieldIndex("class"));
 
     }
 
@@ -108,66 +158,55 @@ public class InvertedTabularAgentTest {
                         new CSVParser(",","\n")));
 
 
-        TableDataSet testDataSet = TabularDataPredictor.fit2model(tabularModel, new TableDataSet(new FileInputStream(new File("D:\\works\\Data\\mush\\mush.test")),
-                new CSVParser(",","\n")));
+        TableDataSet testDataSet =  new TableDataSet(new FileInputStream(new File("D:\\works\\Data\\mush\\mush.test")),
+                new CSVParser(",","\n"));
 
 
         tabularModel.predict(testDataSet.getRecords(), "class", new Powerfunction(null, 0,1), false, 4,  a -> a.getMR() > 0).show(tabularModel.getDataSet().getFieldIndex("class"));
 
     }
 
-
     @Test
-    public void bitIndexTest() throws IOException {
+    public void createTestAbalon() throws IOException {
 
         InvertedTabularModel tabularModel = new InvertedTabularModel(
-                new TableDataSet(new FileInputStream(new File("D:\\works\\Data\\adult\\adult.data")),
-                        new CSVParser(",","\n")),
-                (" INCOME,"+
-                        " education-num," +
-                        " marital-status," +
-                        " capital-gain," +
-/*                               " education," +
-                               "age," +
-                               " race," +
-                               " sex," +*/
-                        " capital-loss").split(","));
+                new TableDataSet(new FileInputStream(new File("D:\\works\\Data\\abalone\\abalone.data")),
+                        new CSVParser(",","\n"))
 
-        Agent agent = new Agent(new Point(tabularModel.getDataSet().getHeader().get(4).getValue().toString(),tabularModel.getDataSet().getRecords().get(0).get(4).getValue()), tabularModel);
+        );
 
 
-        assertTrue(agent.getCondP(tabularModel.getDataSet().getHeader().get(14).getValue().toString()) == 3134.0/5355);
+        //TableDataSet testDataSet = TabularDataPredictor.fit2model(tabularModel, new TableDataSet(new FileInputStream(new File("D:\\works\\Data\\letter\\letter-recognition.data.test.csv")),
+        //        new CSVParser(";","\r\n")));
+        TableDataSet testDataSet = new TableDataSet(new FileInputStream(new File("D:\\works\\Data\\abalone\\abalone.test")),
+                new CSVParser(",","\n"));
+
+        // tabularModel.getInvertedIndex().setConfidenceIntervals(0.88);
+       // tabularModel.setInvertedIndex(new StaticIntervaledBitInvertedIndex((BitInvertedIndex) tabularModel.getInvertedIndex(),"Rings",40));
+
+        PredictionResults pr = tabularModel.predict(testDataSet.getRecords(), "Rings", new LogPowerfunction(null, 0.1,0), false, 30, null/*a-> a.getMR()>0*/);
+        pr.show(tabularModel.getDataSet().getFieldIndex("Rings"));
+        tabularModel.regression(pr,"Rings").show(tabularModel.getDataSet().getFieldIndex("Rings"));
 
     }
 
-
-
     @Test
-    public void indexTest() throws IOException {
-
-        InvertedTabularModel tabularModel = new InvertedTabularModel(
-                new TableDataSet(new FileInputStream(new File("D:\\works\\Data\\adult\\adult.data")),
-                        new CSVParser(",","\n")),
-                (" INCOME,"+
-                        " education-num," +
-                        " marital-status," +
-                        " capital-gain," +
-/*                               " education," +
-                               "age," +
-                               " race," +
-                               " sex," +*/
-                        " capital-loss").split(","));
-
-        Agent agent = new Agent(new Point(tabularModel.getDataSet().getHeader().get(4).getValue().toString(),tabularModel.getDataSet().getRecords().get(0).get(4).getValue()), tabularModel);
+    public void createTestHouse() throws IOException {
 
 
-        assertTrue(agent.getMR() == -0.26021793936194193);
 
-        assertTrue(agent.getCondP(tabularModel.getDataSet().getHeader().get(14).getValue().toString()) == 3134.0/5355);
+        TableDataSet[] sets = TableDataSet.split(new TableDataSet(new FileInputStream(new File("D:\\works\\Data\\house\\house_16H.arff")),
+                        new ArffParser()), 0.1);
 
-        System.out.println(agent.getConfP());
+        InvertedTabularModel tabularModel = new InvertedTabularModel(sets[0]);
+
+
+         tabularModel.getInvertedIndex().setConfidenceIntervals(0.95);
+        //tabularModel.setInvertedIndex(new StaticIntervaledBitInvertedIndex((BitInvertedIndex) tabularModel.getInvertedIndex()," ",10));
+
+        PredictionResults pr = tabularModel.predict(sets[1].getRecords(), "price", new Powerfunction(null, 0,1), false, 2, null/*a-> a.getMR()>0*/);
+        pr.show(tabularModel.getDataSet().getFieldIndex("price"));
+        tabularModel.regression(pr,"price").show(tabularModel.getDataSet().getFieldIndex("price"));
+
     }
-
-
-
 }

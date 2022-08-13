@@ -10,42 +10,43 @@ import static java.lang.Math.min;
 
 public class RecursiveLevelValuesDecomposer implements Decomposer{
 
-    private InvertedTabularModel model;
+    private InvertedIndex invertedIndex;
     private String fields[];
     private String predicttingField;
     private int predictingFieldIndex, predictingFieldInvertedIndex;
     private HashMap<String, Agent> agentMap = new HashMap<>();
-    private boolean modelcashed;
+
     private Function<Agent, Boolean> agentFilter;
     private int maxDepth = 3;
+    private HashSet<Point> desabledPoints = new HashSet<>();
 
-    public RecursiveLevelValuesDecomposer(InvertedTabularModel model, String predictingField, boolean modelcashed) {
-        this( model, predictingField, modelcashed, 3, null);
+    public RecursiveLevelValuesDecomposer(InvertedIndex invertedIndex, String predictingField, boolean modelcashed) {
+        this( invertedIndex, predictingField, modelcashed, 3, null);
 
     }
 
-    public RecursiveLevelValuesDecomposer(InvertedTabularModel model, String predictingField, boolean modelcashed, int maxDepth, Function<Agent, Boolean> agentFilter){
+    public RecursiveLevelValuesDecomposer(InvertedIndex invertedIndex, String predictingField, boolean modelcashed, int maxDepth, Function<Agent, Boolean> agentFilter){
 
         this.maxDepth = maxDepth;
-        this.modelcashed = modelcashed;
-        this.model = model;
+        this.invertedIndex = invertedIndex;
         this.predicttingField = predictingField;
-        predictingFieldIndex = model.getDataSet().getFieldIndex(predictingField);
-        predictingFieldInvertedIndex = ((BitInvertedIndex)model.getInvertedIndex()).dataSetFieldIndexToInvertedFieldIndex(predictingFieldIndex);
-
-        if (modelcashed) agentMap = model.agentsindex;
+        predictingFieldInvertedIndex = invertedIndex.getFieldIndex(predictingField);
+        predictingFieldIndex = ((BitInvertedIndex)invertedIndex).invertedIndexToDatasetFieldIndex(predictingFieldInvertedIndex);
 
         this.agentFilter = agentFilter;
+    }
+
+    public HashSet<Point> getDesabledPoints() {
+        return desabledPoints;
+    }
+
+    public void setDesabledPoints(HashSet<Point> desabledPoints) {
+        this.desabledPoints = desabledPoints;
     }
 
     public Function<Agent, Boolean> getAgentFilter() {
         return agentFilter;
     }
-
-    private double gamma = 000000000.0; //
-    private double mrdelta = -Double.MAX_VALUE;
-    private double epsilon = 0.00; //probability of confidential interval
-    private int sampleSize = 4000;
 
     public int getMaxDepth() {
         return maxDepth;
@@ -55,7 +56,11 @@ public class RecursiveLevelValuesDecomposer implements Decomposer{
         this.maxDepth = maxDepth;
     }
 
-    @Override
+    public HashMap<Object, LinkedList<Agent>> decompose(Tuple record, String predictingfield, InvertedIndex intervaledBitInvertedIndex) {
+        invertedIndex = intervaledBitInvertedIndex;
+        return decompose(record, predictingfield);
+    }
+        @Override
     public HashMap<Object, LinkedList<Agent>> decompose(Tuple record, String predictingfield) {
 
         HashMap<Object, LinkedList<Agent>> r = new HashMap<>();
@@ -64,20 +69,9 @@ public class RecursiveLevelValuesDecomposer implements Decomposer{
 
         LinkedList<Agent> al  = new LinkedList<>();
 
-        al.add(new Agent((Point) null, model));
+        al.add(new Agent((Point) null, invertedIndex));
         doDecompose(al, record, agentMap, r);
         HashMap<Object, LinkedList<Agent>> nr = new HashMap<>();
-
-     //   if (agentFilter != null)
-/*
-            for (Map.Entry<Object, LinkedList<Agent>> e: r.entrySet()){
-                //for (Iterator<Agent> iterator = agl.listIterator(); iterator.hasNext();)
-                   // if (!agentFilter.apply(iterator.next())) iterator.remove();
-                if (e.getKey().toString().equals("null")) nr.put("null", e.getValue());
-                    else
-                        nr.put(e.getKey(), minimize1(e.getValue()));
-            }
-*/
 
         record.set(predictingFieldIndex, ote);
         return r;
@@ -91,19 +85,19 @@ public class RecursiveLevelValuesDecomposer implements Decomposer{
             for (Iterator<Point> pointIterator = getAgentFieldsIterator(a, record); pointIterator.hasNext();) {
                 Point p = pointIterator.next();
 
-                Agent na = new Agent(p, model);
+                Agent na = new Agent(p, invertedIndex);
                 if (p.field.equals(predicttingField))
                     na.setPerdictingValue(p.getValue());
 
-                Agent ca = a.relation.size() == 0 ? na: Agent.merge(a, na, model);
+                Agent ca = a.relation.size() == 0 ? na: Agent.merge(a, na, invertedIndex);
              //   if (ca.records.getCardinality() > 5 ) {
                 if (!ca.records.isEmpty() ) {
-                    if (agentFilter != null ? agentFilter.apply(ca) | (ca.relation.size() == 1): true) {
+                    if (agentFilter == null || agentFilter.apply(ca) || ca.relation.size() == 1) {
                         newlevel.add(ca);
                         Object co = ca.getPerdictingValue();
                         if (co == null) co = "null";
                         if (!resultMap.containsKey(co)) resultMap.put(co, new LinkedList<>());
-                        resultMap.get(co).add(ca);
+                        if ( ca.relation.size() > 1 || co.equals("null")) resultMap.get(co).add(ca);
                     }
                 } else {
                     badAgents.add(ca);
@@ -137,7 +131,7 @@ public class RecursiveLevelValuesDecomposer implements Decomposer{
 
     private String sign(Agent a, Point point){
         BitSet b = (BitSet) a.getFields4view().clone();
-        b.set(model.getInvertedIndex().getFieldIndex(point.getField()), true);
+        b.set(invertedIndex.getFieldIndex(point.getField()), true);
         return b.toString() + (point.getField().equals(predicttingField) ? point.getValue() : "");
     }
 
@@ -158,9 +152,9 @@ public class RecursiveLevelValuesDecomposer implements Decomposer{
                 if (values != null) {
                     int j = (int)ag.getValues().nextAbsentValue(vi + 1);
 
-                    return (j < values.size()  | (i < model.getInvertedIndex().getFields().size()-1));
+                    return (j < values.size()  | (i < invertedIndex.getFields().size()-1));
                 }
-                return i < model.getInvertedIndex().getFields().size();// | (valuesIterator != null ? valuesIterator.hasNext(): false);
+                return i < invertedIndex.getFields().size();// | (valuesIterator != null ? valuesIterator.hasNext(): false);
 
             }
 
@@ -168,12 +162,12 @@ public class RecursiveLevelValuesDecomposer implements Decomposer{
             public Point next() {
                 int ofi = fi;
                 fi = ag.getFields4view().nextClearBit(fi + 1);
-                if (fi >= model.getInvertedIndex().getFields().size()) return null;
-                int ifi = ((BitInvertedIndex)model.getInvertedIndex()).invertedIndexToDatasetFieldIndex(fi);
+                if (fi >= invertedIndex.getFields().size()) return null;
+                int ifi = ((BitInvertedIndex)invertedIndex).invertedIndexToDatasetFieldIndex(fi);
 
-                String field = model.getInvertedIndex().getFields().get(fi);
+                String field = invertedIndex.getFields().get(fi);
                 if (rec.get(ifi) == null & values == null) {
-                    values =  model.getInvertedIndex().getAllValues(field);
+                    values =  invertedIndex.getAllValues(field);
                     //valuesIterator = values.iterator();
                 }
 
@@ -189,8 +183,8 @@ public class RecursiveLevelValuesDecomposer implements Decomposer{
                         values = null;
                         vi = -1;
                         fi = ag.getFields4view().nextClearBit(fi + 1);
-                        if (fi >= model.getInvertedIndex().getFields().size()) return null;
-                        ifi = ((BitInvertedIndex) model.getInvertedIndex()).invertedIndexToDatasetFieldIndex(fi);
+                        if (fi >= invertedIndex.getFields().size()) return null;
+                        ifi = ((BitInvertedIndex) invertedIndex).invertedIndexToDatasetFieldIndex(fi);
                     }
                 }
                 return new Point(field, rec.get(ifi).getValue());
@@ -271,50 +265,5 @@ public class RecursiveLevelValuesDecomposer implements Decomposer{
 
         return node.agents;
     }
-
-/*    private LinkedList<Agent> minimize(LinkedList<Agent> agentslist){
-
-        ArrayList<Agent> agents = new ArrayList<>(agentslist);
-        agents.sort(Comparator.comparing(Agent::getMR, Comparator.reverseOrder()));
-
-        PriorityQueue<Node> nodes = new PriorityQueue(Comparator.comparing(Node::getMr).reversed());
-
-        nodes.add(new Node());
-        int c = 1, k = 1;
-
-        while (k != 0) {
-            PriorityQueue<Node> nnodes = new PriorityQueue(Comparator.comparing(Node::getMr).reversed());
-            k = 0;
-
-            while (!nodes.isEmpty() & c != 0) {
-                Node node = nodes.poll();
-                c = 0;
-                for (int i = node.havagents.isEmpty() ? 0: node.havagents.stream().max().getAsInt(); i < agents.size(); i = node.havagents.nextClearBit(i+1)) {
-                    Agent a = agents.get(i);
-                    if (a.getMR() > 0 & node.canAdd(a)) {
-                        Node nn = node.clone();
-                        nn.addAgent(a);
-                        nnodes.add(nn);
-                        nn.havagents.set(i);
-                        c++;
-                    }
-                }
-                if (node.agents.size() > 0) nnodes.add(node);
-                if (c != 0) k++;
-            }
-            if (nnodes.size() != 0) {
-                nodes = new PriorityQueue(Comparator.comparing(Node::getMr).reversed());
-                for (int i = 0; i < min(nnodes.size(), agents.size()*2); i++)
-                    nodes.add(nnodes.poll());
-
-  //              nodes = nnodes;
-            }
-        }
-        if (nodes.size() > 0)
-            return nodes.peek().agents;
-        else
-            return new LinkedList<>(agents);
-    }*/
-
 
 }

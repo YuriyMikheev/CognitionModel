@@ -133,7 +133,7 @@ public class PatternDecomposer implements Decomposer{
                        else {
                             Agent a2 = agentMap.get(treeSet1.toString());
                             if (a2 != null) {
-                                a = Agent.merge(a1, a2, model);
+                                a = Agent.merge(a1, a2, model.getInvertedIndex());
                                 a.setPerdictingField(true);
                             }
                        }
@@ -149,7 +149,7 @@ public class PatternDecomposer implements Decomposer{
 
 
                 if (a == null) {
-                    a = new Agent(points, model);
+                    a = new Agent(points, model.getInvertedIndex());
                     a.setPerdictingField(true);
                 }
 

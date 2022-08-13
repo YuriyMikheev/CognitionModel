@@ -38,11 +38,16 @@ public abstract class DataSet implements Iterable<Tuple> {
     }
 
     private void read() throws IOException {
-        records.addAll(parser.parse(inputStream.readAllBytes()));
+        if (inputStream != null & parser != null)
+            records.addAll(parser.parse(inputStream.readAllBytes()));
     }
 
     public Parser getParser() {
         return parser;
+    }
+
+    protected InputStream getInputStream() {
+        return inputStream;
     }
 
     public ArrayList<Tuple> getRecords(){

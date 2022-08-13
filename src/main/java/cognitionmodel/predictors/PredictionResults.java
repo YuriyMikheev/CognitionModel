@@ -1,12 +1,15 @@
 package cognitionmodel.predictors;
 
 import cognitionmodel.datasets.Tuple;
+import cognitionmodel.datasets.TupleElement;
 import net.openhft.chronicle.map.ChronicleMap;
 import net.openhft.chronicle.map.ChronicleMapBuilder;
 
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
+
+import static java.lang.Math.pow;
 
 /**
  * Consists results of prediction saved in map
@@ -18,6 +21,8 @@ public class PredictionResults {
     private int[][] confusionMatrix;
 
     private boolean ischanged = true;
+
+    private Double MSE = null;
 
 
     /**
@@ -72,6 +77,10 @@ public class PredictionResults {
         return get(-1,elementIndex);
     }
 
+    public int size(){
+        return datamap.size() - 1;
+    }
+
 
     public int[][] confusionMatrix(int elementIndex) {
 
@@ -95,7 +104,30 @@ public class PredictionResults {
                 else nfailed++;
         }
 
+
         return confusionMatrix;
+    }
+
+    public Double getMSE(){
+        Iterator<Map.Entry<int[],Tuple>> entryIterator = datamap.entrySet().iterator();
+
+        MSE = 0.0;
+
+        while (entryIterator.hasNext()){
+            Map.Entry<int[],Tuple> entry = entryIterator.next();
+            if (entry.getKey()[0] != -1) {
+                Tuple tuple = entry.getValue();
+                try {
+                    MSE += pow(tuple.get(0).asDouble() - tuple.get(1).asDouble(), 2);
+                } catch (ClassCastException e){
+
+                }
+            }
+        }
+
+        MSE = MSE / (datamap.size() - 1);
+
+        return MSE;
     }
 
     /**
@@ -109,6 +141,8 @@ public class PredictionResults {
         Tuple terminals = getHeader(elementIndex).clone();
         terminals.getTupleElements().remove(0);
         terminals.getTupleElements().remove(0);
+
+
 
         System.out.println("Confusion matrix\n");
         System.out.print("\t\t\tactual \n predicted");
@@ -154,6 +188,9 @@ public class PredictionResults {
 
         System.out.printf("\nMean\t\t%1$.5f\t\t%2$.5f\n",(mpr/(confusionMatrix.length)),(mrec/(confusionMatrix.length)));
         System.out.printf("Total \nF1-Score\t\t\t\t\t\t\t%1$.5f\n",(2*mpr*mrec/((confusionMatrix.length)*(mpr+mrec))));
+        if (terminals.get(0).getType() == TupleElement.Type.Double)
+            System.out.printf("MSE\t\t\t\t\t\t\t\t\t%1$.5f\n", getMSE());
+        System.out.println();
         System.out.println("Prediction failed in "+nfailed+" cases");
 
     }

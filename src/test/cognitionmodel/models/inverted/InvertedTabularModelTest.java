@@ -2,8 +2,6 @@ package cognitionmodel.models.inverted;
 
 import cognitionmodel.datasets.CSVParser;
 import cognitionmodel.datasets.TableDataSet;
-import cognitionmodel.models.inverted.Agent;
-import cognitionmodel.models.inverted.InvertedTabularModel;
 import org.junit.Test;
 
 import java.io.File;
