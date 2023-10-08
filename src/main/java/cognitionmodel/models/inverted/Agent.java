@@ -1,5 +1,6 @@
 package cognitionmodel.models.inverted;
 
+import cognitionmodel.datasets.Tuple;
 import org.roaringbitmap.RoaringBitmap;
 
 import java.util.*;
@@ -102,6 +103,7 @@ public class Agent implements Cloneable {
 
     public void setPerdictingValue(Object predictingValue) {
         this.predictingValue = predictingValue;
+        hasPredictingField = true;
     }
 
     public String toString(){
@@ -273,6 +275,7 @@ public class Agent implements Cloneable {
        // if (recordsByField.size() < 2) return 0;
 
         double z = records.getCardinality(), f = 1;
+  //      return z == 0 ? -relation.values().size()*log(invertedIndex.getDataSetSize()) :log(z);
         int c = 1, l = 0;
         for (Point point: relation.values()) {
             RoaringBitmap fieldrecords = invertedIndex.getRecords(point.getField(), point.getValue());
@@ -289,6 +292,10 @@ public class Agent implements Cloneable {
         z = log(z / f) + (l - c) * log(invertedIndex.getDataSetSize());
 
         return z;
+    }
+
+    public TreeMap<String, Point> getRelation() {
+        return relation;
     }
 
     public BitSet getFields4view() {
@@ -353,12 +360,21 @@ public class Agent implements Cloneable {
 
         r.resign();
         r.predictingValue = a1.predictingValue != null ? a1.predictingValue: a2.predictingValue != null ? a2.predictingValue: null;
+        r.hasPredictingField = r.predictingValue != null;
 
         r.records = new RoaringBitmap();
-        if (a1.records != null) r.records.or(a1.records);
-        if (a2.records != null) r.records.and(a2.records);
+
+
+        if (a1.records != null) {
+            r.records.or(a1.records);
+            if (a2.records != null)
+                r.records.and(a2.records);
+        } else
+            if (a2.records != null)
+                r.records.or(a2.records);
 
         return r;
     }
+
 
 }

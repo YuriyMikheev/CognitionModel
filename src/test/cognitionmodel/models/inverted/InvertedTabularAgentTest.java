@@ -3,8 +3,8 @@ package cognitionmodel.models.inverted;
 import cognitionmodel.datasets.ArffParser;
 import cognitionmodel.datasets.CSVParser;
 import cognitionmodel.datasets.TableDataSet;
+import cognitionmodel.datasets.Tuple;
 import cognitionmodel.predictors.PredictionResults;
-import cognitionmodel.predictors.TabularDataPredictor;
 import cognitionmodel.predictors.predictionfunctions.LogPowerfunction;
 import cognitionmodel.predictors.predictionfunctions.Powerfunction;
 import org.junit.Test;
@@ -12,6 +12,8 @@ import org.junit.Test;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 
 import static org.junit.Assert.assertTrue;
 
@@ -88,11 +90,58 @@ public class InvertedTabularAgentTest {
         TableDataSet testDataSet = new TableDataSet(new FileInputStream(new File("D:\\works\\Data\\letter\\letter-recognition.data.test.csv")),
                 new CSVParser(";","\r\n"));
 
-        tabularModel.getInvertedIndex().setConfidenceIntervals(0.90);
+        //tabularModel.getInvertedIndex().setConfidenceIntervals(0.90);
 
         tabularModel.predict(testDataSet.getRecords(), "lettr", new Powerfunction(null, 0,1), false, 5, null).show(tabularModel.getDataSet().getFieldIndex("lettr"));
 
     }
+
+    @Test
+    public void createSpam() throws IOException {
+
+        TableDataSet arrfDataSet = new TableDataSet(new FileInputStream(new File("E:\\Weka-3-8\\data\\KDDCup99_full.arff")),
+                new ArffParser());//false, "duration", "src_bytes", "dst_bytes", "count", "srv_count"));
+
+        TableDataSet[] dataSets = TableDataSet.split(arrfDataSet, 0.5, "label", 100);
+        dataSets = TableDataSet.split(dataSets[1], 0.25, "label", 5);
+
+        HashMap<String, Integer> fr = new HashMap<>() , frs = new HashMap<>();
+        int fi = arrfDataSet.getFieldIndex("label");
+
+        for(Tuple t: dataSets[1]){
+            fr.compute(t.get(fi).getValue().toString(), (k, v) -> (v == null) ? 1: v + 1);
+        }
+
+        for(Tuple t: dataSets[0]){
+            frs.compute(t.get(fi).getValue().toString(), (k, v) -> (v == null) ? 1: v + 1);
+        }
+
+        for (Map.Entry<String, Integer> e: fr.entrySet())
+            if (frs.containsKey(e.getKey()))
+                System.out.println(e.getKey()+"\t"+e.getValue()+"\t"+frs.get(e.getKey())+"\t"+(1.0*e.getValue()/frs.get(e.getKey())));
+
+        InvertedTabularModel tabularModel = new InvertedTabularModel(dataSets[0]);
+
+        tabularModel.predict(dataSets[1].getRecords(), "label", new Powerfunction(null, 1,1), false, 2, null, new double[]{0.1,0.1,0.1,0.1,0.1,0.1,0.1,0.1,0.1,0.1}).show(tabularModel.getDataSet().getFieldIndex("label"));
+    }
+
+
+    @Test
+    public void createDota2Test() throws IOException {
+
+        TableDataSet arrfDataSet = new TableDataSet(new FileInputStream(new File("E:\\Weka-3-8\\data\\dota2.arff")),
+                new ArffParser());//false, "Cluster_ID", "Game_mode"));
+
+        TableDataSet[] dataSets = TableDataSet.split(arrfDataSet, 0.2);// "Team_won", 1);
+        //dataSets = TableDataSet.split(dataSets[1], 0.25, "Team_won", 1);
+
+        InvertedTabularModel tabularModel = new InvertedTabularModel(dataSets[0]);
+
+        PredictionResults predictionResults = tabularModel.predict(dataSets[1].getRecords(), "Team_won", new Powerfunction(null, 0,1), false, 15, a->a.getRelation().values().stream().noneMatch(p->p.getValue().toString().equals("0")) & a.getMR() > 0, null);
+        predictionResults.show(tabularModel.getDataSet().getFieldIndex("Team_won"));
+        predictionResults.toCSVFile("dota2.predict.txt");
+    }
+
 
     @Test
     public void featuresTestLetters() throws IOException {
@@ -103,10 +152,10 @@ public class InvertedTabularAgentTest {
 
         //TableDataSet testDataSet = TabularDataPredictor.fit2model(tabularModel, new TableDataSet(new FileInputStream(new File("D:\\works\\Data\\letter\\letter-recognition.data.test.csv")),
         //        new CSVParser(";","\r\n")));
-        TableDataSet testDataSet = new TableDataSet(new FileInputStream(new File("D:\\works\\Data\\letter\\letter-recognition.data.train.csv")),
+        TableDataSet testDataSet = new TableDataSet(new FileInputStream(new File("D:\\works\\Data\\letter\\letter-recognition.data.test.csv")),
                 new CSVParser(";","\r\n"));
 
-        tabularModel.predict(testDataSet.getRecords(), "lettr", new Powerfunction(null, 0,1), false, 7, null).show(tabularModel.getDataSet().getFieldIndex("lettr"));
+        tabularModel.predict(testDataSet.getRecords(), "lettr", new Powerfunction(null, 0,1), false, 9, null).show(tabularModel.getDataSet().getFieldIndex("lettr"));
 
     }
 

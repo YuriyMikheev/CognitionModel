@@ -3,14 +3,16 @@ package cognitionmodel.models.inverted;
 import cognitionmodel.datasets.TableDataSet;
 import cognitionmodel.datasets.Tuple;
 import cognitionmodel.datasets.TupleElement;
-import cognitionmodel.models.TabularModel;
-import cognitionmodel.models.relations.LightRelation;
+import cognitionmodel.models.inverted.decomposers.DeductiveDecomposer;
+import cognitionmodel.models.inverted.decomposers.RecursiveLevelValuesDecomposer;
 import cognitionmodel.predictors.PredictionResults;
 import cognitionmodel.predictors.predictionfunctions.Powerfunction;
 import cognitionmodel.predictors.predictionfunctions.Predictionfunction;
 
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import static java.lang.Math.*;
 
@@ -26,14 +28,11 @@ public class InvertedTabularModel {
     /**
      * Creates TabularModel object and sets fields from dataset are enabled for usage
      *
+     * @param dataSet            - data for model
      * @param enabledFieldsNames - array of enabled fields names
-     * @param dataSet    - data for model
-     * @param relationInstance - the instance of relation for this model
      */
-    public InvertedTabularModel(TableDataSet dataSet, LightRelation relationInstance, String... enabledFieldsNames){
+    public InvertedTabularModel(TableDataSet dataSet, String... enabledFieldsNames){
         this.dataSet = (TableDataSet) dataSet;
-
-
 
         if (enabledFieldsNames != null)
             if (enabledFieldsNames.length == 0) enabledFieldsNames = null;
@@ -49,16 +48,6 @@ public class InvertedTabularModel {
         invertedIndex = new BitInvertedIndex(this);
 
        // indexInit();
-    }
-
-    /**
-     * Creates TabularModel object and sets fields from dataset are enabled for usage
-     *
-     * @param enabledFieldsNames - array of enabled fields names
-     * @param dataSet    - data for model
-     */
-    public InvertedTabularModel(TableDataSet dataSet, String... enabledFieldsNames) {
-        this(dataSet, null, enabledFieldsNames);
     }
 
 
@@ -94,7 +83,16 @@ public class InvertedTabularModel {
         predict(null, null, new Powerfunction(null, 0,1), false, 4,  a -> a.getMR() > 0);
     }
 
-    public PredictionResults predict(List<Tuple> records, String predictingfield, Predictionfunction predictionfunction, boolean modelcashed, int maxDepth, Function<Agent, Boolean> agentFilter){
+    public PredictionResults predict(List<Tuple> records, String predictingfield, Predictionfunction predictionfunction, boolean modelcashed, int maxDepth, Function<Agent, Boolean> agentFilter) {
+
+        return predict(records, predictingfield, predictionfunction, modelcashed, maxDepth, agentFilter, null);
+    }
+
+    public PredictionResults predict(List<Tuple> records, String predictingfield, Predictionfunction predictionfunction, boolean modelcashed, int maxDepth, Function<Agent, Boolean> agentFilter, double intervals[]){
+
+        if (intervals != null)
+            invertedIndex = new StaticIntervaledBitInvertedIndex((BitInvertedIndex) invertedIndex, predictingfield, intervals);
+
         int si = dataSet.getFieldIndex(predictingfield);
 
         if (si == -1)
@@ -115,72 +113,89 @@ public class InvertedTabularModel {
 
         int recordIndex = 0;
 
-  //      BasicDecomposer decomposer = new BasicDecomposer(this);
-  //      PatternDecomposer decomposer = new PatternDecomposer(new FullGridRecursivePatterns(this, 3).getPatterns(), this, predictingfield, false, a -> a.getMR() > 0);
-//       RecursiveDecomposer decomposer = new RecursiveDecomposer(this, predictingfield, false, 3,  a -> a.getMR() > 0);
 //        RecursiveLevelValuesDecomposer decomposer = new RecursiveLevelValuesDecomposer(new EqualIntervaledBitInvertedIndex((BitInvertedIndex) getInvertedIndex(), predictingfield, 10), predictingfield, modelcashed, maxDepth,  agentFilter);
         RecursiveLevelValuesDecomposer decomposer = new RecursiveLevelValuesDecomposer(getInvertedIndex(), predictingfield, modelcashed, maxDepth,  agentFilter);
-//        getInvertedIndex().setConfidenceIntervals(0.95);
+      //  DeductiveDecomposer decomposer = new DeductiveDecomposer(this, predictingfield, agentFilter, 2, 2,1);
+
+
+
+        //        getInvertedIndex().setConfidenceIntervals(0.95);
 
        // HashMap<String, Features.Err> ferr = Features.errorAgentsMap(this, (a, b) -> {return 1.0;}, predictingfield, decomposer, predictionfunction);
         double pcth = getInvertedIndex().getConfidenceIntervals() != null ? getInvertedIndex().getConfidenceIntervals()[predictingFieldIndex]: 1;
 
+        LinkedList<CompletableFuture<Integer>> cfl = new LinkedList<>();
+
+
         for (Tuple record: records)
             if (record.size() > si){
-                double[] pa = new double[predictingvalues.size()];
-                double[] pp = new double[predictingvalues.size()];
-                double[] pc = new double[predictingvalues.size()];
-                int c[] = new int[predictingvalues.size()];
+                int finalRecordIndex = recordIndex, finalPredictingFieldIndex = predictingFieldIndex;
 
-                HashMap<Object, LinkedList<Agent>> d = decomposer.decompose(record, predictingfield, getInvertedIndex().getConfidenceIntervals() == null? getInvertedIndex() : new DynamicIntervaledBitInvertedIndex((BitInvertedIndex) getInvertedIndex(), record, predictingfield));
-//                HashMap<Object, LinkedList<Agent>> d = decomposer.decompose(record, predictingfield);
-                HashMap<String, Agent> zeroMap = new HashMap<>();
+                cfl.add(CompletableFuture.supplyAsync(() -> {
+                    double[] pa = new double[predictingvalues.size()];
+                    double[] pp = new double[predictingvalues.size()];
+                    double[] pc = new double[predictingvalues.size()];
+                    int c[] = new int[predictingvalues.size()];
 
-                LinkedList<Agent> zl = d.remove("null");
-                if (zl != null){
-                    for (Agent a: zl)
-                        zeroMap.put(a.getFields().toString(), a);
-                }
+                    //HashMap<Object, LinkedList<Agent>> d = decomposer.decompose(record, predictingfield, getInvertedIndex().getConfidenceIntervals() == null ? getInvertedIndex() : new DynamicIntervaledBitInvertedIndex((BitInvertedIndex) getInvertedIndex(), record, predictingfield));
+                    HashMap<Object, LinkedList<Agent>> d = decomposer.decompose(record, predictingfield);
+                    HashMap<String, Agent> zeroMap = new HashMap<>();
 
-                for (Map.Entry<Object, LinkedList<Agent>> re : d.entrySet()) {
-                    int i = pvi.get(predictingfield + ":" + re.getKey());//pvi.get(a.getRelationValue(predictingfield));
-                    for (Agent a : re.getValue()) {
-                        if (a.getConfP() >= pow(pcth, a.relation.size()) /*&  a.relation.size() > 1*/) {
-                            Agent pva = null;
-                            if (zl != null) {
-                                BitSet fs = a.getFields();
-                                fs.set(predictingFieldIndex, false);
-                                pva = zeroMap.get(fs.toString());
+                    LinkedList<Agent> zl = d.remove("null");
+                    if (zl != null) {
+                        for (Agent a : zl)
+                            zeroMap.put(a.getFields().toString(), a);
+                    }
+
+                    for (Map.Entry<Object, LinkedList<Agent>> re : d.entrySet()) {
+                        int i = pvi.get(predictingfield + ":" + re.getKey());//pvi.get(a.getRelationValue(predictingfield));
+                        for (Agent a : re.getValue()) {
+                            if (a.getConfP() >= pow(pcth, a.relation.size()) /*&  a.relation.size() > 1*/)
+                            {
+                                Agent pva = null;
+                                if (zl != null) {
+                                    BitSet fs = a.getFields();
+                                    fs.set(finalPredictingFieldIndex, false);
+                                    pva = zeroMap.get(fs.toString());
+                                }
+
+                                pa[i] += predictionfunction.predictionfunction(a, pva);
+                                //   pp[i] += log(a.getFr());//log(a.getP());
+                                pc[i] += log(a.getConfP());
+                                c[i]++;
                             }
-
-                            pa[i] += predictionfunction.predictionfunction(a, pva);
-                         //   pp[i] += log(a.getFr());//log(a.getP());
-                            pc[i] += log(a.getConfP());
-                            c[i]++;
                         }
                     }
-                }
 
-                int mi = 0;
-                double[] pr = new double[c.length];
-                for (int i = 0; i < c.length; i++)
-                    if ((pr[i] = pa[i]  ) > pa[mi])
-                        mi = i;
+                    int mi = 0;
+                    double[] pr = new double[c.length];
+                    for (int i = 0; i < c.length; i++)
+                        if ((pr[i] = pa[i]/c[i]) > pa[mi]/c[i])
+                            mi = i;
 
-                Object val;
+                    Object val;
 
-                if (record.get(si).getType() == TupleElement.Type.Int) val = (int)record.get(si).getValue() * 1.0;
-                    else val = record.get(si).getValue();
+/*                    if (record.get(si).getType() == TupleElement.Type.Int) val = (int) record.get(si).getValue() * 1.0;
+                        else */
+                            val = record.get(si).getValue();
 
-                r.put(recordIndex, si, new Tuple().add((c[mi] == 0 ? "Prediction failed": predictingvalues.get(mi))).add(val).addAll(pr));
+                    r.put(finalRecordIndex, si, new Tuple().add((c[mi] == 0 ? "Prediction failed" : predictingvalues.get(mi))).add(val).addAll(pr));
+
+                    if (finalRecordIndex % (int) (records.size() * 0.01 + 1) == 0 | finalRecordIndex == records.size())
+                        System.out.print(".");
+
+
+                    return null;
+                }));
 
                 recordIndex++;
+                if (recordIndex % (int) (records.size() * 0.01 + 1) == 0 | recordIndex == records.size())
+                {
+                   // System.out.print(".");
+                    cfl.stream().map(m -> m.join()).collect(Collectors.toList());
+                    cfl.clear();
+                }
         }
-
-     //   double sc = ferr.values().stream().mapToDouble(Double::doubleValue).sum();
-    //    ferr.keySet().forEach(e -> {ferr.compute(e, (k, v) -> v = v/sc);});
-    //    System.out.println("Features cumulative errors");
-   //     ferr.entrySet().stream().sorted(Comparator.comparing(e -> -e.getValue())).collect(toList()).forEach(System.out::println);
 
         return r;
     }

@@ -174,7 +174,7 @@ public class StaticIntervaledBitInvertedIndex extends BitInvertedIndex{
 
                 TreeMap<Object, RoaringBitmap> values = sourceInvertedIndex.get(field);
 
-                double mi = values.keySet().stream().mapToDouble(o -> (Double) o).min().getAsDouble();
+                double mi = values.keySet().stream().mapToDouble(o -> o instanceof Integer? (Integer)o * 1.0: (Double) o).min().getAsDouble();
 
                 TreeMap<Object, RoaringBitmap> rt = new TreeMap<>();
                 RoaringBitmap r = new RoaringBitmap(); rt.put(mi, r);
@@ -183,7 +183,7 @@ public class StaticIntervaledBitInvertedIndex extends BitInvertedIndex{
                 int i = 0;
                 for (Map.Entry<Object, RoaringBitmap> val: values.entrySet()){
                     if (r.getCardinality() >= procentiles[i] * model.getDataSet().size()){
-                        mi = (double)val.getKey(); i++;
+                        Object o = val.getKey(); mi = o instanceof Integer? (Integer)o * 1.0: (Double) o; i++;
                         r = new RoaringBitmap(); rt.put(mi , r);
                         r.or(val.getValue());
                     } else

@@ -3,7 +3,7 @@ package cognitionmodel.models.analyze.invertedmodel;
 import cognitionmodel.datasets.CSVParser;
 import cognitionmodel.datasets.TableDataSet;
 import cognitionmodel.models.inverted.InvertedTabularModel;
-import cognitionmodel.models.inverted.RecursiveLevelValuesDecomposer;
+import cognitionmodel.models.inverted.decomposers.RecursiveLevelValuesDecomposer;
 import cognitionmodel.predictors.predictionfunctions.Powerfunction;
 import org.junit.Test;
 

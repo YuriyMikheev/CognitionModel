@@ -5,6 +5,12 @@ import cognitionmodel.datasets.TupleElement;
 import net.openhft.chronicle.map.ChronicleMap;
 import net.openhft.chronicle.map.ChronicleMapBuilder;
 
+import java.io.BufferedWriter;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -195,5 +201,18 @@ public class PredictionResults {
 
     }
 
+    public void toCSVFile(String file) throws IOException {
+        Iterator<Map.Entry<int[],Tuple>> entryIterator = datamap.entrySet().iterator();
+
+        BufferedWriter writer = Files.newBufferedWriter(Path.of(file), StandardCharsets.UTF_8, new StandardOpenOption[]{StandardOpenOption.CREATE_NEW});
+
+        while (entryIterator.hasNext()){
+            Map.Entry<int[],Tuple> entry = entryIterator.next();
+            Tuple tuple = entry.getValue();
+            writer.write(tuple.toCSVString()+"\n");
+        }
+
+        writer.close();
+    }
 
 }

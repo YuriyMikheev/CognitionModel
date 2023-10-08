@@ -4,7 +4,7 @@ import cognitionmodel.datasets.Tuple;
 import cognitionmodel.models.inverted.Agent;
 import cognitionmodel.models.inverted.BitInvertedIndex;
 import cognitionmodel.models.inverted.InvertedTabularModel;
-import cognitionmodel.models.inverted.RecursiveLevelValuesDecomposer;
+import cognitionmodel.models.inverted.decomposers.RecursiveLevelValuesDecomposer;
 import cognitionmodel.predictors.PredictionResults;
 import cognitionmodel.predictors.predictionfunctions.Predictionfunction;
 

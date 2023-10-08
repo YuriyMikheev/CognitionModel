@@ -1,9 +1,12 @@
 package cognitionmodel.datasets;
 
 import java.nio.charset.Charset;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.stream.Collectors;
 
 
 public class ArffParser implements TabularParser {
@@ -12,10 +15,17 @@ public class ArffParser implements TabularParser {
     private String endofline = "\n";
     private Tuple header = new Tuple();
     private HashSet<String>[] terminalsByfieldIndex;
+    private HashSet<String>  fields = new HashSet<>();
+    private boolean include;
 
     public ArffParser() {
     }
 
+    public ArffParser(boolean include, String ...fields) {
+        this.include = include;
+        this.fields = new  HashSet();
+        Arrays.stream(fields).forEach(this.fields::add);
+    }
 
     public String getDelimiter() {
         return delimiter;
@@ -45,9 +55,9 @@ public class ArffParser implements TabularParser {
 
         int i;
         for (i = 0; i < lines.length; i++){
-            if (lines[i].equals("@data")) break;
+            if (lines[i].toLowerCase().equals("@data")) break;
             String[] l = lines[i].split(" ");
-            if (l[0].equals("@attribute")) header.add(l[1]);
+            if (l[0].toLowerCase().equals("@attribute")) header.add(l[1]);
         }
 
 
@@ -58,16 +68,43 @@ public class ArffParser implements TabularParser {
         for (int j = 0; j < terminalsByfieldIndex.length; j++)
             terminalsByfieldIndex[j] = new HashSet<>();
 
+        LinkedList<CompletableFuture<Tuple>> cfl = new LinkedList<>();
+
+
         i++;
         for (;i < lines.length; i++)
             if (!lines[i].isEmpty()) {
-                Tuple tuple = new Tuple().addAll(lines[i].split(delimiter,-1));
-                r.add(tuple);
+                int finalI = i;
+                cfl.add(CompletableFuture.supplyAsync(() -> {
 
-                for (int j = 0; j < tuple.size(); j++)
-                    terminalsByfieldIndex[j].add(tuple.get(j).getValue().toString());
+                    Tuple tuple = new Tuple();//.addAll(lines[i].split(delimiter,-1));
+
+                    int j = 0;
+                    for (String v : lines[finalI].split(delimiter, -1)) {
+                        if (!(include ^ fields.contains(header.get(j).getValue().toString())))
+                            tuple.add(v);
+                        j++;
+                    }
+                    //r.add(tuple);
+
+                    for (j = 0; j < tuple.size(); j++)
+                        terminalsByfieldIndex[j].add(tuple.get(j).getValue().toString());
+                    return tuple;
+                }));
+
+                if (i % (int) (lines.length * 0.01 + 1) == 0 | i == lines.length)
+                {
+                    cfl.stream().forEach(t -> r.add(t.join()));//map(m -> m.join()).collect(Collectors.toList());
+                    cfl.clear();
+                }
         }
 
+        Tuple h = new Tuple();
+        for ( i = 0; i < header.size(); i++)
+            if (!(include ^ fields.contains(header.get(i).getValue().toString())))
+                h.add(header.get(i));
+
+        header = h;
         return r;
     }
 

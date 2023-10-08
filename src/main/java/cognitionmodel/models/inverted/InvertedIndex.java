@@ -9,11 +9,11 @@ public interface InvertedIndex {
 
     /**
      * Get all available fields in index
-     * @return - List of fields
      *
+     * @return - List of fields
      */
 
-    public List<String> getFields();
+    public TreeMap<String, Integer> getFields();
 
     /**
      * Gets index of the field in index

@@ -4,6 +4,7 @@ import java.io.Serializable;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
 /**
  * Consists data in form of set of tupleElements
@@ -191,6 +192,10 @@ public class Tuple implements Iterable<TupleElement>, Serializable, Cloneable {
         for (int i = start; i < tuple.size() | i < start+length; i++)
             t.add(tuple.get(i));
         return t;
+    }
+
+    public String toCSVString(){
+        return tupleElements.stream().map(t-> t.getValue().toString()).collect(Collectors.joining("; "));
     }
 
 }

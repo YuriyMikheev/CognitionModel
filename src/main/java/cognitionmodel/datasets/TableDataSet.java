@@ -2,8 +2,9 @@ package cognitionmodel.datasets;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.HashMap;
-import java.util.Random;
+import java.util.*;
+
+import static java.lang.Math.floor;
 
 /**
  * Provides CSV data support
@@ -68,4 +69,54 @@ public class TableDataSet extends DataSet{
         return new TableDataSet[]{dataSet1, dataSet2};
     }
 
-}
+
+    /**
+     * Randomly splits dataset to two parts according to percent
+     * @param sourceData - split data set
+     * @param percent - percent of second part
+     * @return - array of two data sets
+     * @throws IOException
+     */
+    public static TableDataSet[] split(TableDataSet sourceData, double percent, int balancingFieldIndex, int minAmount) throws IOException {
+
+        HashMap<String, ArrayList<Integer>> fr = new HashMap<>();//, frs = new HashMap<>();
+
+        int i = 0;
+        for(Tuple t: sourceData){
+            ArrayList<Integer> idx = fr.get(t.get(balancingFieldIndex).getValue().toString());
+            if (idx == null)
+               fr.put(t.get(balancingFieldIndex).getValue().toString(), idx = new ArrayList<>());
+            idx.add(i++);
+        }
+        TableDataSet dataSet1 = new TableDataSet(null, (TabularParser) sourceData.getParser());
+        TableDataSet dataSet2 = new TableDataSet(null, (TabularParser) sourceData.getParser());
+
+        Random random = new Random();
+
+        for (Map.Entry<String, ArrayList<Integer>> e: fr.entrySet()){
+            for (Integer idx: e.getValue()) {
+                if (random.nextDouble() < percent || e.getValue().size() < minAmount)
+                    dataSet2.getRecords().add(sourceData.getRecords().get(idx));
+                else
+                    dataSet1.getRecords().add(sourceData.getRecords().get(idx));
+            }
+        }
+
+        return new TableDataSet[]{dataSet1, dataSet2};
+    }
+
+    /**
+     * Randomly splits dataset to two parts according to percent
+     * @param sourceData - split data set
+     * @param percent - percent of second part
+     * @param balancingField - field for balancing samples, each value of the field represented in proportion fitted original distribution
+     * @return - array of two data sets
+     * @throws IOException
+     */
+    public static TableDataSet[] split(TableDataSet sourceData, double percent, String balancingField, int minAmount) throws IOException {
+        return split(sourceData, percent, sourceData.getFieldIndex(balancingField), minAmount);
+
+    }
+
+    }
+

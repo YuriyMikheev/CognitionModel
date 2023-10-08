@@ -54,8 +54,9 @@ public class BitInvertedIndex implements InvertedIndex{
                     RoaringBitmap idx;
                     Object val;
 
-                    if (tupleElement.getType() == TupleElement.Type.Int) val = (int)tupleElement.getValue() * 1.0;
-                        else val = tupleElement.getValue();
+                    //if (tupleElement.getType() == TupleElement.Type.Int) val = (int)tupleElement.getValue() * 1.0;
+                        //else
+                            val = tupleElement.getValue();
                     if (tupleElement.getType() != TupleElement.Type.Empty)
                         try {
                             if (invertedIndex.get(fieldName).containsKey(val))
@@ -111,12 +112,13 @@ public class BitInvertedIndex implements InvertedIndex{
 
     /**
      * Gets the list of inverted index fields. Inverted index have all indexed fields and does not include fields that not enabled in data set
+     *
      * @return
      */
 
     @Override
-    public List<String> getFields() {
-        return fieldsList;
+    public TreeMap<String, Integer> getFields() {
+        return fields;
     }
 
     /**
@@ -187,7 +189,7 @@ public class BitInvertedIndex implements InvertedIndex{
      * @return
      */
     public RoaringBitmap getRecords(String field, Object value){
-        if (value.getClass().getSuperclass() == Number.class) value = Double.parseDouble(value.toString());
+       // if (value.getClass().getSuperclass() == Number.class) value = Double.parseDouble(value.toString());
         try {
             return (RoaringBitmap) getMap(field).get(value);
         } catch (ClassCastException e){
@@ -200,4 +202,31 @@ public class BitInvertedIndex implements InvertedIndex{
         return dataSet.size();
     }
 
+    public InvertedTabularModel getModel() {
+        return model;
+    }
+
+    public TableDataSet getDataSet() {
+        return dataSet;
+    }
+
+    public HashMap<String, TreeMap<Object, RoaringBitmap>> getInvertedIndex() {
+        return invertedIndex;
+    }
+
+    public ArrayList<String> getFieldsList() {
+        return fieldsList;
+    }
+
+    public double[] getConfidenceLevels() {
+        return confidenceLevels;
+    }
+
+    public int[] getDi2i() {
+        return di2i;
+    }
+
+    public int[] getI2di() {
+        return i2di;
+    }
 }

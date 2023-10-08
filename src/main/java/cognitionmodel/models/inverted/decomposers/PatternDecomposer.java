@@ -1,7 +1,11 @@
-package cognitionmodel.models.inverted;
+package cognitionmodel.models.inverted.decomposers;
 
 import cognitionmodel.datasets.Tuple;
 import cognitionmodel.datasets.TupleElement;
+import cognitionmodel.models.inverted.Agent;
+import cognitionmodel.models.inverted.InvertedTabularModel;
+import cognitionmodel.models.inverted.Point;
+import cognitionmodel.models.inverted.decomposers.Decomposer;
 import cognitionmodel.patterns.LinkedPatternSet;
 import cognitionmodel.patterns.Pattern;
 
@@ -11,7 +15,7 @@ import java.util.function.Function;
 
 import static java.lang.Math.round;
 
-public class PatternDecomposer implements Decomposer{
+public class PatternDecomposer implements Decomposer {
 
     private LinkedPatternSet patternSet;
     private InvertedTabularModel model;
@@ -35,7 +39,7 @@ public class PatternDecomposer implements Decomposer{
         this.predicttingField = predictingField;
         predictingFieldIndex = model.getDataSet().getFieldIndex(predictingField);
         
-        if (modelcashed) agentMap = model.agentsindex;
+      // if (modelcashed) agentMap = model.agentsindex;
 
         LinkedList<Pattern> np = new LinkedList<>();
         for (Pattern p: patterns)
@@ -154,7 +158,7 @@ public class PatternDecomposer implements Decomposer{
                 }
 
 
-                if (a.records.isEmpty()){// | !(agentFilter == null ? true: agentFilter.apply(a))) {//agent checking
+                if (a.getRecords().isEmpty()){// | !(agentFilter == null ? true: agentFilter.apply(a))) {//agent checking
                     patternSet.setInActive(pattern, true);
                 } else {
                     if (agentFilter == null ? true: agentFilter.apply(a)) {

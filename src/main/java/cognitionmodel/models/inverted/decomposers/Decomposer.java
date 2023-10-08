@@ -1,6 +1,7 @@
-package cognitionmodel.models.inverted;
+package cognitionmodel.models.inverted.decomposers;
 
 import cognitionmodel.datasets.Tuple;
+import cognitionmodel.models.inverted.Agent;
 
 import java.util.HashMap;
 import java.util.LinkedList;

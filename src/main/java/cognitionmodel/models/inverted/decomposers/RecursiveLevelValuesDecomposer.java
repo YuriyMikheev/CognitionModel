@@ -1,14 +1,19 @@
-package cognitionmodel.models.inverted;
+package cognitionmodel.models.inverted.decomposers;
 
 import cognitionmodel.datasets.Tuple;
 import cognitionmodel.datasets.TupleElement;
+import cognitionmodel.models.inverted.Agent;
+import cognitionmodel.models.inverted.BitInvertedIndex;
+import cognitionmodel.models.inverted.InvertedIndex;
+import cognitionmodel.models.inverted.Point;
+import cognitionmodel.models.inverted.decomposers.Decomposer;
 
 import java.util.*;
 import java.util.function.Function;
 
 import static java.lang.Math.min;
 
-public class RecursiveLevelValuesDecomposer implements Decomposer{
+public class RecursiveLevelValuesDecomposer implements Decomposer {
 
     private InvertedIndex invertedIndex;
     private String fields[];
@@ -86,12 +91,12 @@ public class RecursiveLevelValuesDecomposer implements Decomposer{
                 Point p = pointIterator.next();
 
                 Agent na = new Agent(p, invertedIndex);
-                if (p.field.equals(predicttingField))
+                if (p.getField().equals(predicttingField))
                     na.setPerdictingValue(p.getValue());
 
+
                 Agent ca = a.relation.size() == 0 ? na: Agent.merge(a, na, invertedIndex);
-             //   if (ca.records.getCardinality() > 5 ) {
-                if (!ca.records.isEmpty() ) {
+                if (!ca.getRecords().isEmpty() ) {
                     if (agentFilter == null || agentFilter.apply(ca) || ca.relation.size() == 1) {
                         newlevel.add(ca);
                         Object co = ca.getPerdictingValue();
@@ -165,7 +170,7 @@ public class RecursiveLevelValuesDecomposer implements Decomposer{
                 if (fi >= invertedIndex.getFields().size()) return null;
                 int ifi = ((BitInvertedIndex)invertedIndex).invertedIndexToDatasetFieldIndex(fi);
 
-                String field = invertedIndex.getFields().get(fi);
+                String field = ((BitInvertedIndex) invertedIndex).getFieldsList().get(fi);
                 if (rec.get(ifi) == null & values == null) {
                     values =  invertedIndex.getAllValues(field);
                     //valuesIterator = values.iterator();
@@ -191,79 +196,6 @@ public class RecursiveLevelValuesDecomposer implements Decomposer{
 
             }
         };
-    }
-
-    private class Node implements Cloneable {
-        LinkedList<Agent> agents = new LinkedList<>();
-        double mr = 0;
-        private BitSet fields = new BitSet();
-        private BitSet havagents = new BitSet();
-
-        public Node(){
-
-        }
-        public Node(Agent agent) {
-            addAgent(agent);
-        }
-
-        private void addAgent(Agent agent){
-            agents.add(agent);
-            mr += agent.getMR();
-            fields.or(agent.getFields());
-            fields.clear(predictingFieldInvertedIndex);
-
-        }
-
-        public double getMr() {
-            return mr;
-        }
-
-        public boolean canAdd(Agent agent){
-            boolean y = agent.getFields().get(predictingFieldInvertedIndex) ? agents.size() > 0 ? agent.getPerdictingValue().equals(agents.get(0).getPerdictingValue()): true: true;
-            return !fields.intersects(agent.getFields()) & y;
-        }
-
-        public Node clone(){
-            Node node = new Node();
-            for (Agent a: agents)
-                node.addAgent(a);
-
-            node.havagents = (BitSet) havagents.clone();
-            return node;
-        }
-
-        public String toString(){
-            return mr+"\t"+agents;
-        }
-
-    }
-
-    private LinkedList<Agent> minimize(LinkedList<Agent> agents){
-
-        agents.sort(Comparator.comparing(Agent::getMR, Comparator.reverseOrder()));
-
-        LinkedList<Agent> nagents = new LinkedList<>();
-
-        for (int i = 0; i < min(5, agents.size()); i++)
-            nagents.add(agents.poll());
-
-
-        return nagents;
-    }
-
-    private LinkedList<Agent> minimize1(LinkedList<Agent> agents){
-
-        agents.sort(Comparator.comparing(Agent::getMR, Comparator.reverseOrder()));
-
-        Node node = new Node();
-
-
-        for (Iterator<Agent> agentIterator = agents.listIterator(); node.agents.size() <  agents.size() & agentIterator.hasNext();){
-            Agent a = agentIterator.next();
-            if (node.canAdd(a) & a.relation.size() > 1) node.addAgent(a);
-        }
-
-        return node.agents;
     }
 
 }

@@ -8,9 +8,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.TreeMap;
 
-import static java.lang.Math.abs;
-
-public class DynamicIntervaledBitInvertedIndex extends BitInvertedIndex{
+public class DynamicIntervaledBitInvertedIndex extends BitInvertedIndex {
 
     private HashMap<String, TreeMap<Object, RoaringBitmap>> sourceInvertedIndex;
     private Tuple record;
@@ -31,19 +29,19 @@ public class DynamicIntervaledBitInvertedIndex extends BitInvertedIndex{
         this.record = record;
         this.predictingField = predictingField;
 
-        this.dataSet = invertedIndex.dataSet;
-        this.model = invertedIndex.model;
-        this.fields = invertedIndex.fields;
-        this.fieldsList = invertedIndex.fieldsList;
-        if (invertedIndex.confidenceLevels != null)
-            confidenceLevels = Arrays.copyOf(invertedIndex.confidenceLevels, invertedIndex.confidenceLevels.length);
+        this.dataSet = invertedIndex.getDataSet();
+        this.model = invertedIndex.getModel();
+        this.fields = invertedIndex.getFields();
+        this.fieldsList = invertedIndex.getFieldsList();
+        if (invertedIndex.getConfidenceLevels() != null)
+            confidenceLevels = Arrays.copyOf(invertedIndex.getConfidenceLevels(), invertedIndex.getConfidenceLevels().length);
         else
             throw new IllegalArgumentException("Confidence intervals are not setted. Making index is impossible");
 
-        this.di2i = invertedIndex.di2i;
-        this.i2di = invertedIndex.i2di;
+        this.di2i = invertedIndex.getDi2i();
+        this.i2di = invertedIndex.getI2di();
 
-        sourceInvertedIndex = invertedIndex.invertedIndex;
+        sourceInvertedIndex = invertedIndex.getInvertedIndex();
         init();
     }
 
@@ -131,7 +129,7 @@ public class DynamicIntervaledBitInvertedIndex extends BitInvertedIndex{
                 try {
                     r = sourceInvertedIndex.get(field).get(value);
                 } catch (ClassCastException e){
-                  //  System.out.println("!!!");
+                    //  System.out.println("!!!");
                     r = null;
                 }
                 confidenceLevels[ifi] = 1.0;

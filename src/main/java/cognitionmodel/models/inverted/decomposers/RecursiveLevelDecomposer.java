@@ -1,36 +1,37 @@
-package cognitionmodel.models.inverted;
+package cognitionmodel.models.inverted.decomposers;
 
 import cognitionmodel.datasets.Tuple;
+import cognitionmodel.models.inverted.Agent;
+import cognitionmodel.models.inverted.BitInvertedIndex;
+import cognitionmodel.models.inverted.InvertedTabularModel;
+import cognitionmodel.models.inverted.Point;
+import cognitionmodel.models.inverted.decomposers.Decomposer;
 
 import java.util.*;
 import java.util.function.Function;
 
-public class RecursiveLevelDecomposer implements Decomposer{
+public class RecursiveLevelDecomposer implements Decomposer {
 
     private InvertedTabularModel model;
     private String fields[];
     private String predicttingField;
     private int predictingFieldIndex, predictingFieldInvertedIndex;
     private HashMap<String, Agent> agentMap = new HashMap<>();
-    private boolean modelcashed;
     private Function<Agent, Boolean> agentFilter;
     private int maxDepth = 3;
 
     public RecursiveLevelDecomposer(InvertedTabularModel model, String predictingField, boolean modelcashed) {
-        this( model, predictingField, modelcashed, 3, null);
+        this( model, predictingField, 3, null);
 
     }
 
-    public RecursiveLevelDecomposer(InvertedTabularModel model, String predictingField, boolean modelcashed, int maxDepth, Function<Agent, Boolean> agentFilter){
+    public RecursiveLevelDecomposer(InvertedTabularModel model, String predictingField,  int maxDepth, Function<Agent, Boolean> agentFilter){
 
         this.maxDepth = maxDepth;
-        this.modelcashed = modelcashed;
         this.model = model;
         this.predicttingField = predictingField;
         predictingFieldIndex = model.getDataSet().getFieldIndex(predictingField);
         predictingFieldInvertedIndex = ((BitInvertedIndex)model.getInvertedIndex()).dataSetFieldIndexToInvertedFieldIndex(predictingFieldIndex);
-
-        if (modelcashed) agentMap = model.agentsindex;
 
         this.agentFilter = agentFilter;
     }
@@ -105,7 +106,7 @@ public class RecursiveLevelDecomposer implements Decomposer{
                     Agent na = new Agent(p, model.getInvertedIndex());
 
                     Agent ca = a.relation.size() == 0 ? na: Agent.merge(a, na, model.getInvertedIndex());
-                    if (!ca.records.isEmpty() ) {
+                    if (!ca.getRecords().isEmpty() ) {
                         if (agentFilter == null ? true: agentFilter.apply(ca)) {
                             newlevel.add(ca);
                             agentMap.put(s, ca);
