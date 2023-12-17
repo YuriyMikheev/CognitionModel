@@ -1,6 +1,5 @@
 package cognitionmodel.models.inverted;
 
-import cognitionmodel.datasets.Tuple;
 import org.roaringbitmap.RoaringBitmap;
 
 import java.util.*;
@@ -63,11 +62,11 @@ public class Agent implements Cloneable {
 
     }
 
-    public boolean hasPerdictingField() {
+    public boolean hasPredictingField() {
         return hasPredictingField;
     }
 
-    public void setPerdictingField(boolean hasPredictingField) {
+    public void setPredictingField(boolean hasPredictingField) {
         this.hasPredictingField = hasPredictingField;
     }
 
@@ -89,7 +88,7 @@ public class Agent implements Cloneable {
         return records;
     }
 
-    public Object getPerdictingValue() {
+    public Object getPredictingValue() {
         return predictingValue;
     }
 
@@ -101,7 +100,7 @@ public class Agent implements Cloneable {
         values.add(index);
     }
 
-    public void setPerdictingValue(Object predictingValue) {
+    public void setPredictingValue(Object predictingValue) {
         this.predictingValue = predictingValue;
         hasPredictingField = true;
     }

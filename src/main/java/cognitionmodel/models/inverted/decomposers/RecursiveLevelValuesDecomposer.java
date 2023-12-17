@@ -6,7 +6,6 @@ import cognitionmodel.models.inverted.Agent;
 import cognitionmodel.models.inverted.BitInvertedIndex;
 import cognitionmodel.models.inverted.InvertedIndex;
 import cognitionmodel.models.inverted.Point;
-import cognitionmodel.models.inverted.decomposers.Decomposer;
 
 import java.util.*;
 import java.util.function.Function;
@@ -92,14 +91,14 @@ public class RecursiveLevelValuesDecomposer implements Decomposer {
 
                 Agent na = new Agent(p, invertedIndex);
                 if (p.getField().equals(predicttingField))
-                    na.setPerdictingValue(p.getValue());
+                    na.setPredictingValue(p.getValue());
 
 
                 Agent ca = a.relation.size() == 0 ? na: Agent.merge(a, na, invertedIndex);
                 if (!ca.getRecords().isEmpty() ) {
                     if (agentFilter == null || agentFilter.apply(ca) || ca.relation.size() == 1) {
                         newlevel.add(ca);
-                        Object co = ca.getPerdictingValue();
+                        Object co = ca.getPredictingValue();
                         if (co == null) co = "null";
                         if (!resultMap.containsKey(co)) resultMap.put(co, new LinkedList<>());
                         if ( ca.relation.size() > 1 || co.equals("null")) resultMap.get(co).add(ca);
@@ -124,8 +123,8 @@ public class RecursiveLevelValuesDecomposer implements Decomposer {
         for (Agent a: level){
             BitSet bt = BitSet.valueOf(b.toLongArray());
             bt.andNot(a.getFields4view());
-            if (a.getPerdictingValue() != null & agent.getPerdictingValue() != null)
-                bt.set(predictingFieldInvertedIndex, !a.getPerdictingValue().toString().equals(agent.getPerdictingValue().toString()));
+            if (a.getPredictingValue() != null & agent.getPredictingValue() != null)
+                bt.set(predictingFieldInvertedIndex, !a.getPredictingValue().toString().equals(agent.getPredictingValue().toString()));
             if (bt.cardinality() == 1) {
                 a.getFields4view().set(bt.nextSetBit(0));
                 if (bt.get(predictingFieldInvertedIndex))

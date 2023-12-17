@@ -118,5 +118,21 @@ public class TableDataSet extends DataSet{
 
     }
 
+    public static TableDataSet merge(TableDataSet dataSet1, TableDataSet dataSet2) throws IOException {
+        TableDataSet rdataSet = new TableDataSet(null, (TabularParser) dataSet1.getParser());
+
+        if (!dataSet1.getHeader().toCSVString().equals(dataSet2.getHeader().toCSVString()))
+            System.err.println("Merging datasets have headers are different");
+
+        for (Tuple t: dataSet1)
+            rdataSet.getRecords().add(t);
+
+        for (Tuple t: dataSet2)
+            rdataSet.getRecords().add(t);
+
+        return rdataSet;
     }
+
+
+}
 

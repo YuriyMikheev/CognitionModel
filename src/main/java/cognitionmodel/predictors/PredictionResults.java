@@ -204,7 +204,7 @@ public class PredictionResults {
     public void toCSVFile(String file) throws IOException {
         Iterator<Map.Entry<int[],Tuple>> entryIterator = datamap.entrySet().iterator();
 
-        BufferedWriter writer = Files.newBufferedWriter(Path.of(file), StandardCharsets.UTF_8, new StandardOpenOption[]{StandardOpenOption.CREATE_NEW});
+        BufferedWriter writer = Files.newBufferedWriter(Path.of(file), StandardCharsets.UTF_8, new StandardOpenOption[]{StandardOpenOption.CREATE});
 
         while (entryIterator.hasNext()){
             Map.Entry<int[],Tuple> entry = entryIterator.next();

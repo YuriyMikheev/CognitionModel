@@ -3,6 +3,10 @@ package cognitionmodel.models.inverted;
 import cognitionmodel.datasets.TableDataSet;
 import cognitionmodel.datasets.Tuple;
 import cognitionmodel.datasets.TupleElement;
+import cognitionmodel.models.inverted.composers.IndependentComposer;
+import cognitionmodel.models.inverted.composers.IndependentComposer2;
+import cognitionmodel.models.inverted.composers.IndependentComposer3;
+import cognitionmodel.models.inverted.composers.InvertedComposer;
 import cognitionmodel.models.inverted.decomposers.DeductiveDecomposer;
 import cognitionmodel.models.inverted.decomposers.RecursiveLevelValuesDecomposer;
 import cognitionmodel.predictors.PredictionResults;
@@ -117,7 +121,7 @@ public class InvertedTabularModel {
         RecursiveLevelValuesDecomposer decomposer = new RecursiveLevelValuesDecomposer(getInvertedIndex(), predictingfield, modelcashed, maxDepth,  agentFilter);
       //  DeductiveDecomposer decomposer = new DeductiveDecomposer(this, predictingfield, agentFilter, 2, 2,1);
 
-
+        InvertedComposer composer = new InvertedComposer(((BitInvertedIndex) getInvertedIndex()).getFieldsAmount(), predictingFieldIndex);
 
         //        getInvertedIndex().setConfidenceIntervals(0.95);
 
@@ -147,7 +151,10 @@ public class InvertedTabularModel {
                             zeroMap.put(a.getFields().toString(), a);
                     }
 
-                    for (Map.Entry<Object, LinkedList<Agent>> re : d.entrySet()) {
+                    HashMap<Object, LinkedList<Agent>>  dc = composer.compose(d);
+
+
+                    for (Map.Entry<Object, LinkedList<Agent>> re : dc.entrySet()) {
                         int i = pvi.get(predictingfield + ":" + re.getKey());//pvi.get(a.getRelationValue(predictingfield));
                         for (Agent a : re.getValue()) {
                             if (a.getConfP() >= pow(pcth, a.relation.size()) /*&  a.relation.size() > 1*/)
@@ -170,7 +177,7 @@ public class InvertedTabularModel {
                     int mi = 0;
                     double[] pr = new double[c.length];
                     for (int i = 0; i < c.length; i++)
-                        if ((pr[i] = pa[i]/c[i]) > pa[mi]/c[i])
+                        if ((pr[i] = pa[i]) > pa[mi])
                             mi = i;
 
                     Object val;

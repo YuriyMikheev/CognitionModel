@@ -5,7 +5,6 @@ import cognitionmodel.datasets.TupleElement;
 import cognitionmodel.models.inverted.Agent;
 import cognitionmodel.models.inverted.InvertedTabularModel;
 import cognitionmodel.models.inverted.Point;
-import cognitionmodel.models.inverted.decomposers.Decomposer;
 import cognitionmodel.patterns.LinkedPatternSet;
 import cognitionmodel.patterns.Pattern;
 
@@ -138,7 +137,7 @@ public class PatternDecomposer implements Decomposer {
                             Agent a2 = agentMap.get(treeSet1.toString());
                             if (a2 != null) {
                                 a = Agent.merge(a1, a2, model.getInvertedIndex());
-                                a.setPerdictingField(true);
+                                a.setPredictingField(true);
                             }
                        }
                     }
@@ -154,7 +153,7 @@ public class PatternDecomposer implements Decomposer {
 
                 if (a == null) {
                     a = new Agent(points, model.getInvertedIndex());
-                    a.setPerdictingField(true);
+                    a.setPredictingField(true);
                 }
 
 
