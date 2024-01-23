@@ -1,14 +1,11 @@
 package cognitionmodel.datasets;
 
-import cognitionmodel.models.relations.LightRelation;
+import cognitionmodel.datasets.parsers.ArffParser;
 import org.junit.Test;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
-
-import static org.junit.Assert.*;
 
 public class ArffParserTest {
 

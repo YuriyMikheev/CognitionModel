@@ -1,5 +1,9 @@
-package cognitionmodel.datasets;
+package cognitionmodel.datasets.parsers;
 
+import cognitionmodel.datasets.Tuple;
+
+import java.io.IOException;
+import java.io.InputStream;
 import java.nio.charset.Charset;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -51,6 +55,12 @@ public class ImageNoizyCSVParser implements TabularParser {
 
     public String getEndofline() {
         return endofline;
+    }
+
+
+    @Override
+    public List<Tuple> parse(InputStream inputStream) throws IOException {
+        return parse(inputStream.readAllBytes());
     }
 
     /**

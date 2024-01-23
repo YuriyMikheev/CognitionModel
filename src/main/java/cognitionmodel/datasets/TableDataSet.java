@@ -1,10 +1,10 @@
 package cognitionmodel.datasets;
 
+import cognitionmodel.datasets.parsers.TabularParser;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.*;
-
-import static java.lang.Math.floor;
 
 /**
  * Provides CSV data support

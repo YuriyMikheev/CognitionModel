@@ -1,4 +1,6 @@
-package cognitionmodel.datasets;
+package cognitionmodel.datasets.parsers;
+
+import cognitionmodel.datasets.Tuple;
 
 import java.util.List;
 

@@ -14,13 +14,23 @@ public class FilterComposer implements Composer {
     }
 
     @Override
-    public HashMap<Object, LinkedList<Agent>> compose(HashMap<Object, LinkedList<Agent>> decomposition){
+    public HashMap<Object, LinkedList<Agent>> composeToAgentList(HashMap<Object, LinkedList<Agent>> decomposition){
         HashMap<Object, LinkedList<Agent>> result = new HashMap<Object, LinkedList<Agent>>();
 
         for (Map.Entry<Object, LinkedList<Agent>> re : decomposition.entrySet())
             result.put(re.getKey(), compose(re.getValue()));
 
         return result;
+    }
+
+    @Override
+    public HashMap<Object, Composition> composeToBestCompositions(HashMap<Object, LinkedList<Agent>> decomposition) {
+        return null;
+    }
+
+    @Override
+    public HashMap<Object, List<Composition>> composeToSortedCompositions(HashMap<Object, LinkedList<Agent>> decomposition) {
+        return null;
     }
 
     private LinkedList<Agent> compose(LinkedList<Agent> agentList){

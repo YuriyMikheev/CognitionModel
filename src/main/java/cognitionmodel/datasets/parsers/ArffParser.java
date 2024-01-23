@@ -1,12 +1,15 @@
-package cognitionmodel.datasets;
+package cognitionmodel.datasets.parsers;
 
+import cognitionmodel.datasets.Tuple;
+
+import java.io.IOException;
+import java.io.InputStream;
 import java.nio.charset.Charset;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
-import java.util.stream.Collectors;
 
 
 public class ArffParser implements TabularParser {
@@ -33,6 +36,12 @@ public class ArffParser implements TabularParser {
 
     public String getEndofline() {
         return endofline;
+    }
+
+
+    @Override
+    public List<Tuple> parse(InputStream inputStream) throws IOException {
+        return parse(inputStream.readAllBytes());
     }
 
     /**
@@ -72,7 +81,7 @@ public class ArffParser implements TabularParser {
 
 
         i++;
-        for (;i < lines.length; i++)
+        for (;i < lines.length; i++){
             if (!lines[i].isEmpty()) {
                 int finalI = i;
                 cfl.add(CompletableFuture.supplyAsync(() -> {
@@ -91,12 +100,13 @@ public class ArffParser implements TabularParser {
                         terminalsByfieldIndex[j].add(tuple.get(j).getValue().toString());
                     return tuple;
                 }));
+            }
+            if (i % (int) (lines.length * 0.01 + 1) == 0 | i == lines.length)
+            {
+                cfl.stream().forEach(t -> r.add(t.join()));//map(m -> m.join()).collect(Collectors.toList());
+                cfl.clear();
+            }
 
-                if (i % (int) (lines.length * 0.01 + 1) == 0 | i == lines.length)
-                {
-                    cfl.stream().forEach(t -> r.add(t.join()));//map(m -> m.join()).collect(Collectors.toList());
-                    cfl.clear();
-                }
         }
 
         Tuple h = new Tuple();

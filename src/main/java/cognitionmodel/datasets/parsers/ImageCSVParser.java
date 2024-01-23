@@ -1,5 +1,9 @@
-package cognitionmodel.datasets;
+package cognitionmodel.datasets.parsers;
 
+import cognitionmodel.datasets.Tuple;
+
+import java.io.IOException;
+import java.io.InputStream;
 import java.nio.charset.Charset;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -122,6 +126,10 @@ public class ImageCSVParser implements TabularParser {
         return terminalindices.get(index);
     }
 
+    @Override
+    public List<Tuple> parse(InputStream inputStream) throws IOException {
+        return parse(inputStream.readAllBytes());
+    }
 
     /**
      * Returns set of @Link Tuples (set of @Link Tuple) representing data from csv stream

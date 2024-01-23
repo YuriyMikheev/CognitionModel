@@ -3,16 +3,16 @@ package cognitionmodel.models.inverted.decomposers;
 import cognitionmodel.datasets.Tuple;
 import cognitionmodel.datasets.TupleElement;
 import cognitionmodel.models.inverted.Agent;
-import cognitionmodel.models.inverted.BitInvertedIndex;
-import cognitionmodel.models.inverted.InvertedIndex;
-import cognitionmodel.models.inverted.Point;
+import cognitionmodel.models.inverted.index.BitInvertedIndex;
+import cognitionmodel.models.inverted.index.InvertedIndex;
+import cognitionmodel.models.inverted.index.Point;
 
 import java.util.*;
 import java.util.function.Function;
 
 import static java.lang.Math.min;
 
-public class RecursiveLevelValuesDecomposer implements Decomposer {
+public class RecursiveLevelValuesDecomposer <T extends Agent> implements Decomposer<Agent> {
 
     private InvertedIndex invertedIndex;
     private String fields[];
@@ -23,13 +23,17 @@ public class RecursiveLevelValuesDecomposer implements Decomposer {
     private Function<Agent, Boolean> agentFilter;
     private int maxDepth = 3;
     private HashSet<Point> desabledPoints = new HashSet<>();
+    private boolean mustHavePredictingField = false;
 
     public RecursiveLevelValuesDecomposer(InvertedIndex invertedIndex, String predictingField, boolean modelcashed) {
-        this( invertedIndex, predictingField, modelcashed, 3, null);
+        this(invertedIndex, predictingField, modelcashed, 3, null, false);
 
     }
 
     public RecursiveLevelValuesDecomposer(InvertedIndex invertedIndex, String predictingField, boolean modelcashed, int maxDepth, Function<Agent, Boolean> agentFilter){
+        this(invertedIndex, predictingField, modelcashed, maxDepth, agentFilter, false);
+    }
+    public RecursiveLevelValuesDecomposer(InvertedIndex invertedIndex, String predictingField, boolean modelcashed, int maxDepth, Function<Agent, Boolean> agentFilter, boolean mustHavePredictingField){
 
         this.maxDepth = maxDepth;
         this.invertedIndex = invertedIndex;
@@ -38,6 +42,15 @@ public class RecursiveLevelValuesDecomposer implements Decomposer {
         predictingFieldIndex = ((BitInvertedIndex)invertedIndex).invertedIndexToDatasetFieldIndex(predictingFieldInvertedIndex);
 
         this.agentFilter = agentFilter;
+        this.mustHavePredictingField = mustHavePredictingField;
+    }
+
+    public boolean isMustHavePredictingField() {
+        return mustHavePredictingField;
+    }
+
+    public void setMustHavePredictingField(boolean mustHavePredictingField) {
+        this.mustHavePredictingField = mustHavePredictingField;
     }
 
     public HashSet<Point> getDesabledPoints() {

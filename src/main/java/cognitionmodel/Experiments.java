@@ -1,7 +1,7 @@
 package cognitionmodel;
 
-import cognitionmodel.datasets.CSVParser;
-import cognitionmodel.datasets.ImageNoizyCSVParser;
+import cognitionmodel.datasets.parsers.CSVParser;
+import cognitionmodel.datasets.parsers.ImageNoizyCSVParser;
 import cognitionmodel.datasets.TableDataSet;
 import cognitionmodel.models.TabularModel;
 import cognitionmodel.models.analyze.Entropy;

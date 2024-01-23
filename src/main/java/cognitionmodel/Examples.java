@@ -1,6 +1,9 @@
 package cognitionmodel;
 
 import cognitionmodel.datasets.*;
+import cognitionmodel.datasets.parsers.CSVParser;
+import cognitionmodel.datasets.parsers.ImageCSVParser;
+import cognitionmodel.datasets.parsers.ImageNoizyCSVParser;
 import cognitionmodel.models.relations.ImageLightRelation;
 import cognitionmodel.models.TabularModel;
 import cognitionmodel.patterns.*;

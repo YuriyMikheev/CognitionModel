@@ -1,5 +1,6 @@
 package cognitionmodel.predictors.predictionfunctions;
 
+import cognitionmodel.models.Model;
 import cognitionmodel.models.inverted.Agent;
 
 /**
@@ -13,4 +14,5 @@ public interface Predictionfunction {
     public double predictionfunction(Agent agent, String predictionfield);
     public double predictionfunction(Agent agent, Agent agentWithoutPredictionfield);
 
+    public Model getModel();
 }

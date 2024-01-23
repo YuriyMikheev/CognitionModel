@@ -1,0 +1,12 @@
+<component name="libraryTable">
+  <library name="github.wnameless.json.flattener" type="repository">
+    <properties maven-id="com.github.wnameless:json-flattener:0.1.5" />
+    <CLASSES>
+      <root url="jar://$MAVEN_REPOSITORY$/com/github/wnameless/json-flattener/0.1.5/json-flattener-0.1.5.jar!/" />
+      <root url="jar://$MAVEN_REPOSITORY$/com/eclipsesource/minimal-json/minimal-json/0.9.4/minimal-json-0.9.4.jar!/" />
+      <root url="jar://$MAVEN_REPOSITORY$/org/apache/commons/commons-lang3/3.4/commons-lang3-3.4.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>

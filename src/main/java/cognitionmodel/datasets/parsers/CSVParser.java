@@ -1,5 +1,10 @@
-package cognitionmodel.datasets;
+package cognitionmodel.datasets.parsers;
 
+import cognitionmodel.datasets.Tuple;
+import cognitionmodel.datasets.TupleElement;
+
+import java.io.IOException;
+import java.io.InputStream;
 import java.nio.charset.Charset;
 import java.util.*;
 
@@ -72,6 +77,11 @@ public class CSVParser implements TabularParser {
         }
 
         return r;
+    }
+
+    @Override
+    public List<Tuple> parse(InputStream inputStream) throws IOException {
+        return parse(inputStream.readAllBytes());
     }
 
     @Override

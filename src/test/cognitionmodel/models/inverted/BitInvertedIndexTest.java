@@ -1,6 +1,6 @@
 package cognitionmodel.models.inverted;
 
-import cognitionmodel.datasets.CSVParser;
+import cognitionmodel.datasets.parsers.CSVParser;
 import cognitionmodel.datasets.TableDataSet;
 import org.junit.Test;
 import org.roaringbitmap.RoaringBitmap;

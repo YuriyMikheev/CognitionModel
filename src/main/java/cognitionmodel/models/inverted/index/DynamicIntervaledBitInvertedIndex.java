@@ -1,4 +1,4 @@
-package cognitionmodel.models.inverted;
+package cognitionmodel.models.inverted.index;
 
 import cognitionmodel.datasets.Tuple;
 import org.roaringbitmap.RoaringBitmap;

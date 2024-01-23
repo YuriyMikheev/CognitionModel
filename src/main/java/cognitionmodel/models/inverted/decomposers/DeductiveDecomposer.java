@@ -4,14 +4,12 @@ import cognitionmodel.datasets.Tuple;
 import cognitionmodel.datasets.TupleElement;
 import cognitionmodel.models.inverted.Agent;
 import cognitionmodel.models.inverted.InvertedTabularModel;
-import cognitionmodel.models.inverted.Point;
-import cognitionmodel.patterns.LinkedPatternSet;
-import cognitionmodel.patterns.Pattern;
+import cognitionmodel.models.inverted.index.Point;
 
 import java.util.*;
 import java.util.function.Function;
 
-public class DeductiveDecomposer implements Decomposer {
+public class DeductiveDecomposer implements Decomposer<Agent> {
 
     private InvertedTabularModel model;
     private String fields[];

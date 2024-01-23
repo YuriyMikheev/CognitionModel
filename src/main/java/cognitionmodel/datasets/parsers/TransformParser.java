@@ -1,5 +1,9 @@
-package cognitionmodel.datasets;
+package cognitionmodel.datasets.parsers;
 
+import cognitionmodel.datasets.Tuple;
+
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -22,6 +26,11 @@ public class TransformParser implements TabularParser {
     public TransformParser(TabularParser parser, Function<Tuple, Tuple> dataTransformer) {
         this.dataTransformer = dataTransformer;
         this.parser = parser;
+    }
+
+    @Override
+    public List<Tuple> parse(InputStream inputStream) throws IOException {
+        return parse(inputStream.readAllBytes());
     }
 
     /**

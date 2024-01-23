@@ -1,5 +1,7 @@
 package cognitionmodel.models.inverted;
 
+import cognitionmodel.models.inverted.index.InvertedIndex;
+import cognitionmodel.models.inverted.index.Point;
 import org.roaringbitmap.RoaringBitmap;
 
 import java.util.*;
@@ -12,13 +14,14 @@ import static java.lang.Math.round;
  * Class Agent performs Z increasing by changing agent's relation
  */
 
-public class Agent implements Cloneable {
+public class Agent  {
     public TreeMap<String, Point> relation = new TreeMap<String, Point>();
 
     //HashMap<String, RoaringBitmap> recordsByField = new HashMap<>(); // records common for all points from relation
     RoaringBitmap records = null;//new RoaringBitmap(); // records common for all points from relation
     String signature = "";
-    private double z = NaN, p = NaN, cp = NaN;
+    private double z = 0, p = NaN, cp = NaN;
+    private long fr = 0;
     private InvertedIndex invertedIndex;
     private Object predictingValue = null;
     private boolean hasPredictingField = false;
@@ -133,7 +136,7 @@ public class Agent implements Cloneable {
      * @return
      */
     public double getP(){
-        if (records == null) return 0;
+        if (records == null) return p;
         return (Double.isNaN(p)?(p=(double)records.getCardinality()/invertedIndex.getDataSetSize()): p);
     }
 
@@ -142,7 +145,8 @@ public class Agent implements Cloneable {
      * @return
      */
     public double getFr(){
-        return (getP()*invertedIndex.getDataSetSize());
+        if (records == null) return fr;
+        return fr = records.getCardinality();
     }
 
 
@@ -153,7 +157,7 @@ public class Agent implements Cloneable {
      */
 
     public double getCondP(String field){
-
+/*
         Double r = condPcashe.get(field);
         if (r != null) return r;
 
@@ -172,9 +176,9 @@ public class Agent implements Cloneable {
 
         r = (double) records.getCardinality() / rc.getCardinality();
 
-        condPcashe.put(field, r);
+        condPcashe.put(field, r);*/
 
-        return r;
+        return NaN;
     }
 
 
@@ -268,12 +272,13 @@ public class Agent implements Cloneable {
     }
 
     public double getMR(RoaringBitmap records){
+        if (records == null) return z;
         if (relation.size() < 1) return 0;
-        if (records == null) return 0;
-        if (records.isEmpty()) return 0;
+        if (records.isEmpty()) return z;
        // if (recordsByField.size() < 2) return 0;
 
-        double z = records.getCardinality(), f = 1;
+        z = records.getCardinality();
+        double f = 1;
   //      return z == 0 ? -relation.values().size()*log(invertedIndex.getDataSetSize()) :log(z);
         int c = 1, l = 0;
         for (Point point: relation.values()) {
@@ -334,8 +339,19 @@ public class Agent implements Cloneable {
         return ps >= 0;
     }
 
+    public InvertedIndex getInvertedIndex() {
+        return invertedIndex;
+    }
+
+    public void freeze(){
+        getP();
+        getMR();
+        records = null;
+    }
+
     public static Agent merge(Agent a1, Agent a2, InvertedIndex invertedIndex) {
         if (a1 == null & a2 == null) throw new IllegalArgumentException("Can't merge two null agents");
+        if (a1.getRecords() == null || a2.getRecords() == null) throw new IllegalArgumentException("Can't merge frozen agent");
 
         if (a1 == null) return a2;
         if (a2 == null) return a1;
@@ -369,8 +385,8 @@ public class Agent implements Cloneable {
             if (a2.records != null)
                 r.records.and(a2.records);
         } else
-            if (a2.records != null)
-                r.records.or(a2.records);
+        if (a2.records != null)
+            r.records.or(a2.records);
 
         return r;
     }

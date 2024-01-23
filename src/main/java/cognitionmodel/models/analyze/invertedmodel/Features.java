@@ -2,7 +2,7 @@ package cognitionmodel.models.analyze.invertedmodel;
 
 import cognitionmodel.datasets.Tuple;
 import cognitionmodel.models.inverted.Agent;
-import cognitionmodel.models.inverted.BitInvertedIndex;
+import cognitionmodel.models.inverted.index.BitInvertedIndex;
 import cognitionmodel.models.inverted.InvertedTabularModel;
 import cognitionmodel.models.inverted.decomposers.RecursiveLevelValuesDecomposer;
 import cognitionmodel.predictors.PredictionResults;

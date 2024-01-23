@@ -1,8 +1,11 @@
 package cognitionmodel.models.inverted.composers;
 
 import cognitionmodel.models.inverted.Agent;
+import cognitionmodel.predictors.predictionfunctions.Predictionfunction;
 
 import java.util.*;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 /**
  * Composer class that for each of the predicting values produces sets of independent agents with max MR
@@ -10,27 +13,29 @@ import java.util.*;
 
 public class InvertedComposer implements Composer {
 
-    private int fieldsLength, predictingIndex;
+    private int fieldsLength;
+    private int predictingIndex;
+    private Predictionfunction predictionfunction;
 
 
-
-    public InvertedComposer(int fieldsLength, int predictingIndex){
+    public InvertedComposer(int fieldsLength, int predictingIndex, Predictionfunction predictionfunction) {
         this.fieldsLength = fieldsLength;
         this.predictingIndex = predictingIndex;
+        this.predictionfunction = predictionfunction;
     }
 
     private class CompositionIndex {
         ArrayList<Composition> compositions = new ArrayList<>();
         BitSet[] index = new BitSet[fieldsLength];
-      //  HashMap<String, Composition> maxcompositions = new HashMap<>();
+        //  HashMap<String, Composition> maxcompositions = new HashMap<>();
 
         private boolean changed = true;
 
-        public CompositionIndex(){
+        public CompositionIndex() {
             reindex();
         }
 
-        private void reindex(){
+        private void reindex() {
             if (!changed) return;
             index = new BitSet[fieldsLength];
 
@@ -40,7 +45,7 @@ public class InvertedComposer implements Composer {
             compositions.sort(Comparator.comparing(Composition::getMr).reversed());
 
             int idx = 0;
-            for (Composition composition: compositions) {
+            for (Composition composition : compositions) {
                 for (int i : composition.getFields().stream().toArray())
                     index[i].set(idx);
                 idx++;
@@ -52,29 +57,15 @@ public class InvertedComposer implements Composer {
         public void add(Composition composition) {
             int idx = compositions.size();
             compositions.add(composition);
-
-/*
-            Composition tc = maxcompositions.get(composition.getFields().toString());
-            if (tc == null) {
-                maxcompositions.put(composition.getFields().toString(), composition);
-                compositions.add(composition);
-            }
-                else
-                    if (tc.getMr() < composition.getMr())
-                        maxcompositions.put(composition.getFields().toString(), composition);
-*/
-
             changed = true;
-/*            if (idx < compositions.size())
-                for (int i: composition.getFields().stream().toArray())
-                    index[i].set(idx);*/
         }
 
-        public List<Composition> get(BitSet fields){
+        public List<Composition> get(BitSet fields) {
             reindex();
             LinkedList<Composition> result = new LinkedList<>();
 
-            BitSet rset = new BitSet(); rset.set(0, compositions.size());
+            BitSet rset = new BitSet();
+            rset.set(0, compositions.size());
 
             for (int nextbit = fields.nextClearBit(0); nextbit >= 0 & nextbit < fieldsLength; nextbit = fields.nextClearBit(nextbit + 1))
                 rset.and(index[nextbit]);
@@ -84,53 +75,81 @@ public class InvertedComposer implements Composer {
 
             return result;
         }
-        public Composition getMax(BitSet fields){
+
+        public Composition getMax(BitSet fields) {
             reindex();
 
-            Composition result = new Composition(); result.setMr(-100000000);
+            Composition result = new Composition();
+            result.setMr(-100000000);
             HashSet<String> ca = new HashSet<>();
-            LinkedList<Composition> resultList = new LinkedList<>();
 
-
-            BitSet rset = new BitSet(); rset.set(0, compositions.size());
+            BitSet rset = new BitSet();
+            rset.set(0, compositions.size());
 
             for (int nextbit = fields.nextSetBit(0); nextbit >= 0 & nextbit < fieldsLength; nextbit = fields.nextSetBit(nextbit + 1))
                 rset.andNot(index[nextbit]);
 
-/*            for (int nextbit = rset.nextSetBit(0); nextbit >= 0 & nextbit < compositions.size(); nextbit = rset.nextSetBit(nextbit + 1)) {
-                Composition nc = compositions.get(nextbit);
-
-                String f = nc.getFields().toString();
-
-                if (!ca.contains(f)) {
-                    resultList.add(maxcompositions.get(f));
-                    ca.add(f);
-
-                    if (result.getMr() < nc.getMr())
-                        result = nc;
-                }
-            }*/
-
             int nextbit = rset.nextSetBit(0);
-            return  nextbit < 0? null:  compositions.get(nextbit);
-
-            //return result.getAgents().isEmpty()? null: result;
+            return nextbit < 0 ? null : compositions.get(nextbit);
         }
 
 
     }
 
+    private HashMap<String, Agent> getZeroMap(HashMap<Object, LinkedList<Agent>> decomposition){
+        HashMap<String, Agent> zeroMap = new HashMap<>();
+        LinkedList<Agent> zl = decomposition.size() > 1? decomposition.remove("null"): decomposition.get("null");
+        if (zl != null) {
+            for (Agent a : zl)
+                zeroMap.put(a.getFields().toString(), a);
+        }
+        return zeroMap;
+    }
+
     @Override
-    public HashMap<Object, LinkedList<Agent>> compose(HashMap<Object, LinkedList<Agent>> decomposition){
+    public HashMap<Object, LinkedList<Agent>> composeToAgentList(HashMap<Object, LinkedList<Agent>> decomposition) {
         HashMap<Object, LinkedList<Agent>> result = new HashMap<Object, LinkedList<Agent>>();
+        HashMap<String, Agent> zeroMap = getZeroMap(decomposition);
 
         for (Map.Entry<Object, LinkedList<Agent>> re : decomposition.entrySet())
-            result.put(re.getKey(), compose(re.getValue()));
+            result.put(re.getKey(), composeToBestComposition(re.getValue(), zeroMap).getAgents());
 
         return result;
     }
 
-    private int maxN = 4000;
+    @Override
+    public HashMap<Object, Composition> composeToBestCompositions(HashMap<Object, LinkedList<Agent>> decomposition) {
+        HashMap<Object, Composition> result = new HashMap<Object, Composition>();
+        HashMap<String, Agent> zeroMap = getZeroMap(decomposition);
+
+        for (Map.Entry<Object, LinkedList<Agent>> re : decomposition.entrySet())
+            result.put(re.getKey(), composeToBestComposition(re.getValue(), zeroMap));
+
+        return result;
+    }
+
+    @Override
+    public HashMap<Object, List<Composition>> composeToSortedCompositions(HashMap<Object, LinkedList<Agent>> decomposition) {
+        HashMap<Object, List<Composition>> result = new HashMap<Object, List<Composition>>();
+        HashMap<String, Agent> zeroMap = getZeroMap(decomposition);
+
+        for (Map.Entry<Object, LinkedList<Agent>> re : decomposition.entrySet())
+            result.put(re.getKey(), composeToSortedList(re.getValue(), zeroMap));
+
+        return result;
+    }
+
+    public HashMap<Object, List<Composition>> composeToSortedCompositions(HashMap<Object, LinkedList<Agent>> decomposition, Function<Composition, Boolean> compositionFilter) {
+        HashMap<Object, List<Composition>> result = new HashMap<Object, List<Composition>>();
+        HashMap<String, Agent> zeroMap = getZeroMap(decomposition);
+
+        for (Map.Entry<Object, LinkedList<Agent>> re : decomposition.entrySet())
+            result.put(re.getKey(), composeToSortedList(re.getValue(), zeroMap).stream().filter(c-> compositionFilter.apply(c)).collect(Collectors.toList()));
+
+        return result;
+    }
+
+    private int maxN = Integer.MAX_VALUE;
 
     public int getMaxN() {
         return maxN;
@@ -140,35 +159,41 @@ public class InvertedComposer implements Composer {
         this.maxN = maxN;
     }
 
-    private LinkedList<Agent> compose(LinkedList<Agent> agentList){
+    private LinkedList<Agent> composeToList(LinkedList<Agent> agentList, HashMap<String, Agent> zeroMap) {
+        Composition c = composeToBestComposition(agentList, zeroMap);
+        return c == null ? agentList : c.getAgents();
+    }
+
+    private Composition composeToBestComposition(LinkedList<Agent> agentList, HashMap<String, Agent> zeroMap){
+        List<Composition> cl = composeToSortedList(agentList,  zeroMap);
+        return cl.isEmpty() ? null: cl.get(0);
+    }
+
+    private List<Composition> composeToSortedList(LinkedList<Agent> agentList, HashMap<String, Agent> zeroMap){
         PriorityQueue<Composition> bestCompositions = new PriorityQueue<>(Comparator.comparing(Composition::getMr).reversed());
         CompositionIndex compositionIndex = new CompositionIndex();
 
         for (Agent agent : agentList) {
-            Composition composition = new Composition(agent, predictingIndex);
+            Composition composition = new Composition(agent, predictingIndex, predictionfunction, zeroMap);
             bestCompositions.add(composition);
             compositionIndex.add(composition);
         }
 
-        PriorityQueue<Composition> nbc = null;//new PriorityQueue<>(Comparator.comparing(Composition::getMr).reversed());
-
+        PriorityQueue<Composition> nbc = null;
         boolean f = false;
         do {
             nbc = new PriorityQueue<>(Comparator.comparing(Composition::getMr).reversed()); f = false;
             while (!bestCompositions.isEmpty()) try {
                 Composition composition = bestCompositions.poll(); //nbc.add(composition);
                 if (composition.getFields().cardinality() < fieldsLength - 1) {
-                   // List<Composition> compositionList = compositionIndex.getMax(composition.getFields());
 
                     boolean fl = false;
-                    //for (Composition composition1: compositionList)
                     Composition composition1 = compositionIndex.getMax(composition.getFields());
                     if (composition1 != null)
                     {
                         Composition oc = composition.clone();
                         if (oc.add(composition1)) {
                             nbc.add(oc);
-                          //  compositionIndex.add(oc);
                             fl = f = true;
                         }
                     }
@@ -188,7 +213,7 @@ public class InvertedComposer implements Composer {
 
         } while (f);
 
-        return bestCompositions.isEmpty()? agentList: bestCompositions.peek().getAgents();
+        return bestCompositions.stream().collect(Collectors.toList());
     }
 
 

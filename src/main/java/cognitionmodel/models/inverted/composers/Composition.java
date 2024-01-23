@@ -1,30 +1,41 @@
 package cognitionmodel.models.inverted.composers;
 
 import cognitionmodel.models.inverted.Agent;
+import cognitionmodel.models.inverted.index.Point;
+import cognitionmodel.predictors.predictionfunctions.Predictionfunction;
+import org.fusesource.jansi.Ansi;
 
-import java.util.BitSet;
-import java.util.LinkedList;
-import java.util.List;
+import java.util.*;
 
 import static java.lang.Math.abs;
+import static org.fusesource.jansi.Ansi.ansi;
 
 public class Composition implements Cloneable{
 
-    private double p, mr, f;
+    private double p = 1, mr, f, pf;
 
     private BitSet fields = new BitSet();
     private int predictingIndex;
+    private Predictionfunction predictionfunction = null;
     private int length;
-
+    private  HashMap<String, Agent> zeroMap;
     private LinkedList<Agent> agents = new LinkedList<>();
 
-    public Composition(Agent agent, int predictingIndex){
+    public Composition(Agent agent, int predictingIndex, Predictionfunction predictionfunction, HashMap<String, Agent> zeroMap){
         this.predictingIndex = predictingIndex;
+        this.predictionfunction = predictionfunction;
+        this.zeroMap = zeroMap;
+        add(agent);
+    }
+    public Composition(Agent agent, int predictingIndex, HashMap<String, Agent> zeroMap){
+        this.predictingIndex = predictingIndex;
+        this.zeroMap = zeroMap;
         add(agent);
     }
 
-    public Composition(List<Agent> agents, int predictingIndex){
+    public Composition(List<Agent> agents, int predictingIndex, HashMap<String, Agent> zeroMap){
         this.predictingIndex = predictingIndex;
+        this.zeroMap = zeroMap;
         for (Agent agent: agents)
             add(agent);
     }
@@ -37,7 +48,7 @@ public class Composition implements Cloneable{
             agents.add(agent);
             fields.or(agent.getFields());
             recalculate(agent);
-            fields.set(predictingIndex, false);
+            if (predictingIndex != -1) fields.set(predictingIndex, false);
             length = fields.cardinality();
             return true;
         }
@@ -51,8 +62,9 @@ public class Composition implements Cloneable{
             mr = mr + composition.mr;
             p = p * composition.p;
             f = f + composition.f;
+            pf = pf + composition.pf;
             fields.or(composition.fields);
-            fields.set(predictingIndex, false);
+            if (predictingIndex != -1) fields.set(predictingIndex, false);
             length = fields.cardinality();
             return true;
         }
@@ -71,6 +83,17 @@ public class Composition implements Cloneable{
         mr = mr + agent.getMR();
         p = p * agent.getP();
         f = f + agent.getFr();
+
+
+        if (predictionfunction != null) {
+            Agent pva = null;
+            if (zeroMap != null) {
+                BitSet fs = agent.getFields();
+                fs.set(predictingIndex, false);
+                pva = zeroMap.get(fs.toString());
+            }
+            pf = pf + predictionfunction.predictionfunction(agent, pva);
+        }
     }
 
     public double getP() {
@@ -78,7 +101,7 @@ public class Composition implements Cloneable{
     }
 
     public double getMr() {
-        return mr;
+        return predictionfunction != null? pf: mr;
     }
     public double getAbsMr() {
         return abs(mr);
@@ -97,9 +120,11 @@ public class Composition implements Cloneable{
         composition.f = f;
         composition.mr = mr;
         composition.p = p;
+        composition.pf = pf;
         composition.agents.addAll(agents);
         composition.predictingIndex = predictingIndex;
         composition.length = length;
+        composition.predictionfunction = predictionfunction;
 
         return composition;
     }
@@ -112,6 +137,12 @@ public class Composition implements Cloneable{
 
     public void setMr(double mr) {
         this.mr = mr;
+    }
+
+
+
+    public Object getPredictingValue(){
+        return agents.getFirst().getPredictingValue();
     }
 
     /**

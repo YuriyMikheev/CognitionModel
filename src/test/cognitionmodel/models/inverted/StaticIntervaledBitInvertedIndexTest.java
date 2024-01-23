@@ -1,7 +1,9 @@
 package cognitionmodel.models.inverted;
 
-import cognitionmodel.datasets.CSVParser;
+import cognitionmodel.datasets.parsers.CSVParser;
 import cognitionmodel.datasets.TableDataSet;
+import cognitionmodel.models.inverted.index.BitInvertedIndex;
+import cognitionmodel.models.inverted.index.StaticIntervaledBitInvertedIndex;
 import cognitionmodel.predictors.predictionfunctions.Powerfunction;
 import org.junit.Test;
 
@@ -44,7 +46,7 @@ public class StaticIntervaledBitInvertedIndexTest {
 
         StaticIntervaledBitInvertedIndex invertedIndex = new StaticIntervaledBitInvertedIndex((BitInvertedIndex) tabularModel.getInvertedIndex(), "class", 10);
 
-        assertTrue(invertedIndex.invertedIndex.entrySet().stream().filter(e->{
+        assertTrue(invertedIndex.getInvertedIndex().entrySet().stream().filter(e->{
             //System.out.println(e.getKey() + "\t"+e.getValue().size());
             return e.getValue().size() > 10;
         }).collect(Collectors.toList()).size() == 0);
@@ -82,7 +84,7 @@ public class StaticIntervaledBitInvertedIndexTest {
 
         StaticIntervaledBitInvertedIndex invertedIndex = new StaticIntervaledBitInvertedIndex((BitInvertedIndex) tabularModel.getInvertedIndex(), "class", 0.1);
 
-        assertTrue(invertedIndex.invertedIndex.entrySet().stream().filter(e->{
+        assertTrue(invertedIndex.getInvertedIndex().entrySet().stream().filter(e->{
             //System.out.println(e.getKey() + "\t"+e.getValue().size());
             return e.getValue().size() > 10;
         }).collect(Collectors.toList()).size() == 0);

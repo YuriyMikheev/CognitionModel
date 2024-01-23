@@ -1,5 +1,7 @@
 package cognitionmodel.datasets;
 
+import cognitionmodel.datasets.parsers.Parser;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -48,6 +50,10 @@ public abstract class DataSet implements Iterable<Tuple> {
 
     protected InputStream getInputStream() {
         return inputStream;
+    }
+
+    public void setInputStream(InputStream inputStream) {
+        this.inputStream = inputStream;
     }
 
     public ArrayList<Tuple> getRecords(){

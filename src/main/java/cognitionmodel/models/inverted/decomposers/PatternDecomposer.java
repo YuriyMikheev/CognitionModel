@@ -4,7 +4,7 @@ import cognitionmodel.datasets.Tuple;
 import cognitionmodel.datasets.TupleElement;
 import cognitionmodel.models.inverted.Agent;
 import cognitionmodel.models.inverted.InvertedTabularModel;
-import cognitionmodel.models.inverted.Point;
+import cognitionmodel.models.inverted.index.Point;
 import cognitionmodel.patterns.LinkedPatternSet;
 import cognitionmodel.patterns.Pattern;
 
@@ -14,7 +14,7 @@ import java.util.function.Function;
 
 import static java.lang.Math.round;
 
-public class PatternDecomposer implements Decomposer {
+public class PatternDecomposer <T extends Agent> implements Decomposer {
 
     private LinkedPatternSet patternSet;
     private InvertedTabularModel model;
@@ -68,7 +68,7 @@ public class PatternDecomposer implements Decomposer {
     private double epsilon = 0.00; //probability of confidential interval
 
     @Override
-    public HashMap<Object, LinkedList<Agent>> decompose(Tuple record, String predictingfield) {
+    public HashMap<Object, LinkedList<T>> decompose(Tuple record, String predictingfield) {
 
         HashMap<String, Point> pl = new HashMap<>();
 
@@ -86,7 +86,7 @@ public class PatternDecomposer implements Decomposer {
             pl.put(p.toString(), p);
         }
 
-        HashMap<Object, LinkedList<Agent>> r = new HashMap<>();
+        HashMap<Object, LinkedList<T>> r = new HashMap<>();
 
         List<Object> values  =  model.getInvertedIndex().getAllValues(predictingfield);
         values.add("null");
@@ -168,7 +168,7 @@ public class PatternDecomposer implements Decomposer {
                 }
 
             }
-            r.put(pv, agents);
+            r.put(pv, (LinkedList<T>) agents);
         }
 
 

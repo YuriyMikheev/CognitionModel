@@ -1,8 +1,9 @@
-package cognitionmodel.models.inverted;
+package cognitionmodel.models.inverted.index;
 
 import cognitionmodel.datasets.TableDataSet;
 import cognitionmodel.datasets.Tuple;
 import cognitionmodel.datasets.TupleElement;
+import cognitionmodel.models.inverted.InvertedTabularModel;
 import org.roaringbitmap.RoaringBitmap;
 
 import java.util.*;
@@ -28,10 +29,7 @@ public class BitInvertedIndex implements InvertedIndex{
     public BitInvertedIndex(InvertedTabularModel model){
         this.dataSet = model.getDataSet();
         this.model = model;
-        init();
-    }
 
-    private void init() {
         fieldsList = new ArrayList<>(); //fieldsList.addAll(fields.keySet().stream().collect(Collectors.toList()));
 
         di2i = new int[dataSet.getHeader().size()];
@@ -78,6 +76,7 @@ public class BitInvertedIndex implements InvertedIndex{
     }
 
 
+
     /**
      * Returns field index in Data Set object corresponded with filed index in Inverted Index object
      * @param index
@@ -95,11 +94,12 @@ public class BitInvertedIndex implements InvertedIndex{
      */
 
     public int invertedIndexToDatasetFieldIndex(int index){
+        if (index == -1) return -1;
         return i2di[index];
     }
 
     /**
-     * Gets number of the field in index. The index do not includes not enabled fields. Order of fields corresponds the order in data set excluding not enabled fields.
+     * Gets number of the field in index. The index does not include not enabled fields. Order of fields corresponds the order in data set excluding not enabled fields.
      * @param field - field in index
      * @return
      */
@@ -143,7 +143,7 @@ public class BitInvertedIndex implements InvertedIndex{
     @Override
     public TreeMap getMap(String field) {
         if (!invertedIndex.containsKey(field))
-            throw new IllegalArgumentException("Field " + field + " do not contained in index") ;
+            throw new IllegalArgumentException("Field " + field + " is not contained in index") ;
         return invertedIndex.get(field);
     }
 
@@ -188,6 +188,7 @@ public class BitInvertedIndex implements InvertedIndex{
      * @param value - value of the field
      * @return
      */
+    @Override
     public RoaringBitmap getRecords(String field, Object value){
        // if (value.getClass().getSuperclass() == Number.class) value = Double.parseDouble(value.toString());
         try {

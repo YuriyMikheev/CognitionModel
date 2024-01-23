@@ -64,6 +64,11 @@ public class PowerProbfunction implements Predictionfunction {
     @Override
     public double predictionfunction(Agent agent, Agent agentWithoutPredictionfield) {
         if (wp == 0 | agentWithoutPredictionfield == null) return pow(agent.getP(),wz);
-        return pow((double) agent.getRecords().getCardinality() / agentWithoutPredictionfield.getRecords().getCardinality(), wp) * pow(agent.getP(),wz);
+        return pow((double) agent.getP(), wp) * pow(agent.getMR(),wz);
+    }
+
+    @Override
+    public Model getModel() {
+        return model;
     }
 }

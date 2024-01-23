@@ -1,7 +1,9 @@
 package cognitionmodel.models.inverted;
 
-import cognitionmodel.datasets.CSVParser;
+import cognitionmodel.datasets.parsers.CSVParser;
 import cognitionmodel.datasets.TableDataSet;
+import cognitionmodel.models.inverted.index.BitInvertedIndex;
+import cognitionmodel.models.inverted.index.DynamicIntervaledBitInvertedIndex;
 import org.junit.Test;
 
 import java.io.File;
@@ -44,11 +46,11 @@ public class IntervaledBitInvertedIndexTest {
 
         DynamicIntervaledBitInvertedIndex invertedIndex = new DynamicIntervaledBitInvertedIndex((BitInvertedIndex) tabularModel.getInvertedIndex(), tabularModel.getDataSet().getRecords().get(13), " INCOME");
 
-        invertedIndex.invertedIndex.entrySet().forEach(e->{
+        invertedIndex.getInvertedIndex().entrySet().forEach(e->{
             System.out.println(e.getKey() + "\t"+(1 - (double)e.getValue().values().stream().findFirst().orElseThrow().getCardinality()/invertedIndex.getDataSetSize()));
         });
 
-        Arrays.stream(invertedIndex.confidenceLevels).forEach(System.out::println);
+        Arrays.stream(invertedIndex.getConfidenceLevels()).forEach(System.out::println);
 
     }
 
@@ -83,11 +85,11 @@ public class IntervaledBitInvertedIndexTest {
 
         DynamicIntervaledBitInvertedIndex invertedIndex = new DynamicIntervaledBitInvertedIndex((BitInvertedIndex) tabularModel.getInvertedIndex(), tabularModel.getDataSet().getRecords().get(13), "class");
 
-        invertedIndex.invertedIndex.entrySet().forEach(e->{
+        invertedIndex.getInvertedIndex().entrySet().forEach(e->{
             System.out.println(e.getKey() + "\t"+(1 - (double)e.getValue().values().stream().findFirst().orElseThrow().getCardinality()/invertedIndex.getDataSetSize()));
         });
 
-        Arrays.stream(invertedIndex.confidenceLevels).forEach(System.out::println);
+        Arrays.stream(invertedIndex.getConfidenceLevels()).forEach(System.out::println);
 
     }
 

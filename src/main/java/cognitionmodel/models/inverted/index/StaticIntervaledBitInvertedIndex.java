@@ -1,4 +1,4 @@
-package cognitionmodel.models.inverted;
+package cognitionmodel.models.inverted.index;
 
 import org.roaringbitmap.RoaringBitmap;
 
@@ -6,7 +6,6 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.TreeMap;
-import java.util.stream.Collectors;
 
 import static java.lang.Math.round;
 
@@ -204,12 +203,20 @@ public class StaticIntervaledBitInvertedIndex extends BitInvertedIndex{
     @Override
     public RoaringBitmap getRecords(String field, Object value){
         if (value.getClass().getSuperclass() == Number.class) {
-            value = Double.parseDouble(value.toString());
-            Map.Entry<Object, RoaringBitmap> e = getMap(field).floorEntry(value);
-            if (e != null)
-                return (RoaringBitmap) getMap(field).floorEntry(value).getValue();
+            if (getMap(field).firstEntry().getKey() instanceof Double && value instanceof Integer)
+                value = Double.parseDouble(value.toString());
             else
-                return (RoaringBitmap) getMap(field).firstEntry().getValue();
+                if (getMap(field).firstEntry().getKey() instanceof Integer && value instanceof Double)
+                    value = Integer.parseInt(value.toString());
+            try {
+                Map.Entry<Object, RoaringBitmap> e = getMap(field).floorEntry(value);
+                if (e != null)
+                    return (RoaringBitmap) getMap(field).floorEntry(value).getValue();
+                else
+                    return (RoaringBitmap) getMap(field).firstEntry().getValue();
+            } catch (ClassCastException e){
+                System.err.println();
+            }
         }
         try {
             return (RoaringBitmap) getMap(field).get(value);

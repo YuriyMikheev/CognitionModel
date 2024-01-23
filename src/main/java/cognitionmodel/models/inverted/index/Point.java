@@ -1,4 +1,6 @@
-package cognitionmodel.models.inverted;
+package cognitionmodel.models.inverted.index;
+
+import cognitionmodel.models.inverted.Agent;
 
 public class Point{
     String field;

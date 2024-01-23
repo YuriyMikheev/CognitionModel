@@ -1,7 +1,7 @@
 package cognitionmodel.models;
 
 import cognitionmodel.datasets.TableDataSet;
-import cognitionmodel.datasets.TabularParser;
+import cognitionmodel.datasets.parsers.TabularParser;
 import cognitionmodel.datasets.TupleElement;
 import cognitionmodel.models.relations.LightRelation;
 import cognitionmodel.patterns.PatternSet;

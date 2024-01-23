@@ -3,12 +3,13 @@ package cognitionmodel.models.inverted;
 import cognitionmodel.datasets.TableDataSet;
 import cognitionmodel.datasets.Tuple;
 import cognitionmodel.datasets.TupleElement;
-import cognitionmodel.models.inverted.composers.IndependentComposer;
-import cognitionmodel.models.inverted.composers.IndependentComposer2;
-import cognitionmodel.models.inverted.composers.IndependentComposer3;
-import cognitionmodel.models.inverted.composers.InvertedComposer;
-import cognitionmodel.models.inverted.decomposers.DeductiveDecomposer;
-import cognitionmodel.models.inverted.decomposers.RecursiveLevelValuesDecomposer;
+import cognitionmodel.models.inverted.composers.*;
+import cognitionmodel.models.inverted.decomposers.IterativeDecomposer;
+import cognitionmodel.models.inverted.index.BitInvertedIndex;
+import cognitionmodel.models.inverted.index.InvertedIndex;
+import cognitionmodel.models.inverted.index.StaticIntervaledBitInvertedIndex;
+import cognitionmodel.models.inverted.producers.Classifier;
+import cognitionmodel.models.inverted.producers.Producer;
 import cognitionmodel.predictors.PredictionResults;
 import cognitionmodel.predictors.predictionfunctions.Powerfunction;
 import cognitionmodel.predictors.predictionfunctions.Predictionfunction;
@@ -118,10 +119,11 @@ public class InvertedTabularModel {
         int recordIndex = 0;
 
 //        RecursiveLevelValuesDecomposer decomposer = new RecursiveLevelValuesDecomposer(new EqualIntervaledBitInvertedIndex((BitInvertedIndex) getInvertedIndex(), predictingfield, 10), predictingfield, modelcashed, maxDepth,  agentFilter);
-        RecursiveLevelValuesDecomposer decomposer = new RecursiveLevelValuesDecomposer(getInvertedIndex(), predictingfield, modelcashed, maxDepth,  agentFilter);
+     //   RecursiveLevelValuesDecomposer decomposer = new RecursiveLevelValuesDecomposer(getInvertedIndex(), predictingfield, modelcashed, maxDepth,  agentFilter);
+        IterativeDecomposer decomposer = new IterativeDecomposer(getInvertedIndex(), predictingfield, modelcashed, maxDepth,  agentFilter);
       //  DeductiveDecomposer decomposer = new DeductiveDecomposer(this, predictingfield, agentFilter, 2, 2,1);
 
-        InvertedComposer composer = new InvertedComposer(((BitInvertedIndex) getInvertedIndex()).getFieldsAmount(), predictingFieldIndex);
+        InvertedComposer composer = new InvertedComposer(((BitInvertedIndex) getInvertedIndex()).getFieldsAmount(), predictingFieldIndex, predictionfunction);
 
         //        getInvertedIndex().setConfidenceIntervals(0.95);
 
@@ -151,13 +153,13 @@ public class InvertedTabularModel {
                             zeroMap.put(a.getFields().toString(), a);
                     }
 
-                    HashMap<Object, LinkedList<Agent>>  dc = composer.compose(d);
+                    HashMap<Object, LinkedList<Agent>>  dc = composer.composeToAgentList(d);
 
 
                     for (Map.Entry<Object, LinkedList<Agent>> re : dc.entrySet()) {
                         int i = pvi.get(predictingfield + ":" + re.getKey());//pvi.get(a.getRelationValue(predictingfield));
                         for (Agent a : re.getValue()) {
-                            if (a.getConfP() >= pow(pcth, a.relation.size()) /*&  a.relation.size() > 1*/)
+                            //if (a.getConfP() >= pow(pcth, a.relation.size()) /*&  a.relation.size() > 1*/)
                             {
                                 Agent pva = null;
                                 if (zl != null) {
@@ -206,6 +208,68 @@ public class InvertedTabularModel {
 
         return r;
     }
+
+    public PredictionResults predict1(List<Tuple> records, String predictingfield, Predictionfunction predictionfunction, boolean modelcashed, int maxDepth, Function<Agent, Boolean> agentFilter, double intervals[]){
+
+        if (intervals != null)
+            invertedIndex = new StaticIntervaledBitInvertedIndex((BitInvertedIndex) invertedIndex, predictingfield, intervals);
+
+        int si = dataSet.getFieldIndex(predictingfield);
+
+        if (si == -1)
+            throw new IllegalArgumentException(predictingfield + " is not found in model data set");
+
+        LinkedList<Object> predictingvalues = new LinkedList<>();
+        predictingvalues.addAll(invertedIndex.getAllValues(predictingfield));
+
+        int predictingFieldIndex = getDataSet().getFieldIndex(predictingfield);
+        predictingFieldIndex = ((BitInvertedIndex)getInvertedIndex()).dataSetFieldIndexToInvertedFieldIndex(predictingFieldIndex);
+
+        PredictionResults r = new PredictionResults();
+        r.addPredictedDataHeader(si,new Tuple().add(dataSet.getHeader().get(si).getValue()+" Predicted").add(dataSet.getHeader().get(si).getValue()+" From data").addAll(predictingvalues));
+
+        int recordIndex = 0;
+
+//        RecursiveLevelValuesDecomposer decomposer = new RecursiveLevelValuesDecomposer(new EqualIntervaledBitInvertedIndex((BitInvertedIndex) getInvertedIndex(), predictingfield, 10), predictingfield, modelcashed, maxDepth,  agentFilter);
+        //   RecursiveLevelValuesDecomposer decomposer = new RecursiveLevelValuesDecomposer(getInvertedIndex(), predictingfield, modelcashed, maxDepth,  agentFilter);
+        IterativeDecomposer decomposer = new IterativeDecomposer(getInvertedIndex(), predictingfield, modelcashed, maxDepth,  agentFilter);
+        InvertedComposer composer = new InvertedComposer(((BitInvertedIndex) getInvertedIndex()).getFieldsAmount(), predictingFieldIndex, predictionfunction);
+        Producer producer = new Classifier(invertedIndex, predictingfield, predictionfunction);
+
+        LinkedList<CompletableFuture<Integer>> cfl = new LinkedList<>();
+
+        for (Tuple record: records)
+            if (record.size() > si){
+                int finalRecordIndex = recordIndex;
+
+                cfl.add(CompletableFuture.supplyAsync(() -> {
+
+                    HashMap<Object, LinkedList<Agent>> d = decomposer.decompose(record, predictingfield);
+                    HashMap<Object, List<Composition>>  dc = composer.composeToSortedCompositions(d);
+                    Tuple rt = producer.produce(dc); rt.set(1, record.get(si).getValue());
+                    r.put(finalRecordIndex, si, rt);
+
+                    if (finalRecordIndex % (int) (records.size() * 0.01 + 1) == 0 | finalRecordIndex == records.size())
+                        System.out.print(".");
+
+                    return null;
+                }));
+
+
+                recordIndex++;
+                if (recordIndex % (int) (records.size() * 0.01 + 1) == 0 | recordIndex == records.size())
+                {
+                    cfl.stream().map(m -> m.join()).collect(Collectors.toList());
+                    cfl.clear();
+                }
+            }
+        System.out.println();
+
+        return r;
+    }
+
+
+
 
     /**
      * Changes result of prediction of the numerical values to fit regression logic according to probability density result distribution

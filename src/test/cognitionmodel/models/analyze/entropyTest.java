@@ -1,6 +1,6 @@
 package cognitionmodel.models.analyze;
 
-import cognitionmodel.datasets.CSVParser;
+import cognitionmodel.datasets.parsers.CSVParser;
 import cognitionmodel.datasets.TableDataSet;
 import cognitionmodel.models.TabularModel;
 import cognitionmodel.patterns.FullGridIterativePatterns;
