@@ -1,5 +1,6 @@
 package cognitionmodel.datasets;
 
+import cognitionmodel.datasets.parsers.ImageCSVParser;
 import org.junit.Test;
 
 import java.util.LinkedList;

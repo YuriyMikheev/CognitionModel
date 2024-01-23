@@ -1,16 +1,18 @@
 package cognitionmodel.models.inverted;
 
 import cognitionmodel.datasets.*;
+import cognitionmodel.datasets.parsers.ArffParser;
+import cognitionmodel.datasets.parsers.CSVParser;
+import cognitionmodel.models.inverted.index.BitInvertedIndex;
+import cognitionmodel.models.inverted.index.StaticIntervaledBitInvertedIndex;
 import cognitionmodel.predictors.PredictionResults;
-import cognitionmodel.predictors.predictionfunctions.LogPowerfunction;
+import cognitionmodel.predictors.predictionfunctions.PowerProbfunction;
 import cognitionmodel.predictors.predictionfunctions.Powerfunction;
 import org.junit.Test;
 
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
 
 import static org.junit.Assert.assertTrue;
 
@@ -51,7 +53,7 @@ public class InvertedTabularAgentTest {
 
 //        tabularModel.predict(testDataSet.getRecords(), " INCOME", new Powerfunction(null, 10, 1), false, 4, a -> a.getMR() > 0).show(tabularModel.getDataSet().getFieldIndex(" INCOME"));
      //   tabularModel.predict(testDataSet.getRecords(), " INCOME", new Powerfunction(null, 11.2, 2), false, 4, a -> a.getMR() > 0).show(tabularModel.getDataSet().getFieldIndex(" INCOME"));
-        tabularModel.predict(testDataSet.getRecords(), " INCOME", new Powerfunction(null, 7, 1), false, 14, a -> a.getMR() > -10.01).show(tabularModel.getDataSet().getFieldIndex(" INCOME"));
+        tabularModel.predict1(testDataSet.getRecords(), " INCOME", new Powerfunction(null, 7, 1), false, 14, a -> a.getMR() > -10.01, null).show(tabularModel.getDataSet().getFieldIndex(" INCOME"));
 
     }
 
@@ -91,7 +93,7 @@ public class InvertedTabularAgentTest {
 
         //tabularModel.getInvertedIndex().setConfidenceIntervals(0.90);
 
-        tabularModel.predict(testDataSet.getRecords(), "lettr", new Powerfunction(null, 0,1), false, 20, null).show(tabularModel.getDataSet().getFieldIndex("lettr"));
+        tabularModel.predict1(testDataSet.getRecords(), "lettr", new Powerfunction(null, 0,1), false, 20, null, null).show(tabularModel.getDataSet().getFieldIndex("lettr"));
 
     }
 
@@ -103,10 +105,10 @@ public class InvertedTabularAgentTest {
 
 
 
-        TableDataSet[] dataSets = TableDataSet.split(arrfDataSet, 0.5, "label", 100);
+        TableDataSet[] dataSets = TableDataSet.split(arrfDataSet, 0.1, "label", 100);
         dataSets = TableDataSet.split(dataSets[1], 0.25, "label", 5);
 
-        HashMap<String, Integer> fr = new HashMap<>() , frs = new HashMap<>();
+ /*       HashMap<String, Integer> fr = new HashMap<>() , frs = new HashMap<>();
         int fi = arrfDataSet.getFieldIndex("label");
 
         for(Tuple t: dataSets[1]){
@@ -122,10 +124,10 @@ public class InvertedTabularAgentTest {
                 System.out.println(e.getKey()+"\t"+e.getValue()+"\t"+frs.get(e.getKey())+"\t"+(1.0*e.getValue()/frs.get(e.getKey())));
 
 
-
+*/
         InvertedTabularModel tabularModel = new InvertedTabularModel(dataSets[0]);
 
-        tabularModel.predict(dataSets[1].getRecords(), "label", new Powerfunction(null, 1,1), false, 2, null, new double[]{0.1,0.1,0.1,0.1,0.1,0.1,0.1,0.1,0.1,0.1}).show(tabularModel.getDataSet().getFieldIndex("label"));
+        tabularModel.predict(dataSets[1].getRecords(), "label", new Powerfunction(null, 0,1), false, 2, null, new double[]{0.1,0.1,0.1,0.1,0.1,0.1,0.1,0.1,0.1,0.1}).show(tabularModel.getDataSet().getFieldIndex("label"));
     }
 
 
@@ -133,17 +135,17 @@ public class InvertedTabularAgentTest {
     public void createDota2Test() throws IOException {
 
         TableDataSet arrfDataSet = new TableDataSet(new FileInputStream(new File("E:\\Weka-3-8\\data\\dota2.arff")),
-                new ArffParser(false, "Cluster_ID"));
+                new ArffParser(false, "Cluster_ID","Game_mode","Game_type"));
 
         int game_mode = 8;
 
-
+/*
         TableDataSet arrfDataSet1 = new TableDataSet(new FileInputStream(new File("E:\\Weka-3-8\\data\\dota2.arff")),
-                new TransformParser(new ArffParser(), t-> {
-                    //if (t.get(2).getValue().equals(game_mode)){
-                        Tuple nt = new Tuple(); int j = 0;
+                new TransformParser(new ArffParser(false, "Cluster_ID"), t-> {
+                    Tuple nt = new Tuple(); int j = 0;
+                    if (t.get(0).getValue().toString().equals("-1"))
                         for (TupleElement te: t) {
-                            if (j == 0 || j > 3)
+                            if (j == 0 || j > 2)
                                 if (te.getValue().toString().equals("-1")) nt.add(1);
                                     else
                                         if (te.getValue().toString().equals("1")) nt.add(-1);
@@ -151,31 +153,45 @@ public class InvertedTabularAgentTest {
                                                 nt.add(te);
                             else
                                 nt.add(te);
+                        j++;
+                    }
+                    else
+                        nt = t;
+                    return nt;
+                }));
+*//*        TableDataSet arrfDataSet2 = new TableDataSet(new FileInputStream(new File("E:\\Weka-3-8\\data\\dota2.arff")),
+                new TransformParser(new ArffParser(false, "Cluster_ID"), t-> {
+                    Tuple nt = new Tuple(); int j = 0;
+                    if (t.get(0).getValue().toString().equals("1"))
+                        for (TupleElement te: t) {
+                            if (j == 0 || j > 2)
+                                if (te.getValue().toString().equals("-1")) nt.add(1);
+                                else
+                                if (te.getValue().toString().equals("1")) nt.add(-1);
+                                else
+                                    nt.add(te);
+                            else
+                                nt.add(te);
                             j++;
                         }
-                        return nt;
-                 //   } else
-                 //      return null;
-                }));//false, "duration", "src_bytes", "dst_bytes", "count", "srv_count"));
-/*
-        TableDataSet arrfDataSet2 = new TableDataSet(new FileInputStream(new File("E:\\Weka-3-8\\data\\dota2.arff")),
-                new TransformParser(new ArffParser(), t-> {
-          //          if (t.get(2).getValue().equals(game_mode)){
-                        return t;
-         //           } else
-         //               return null;
-                }));//false, "duration", "src_bytes", "dst_bytes", "count", "srv_count"));
+                    else
+                        nt = t;
+                    return nt;
 
-        arrfDataSet = TableDataSet.merge(arrfDataSet2, arrfDataSet1);*/
+                }));
 
-        arrfDataSet = arrfDataSet1;
+        arrfDataSet = TableDataSet.merge(arrfDataSet2, arrfDataSet1);*//*
 
-        TableDataSet[] dataSets = TableDataSet.split(arrfDataSet, 0.2);// "Team_won", 1);
-        dataSets = TableDataSet.split(dataSets[1], 0.25, "Team_won", 1);
+        arrfDataSet = arrfDataSet1;*/
+
+       // TableDataSet[] dataSets = TableDataSet.split(arrfDataSet, 0.5);// "Team_won", 1);
+      //dataSets = TableDataSet.split(dataSets[1], 0.1, "Team_won", 1);
+
+        TableDataSet[]  dataSets = TableDataSet.split(arrfDataSet, 0.05);//, "Team_won", 1);
 
         InvertedTabularModel tabularModel = new InvertedTabularModel(dataSets[0]);
 
-        PredictionResults predictionResults = tabularModel.predict(dataSets[1].getRecords(), "Team_won", new Powerfunction(null, 0,1), false, 150, a->a.getRelation().values().stream().noneMatch(p->p.getValue().equals(0)), null);
+        PredictionResults predictionResults = tabularModel.predict(dataSets[1].getRecords(), "Team_won", new PowerProbfunction(null, 1,1), false, 150, a->a.getRelation().values().stream().noneMatch(p->p.getValue().equals(0)), null);
         predictionResults.show(tabularModel.getDataSet().getFieldIndex("Team_won"));
       //  predictionResults.toCSVFile("dota2.predict.txt");
     }
@@ -193,7 +209,7 @@ public class InvertedTabularAgentTest {
         TableDataSet testDataSet = new TableDataSet(new FileInputStream(new File("D:\\works\\Data\\letter\\letter-recognition.data.test.csv")),
                 new CSVParser(";","\r\n"));
 
-        tabularModel.predict(testDataSet.getRecords(), "lettr", new Powerfunction(null, 0,1), false, 4, null).show(tabularModel.getDataSet().getFieldIndex("lettr"));
+        tabularModel.predict1(testDataSet.getRecords(), "lettr", new Powerfunction(null, 0,1), false, 20, null, null).show(tabularModel.getDataSet().getFieldIndex("lettr"));
 
     }
 
@@ -233,7 +249,7 @@ public class InvertedTabularAgentTest {
       //  tabularModel.getInvertedIndex().setConfidenceIntervals(0.92);
         tabularModel.setInvertedIndex(new StaticIntervaledBitInvertedIndex((BitInvertedIndex) tabularModel.getInvertedIndex(),"class",35));
 
-        tabularModel.predict(testDataSet.getRecords(), "class", new Powerfunction(null, 0.01,0), false, 20, null).show(tabularModel.getDataSet().getFieldIndex("class"));
+        tabularModel.predict1(testDataSet.getRecords(), "class", new Powerfunction(null, 0.01,0), false, 20, null, null).show(tabularModel.getDataSet().getFieldIndex("class"));
 
     }
 
@@ -249,7 +265,7 @@ public class InvertedTabularAgentTest {
                 new CSVParser(",","\n"));
 
 
-        tabularModel.predict(testDataSet.getRecords(), "class", new Powerfunction(null, 0,1), false, 5,  a -> a.getMR() > -10).show(tabularModel.getDataSet().getFieldIndex("class"));
+        tabularModel.predict1(testDataSet.getRecords(), "class", null, false, 5,  a -> a.getMR() > -10, null).show(tabularModel.getDataSet().getFieldIndex("class"));
 
     }
 
@@ -269,9 +285,9 @@ public class InvertedTabularAgentTest {
                 new CSVParser(",","\n"));
 
         // tabularModel.getInvertedIndex().setConfidenceIntervals(0.88);
-       // tabularModel.setInvertedIndex(new StaticIntervaledBitInvertedIndex((BitInvertedIndex) tabularModel.getInvertedIndex(),"Rings",40));
+        tabularModel.setInvertedIndex(new StaticIntervaledBitInvertedIndex((BitInvertedIndex) tabularModel.getInvertedIndex(),"Rings",5));
 
-        PredictionResults pr = tabularModel.predict(testDataSet.getRecords(), "Rings", new LogPowerfunction(null, 0.1,0), false, 30, null/*a-> a.getMR()>0*/);
+        PredictionResults pr = tabularModel.predict(testDataSet.getRecords(), "Rings", new Powerfunction(null, 2,3), false, 30, null/*a-> a.getMR()>0*/);
         pr.show(tabularModel.getDataSet().getFieldIndex("Rings"));
         tabularModel.regression(pr,"Rings").show(tabularModel.getDataSet().getFieldIndex("Rings"));
 
@@ -288,10 +304,10 @@ public class InvertedTabularAgentTest {
         InvertedTabularModel tabularModel = new InvertedTabularModel(sets[0]);
 
 
-         tabularModel.getInvertedIndex().setConfidenceIntervals(0.95);
-        //tabularModel.setInvertedIndex(new StaticIntervaledBitInvertedIndex((BitInvertedIndex) tabularModel.getInvertedIndex()," ",10));
+         //tabularModel.getInvertedIndex().setConfidenceIntervals(0.95);
+        tabularModel.setInvertedIndex(new StaticIntervaledBitInvertedIndex((BitInvertedIndex) tabularModel.getInvertedIndex()," ",10));
 
-        PredictionResults pr = tabularModel.predict(sets[1].getRecords(), "price", new Powerfunction(null, 0,1), false, 2, null/*a-> a.getMR()>0*/);
+        PredictionResults pr = tabularModel.predict(sets[1].getRecords(), "price", new Powerfunction(null, 0,1), false, 4, null/*a-> a.getMR()>0*/);
         pr.show(tabularModel.getDataSet().getFieldIndex("price"));
         tabularModel.regression(pr,"price").show(tabularModel.getDataSet().getFieldIndex("price"));
 

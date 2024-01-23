@@ -9,7 +9,6 @@
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="library" name="net.openhft:chronicle-map:3.21ea41" level="project" />
-    <orderEntry type="library" name="org.roaringbitmap:RoaringBitmap:0.9.10" level="project" />
     <orderEntry type="library" name="guicedee.services.commons.math3" level="project" />
     <orderEntry type="module-library" scope="TEST">
       <library name="JUnit4">
@@ -21,5 +20,11 @@
         <SOURCES />
       </library>
     </orderEntry>
+    <orderEntry type="library" name="knuddels.jtokkit" level="project" />
+    <orderEntry type="library" name="googlecode.json.simple" level="project" />
+    <orderEntry type="library" name="apache.commons.compress" level="project" />
+    <orderEntry type="library" name="github.wnameless.json.flattener" level="project" />
+    <orderEntry type="library" name="roaringbitmap.RoaringBitmap" level="project" />
+    <orderEntry type="library" name="fusesource.jansi.example" level="project" />
   </component>
 </module>

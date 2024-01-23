@@ -1,5 +1,6 @@
 package cognitionmodel.predictors.predictionfunctions;
 
+import cognitionmodel.models.Model;
 import cognitionmodel.models.TabularModel;
 import cognitionmodel.models.inverted.Agent;
 
@@ -59,6 +60,11 @@ public class ZdPowerfunction implements Predictionfunction {
     @Override
     public double predictionfunction(Agent agent, Agent agentWithoutPredictionfield) {
         return agent.getMR();
+    }
+
+    @Override
+    public Model getModel() {
+        return model;
     }
 
 }

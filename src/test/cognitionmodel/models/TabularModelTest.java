@@ -1,6 +1,6 @@
 package cognitionmodel.models;
 
-import cognitionmodel.datasets.CSVParser;
+import cognitionmodel.datasets.parsers.CSVParser;
 import cognitionmodel.datasets.TableDataSet;
 import cognitionmodel.patterns.FullGridRecursivePatterns;
 import org.junit.Test;

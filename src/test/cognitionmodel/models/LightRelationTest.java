@@ -1,6 +1,6 @@
 package cognitionmodel.models;
 
-import cognitionmodel.datasets.CSVParser;
+import cognitionmodel.datasets.parsers.CSVParser;
 import cognitionmodel.datasets.Tuple;
 import cognitionmodel.models.relations.LightRelation;
 import org.junit.Test;

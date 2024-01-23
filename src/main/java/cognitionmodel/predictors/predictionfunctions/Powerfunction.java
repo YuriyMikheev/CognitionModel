@@ -64,6 +64,13 @@ public class Powerfunction implements Predictionfunction {
     @Override
     public double predictionfunction(Agent agent, Agent agentWithoutPredictionfield) {
         if (wp == 0 | agentWithoutPredictionfield == null) return pow(agent.getMR(),wz);
-        return pow((double) agent.getRecords().getCardinality() / agentWithoutPredictionfield.getRecords().getCardinality(), wp) * pow(agent.getMR(),wz);
+        return pow((double) agent.getFr()/ agentWithoutPredictionfield.getFr(), wp) * pow(agent.getMR(),wz);
     }
+
+    @Override
+    public Model getModel() {
+        return model;
+    }
+
+
 }

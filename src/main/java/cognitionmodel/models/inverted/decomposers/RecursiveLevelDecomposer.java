@@ -2,15 +2,14 @@ package cognitionmodel.models.inverted.decomposers;
 
 import cognitionmodel.datasets.Tuple;
 import cognitionmodel.models.inverted.Agent;
-import cognitionmodel.models.inverted.BitInvertedIndex;
+import cognitionmodel.models.inverted.index.BitInvertedIndex;
 import cognitionmodel.models.inverted.InvertedTabularModel;
-import cognitionmodel.models.inverted.Point;
-import cognitionmodel.models.inverted.decomposers.Decomposer;
+import cognitionmodel.models.inverted.index.Point;
 
 import java.util.*;
 import java.util.function.Function;
 
-public class RecursiveLevelDecomposer implements Decomposer {
+public class RecursiveLevelDecomposer <T extends Agent> implements Decomposer<Agent> {
 
     private InvertedTabularModel model;
     private String fields[];

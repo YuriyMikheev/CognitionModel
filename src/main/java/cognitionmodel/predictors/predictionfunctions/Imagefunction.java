@@ -42,4 +42,9 @@ public class Imagefunction implements Predictionfunction {
         return agent.getMR();
     }
 
+    @Override
+    public Model getModel() {
+        return model;
+    }
+
 }

@@ -1,0 +1,10 @@
+<component name="libraryTable">
+  <library name="knuddels.jtokkit" type="repository">
+    <properties maven-id="com.knuddels:jtokkit:0.6.1" />
+    <CLASSES>
+      <root url="jar://$MAVEN_REPOSITORY$/com/knuddels/jtokkit/0.6.1/jtokkit-0.6.1.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>

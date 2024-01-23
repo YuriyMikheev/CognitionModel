@@ -67,4 +67,9 @@ public class LogPowerfunction implements Predictionfunction {
         if (wp == 0 | agentWithoutPredictionfield == null) return pow(agent.getMR(),wz);
         return pow(log((double) agent.getRecords().getCardinality() / agentWithoutPredictionfield.getRecords().getCardinality()), wp) * pow(agent.getMR(),wz);
     }
+
+    @Override
+    public Model getModel() {
+        return model;
+    }
 }
