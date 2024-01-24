@@ -108,7 +108,7 @@ public class RecursiveLevelValuesDecomposer <T extends Agent> implements Decompo
 
 
                 Agent ca = a.relation.size() == 0 ? na: Agent.merge(a, na, invertedIndex);
-                if (!ca.getRecords().isEmpty() ) {
+                if (ca.getFr() > 0) {
                     if (agentFilter == null || agentFilter.apply(ca) || ca.relation.size() == 1) {
                         newlevel.add(ca);
                         Object co = ca.getPredictingValue();

@@ -1,6 +1,7 @@
 package cognitionmodel.models.inverted.index;
 
 
+import cognitionmodel.models.inverted.Agent;
 import org.roaringbitmap.RoaringBitmap;
 
 import java.util.*;
@@ -88,5 +89,23 @@ public interface InvertedIndex {
      */
 
     public double getDataSetSize();
+
+    double getP(Agent agent);
+
+    double getFr(Agent agent);
+
+    double getProductP(Agent agent);
+
+    double getMR(Agent agent);
+
+    void mergeAgents(Agent agent, Agent a1, Agent a2);
+
+    void putCash(Agent agent, Object map);
+
+    Object getCash(Agent agent);
+
+    void clearCash(Agent agent);
+
+    void clearCash(List<Agent> agents);
 
 }

@@ -3,6 +3,7 @@ package cognitionmodel.models.inverted.index;
 import cognitionmodel.datasets.TableDataSet;
 import cognitionmodel.datasets.Tuple;
 import cognitionmodel.datasets.TupleElement;
+import cognitionmodel.models.inverted.Agent;
 import cognitionmodel.models.inverted.InvertedTabularModel;
 import cognitionmodel.models.inverted.InvertedTextModel;
 import org.apache.commons.math3.exception.OutOfRangeException;
@@ -198,13 +199,60 @@ public class TextIndex extends BitInvertedIndex {
     public RoaringBitmap getRecords(String field, Object value){
         if (field.contains(textField))
             if (!field.equals(textField+"0")){
-                RoaringBitmap rm = RoaringBitmap.addOffset((RoaringBitmap) getMap(textField+"0").get(value), -Integer.parseInt(field.substring(textField.length())));
+                RoaringBitmap rm =  RoaringBitmap.addOffset((RoaringBitmap) getMap(textField+"0").get(value), -Integer.parseInt(field.substring(textField.length())));
                 return rm;
         }
 
         return (RoaringBitmap) getMap(field).get(value);
     }
 
+    @Override
+    public double getFr(Agent agent) {
+        if (agent.getPoints().isEmpty()) return -1;
+
+        RoaringBitmap rb = (RoaringBitmap) getCash(agent);//agent.getCachedRecords();
+        if (rb == null) {
+            rb = RoaringBitmap.and(getBitmapList(agent.getPoints()).listIterator(), 0L, round(getDataSetSize()));
+            putCash(agent, rb);
+            //cash.put(agent.getSignature(), rb);
+        }
+        return rb.getCardinality();
+    }
+
+
+    private List<RoaringBitmap> getBitmapList(Collection<Point> points){
+        LinkedList<RoaringBitmap> r = new LinkedList<>();
+        for (Point point : points) {
+            RoaringBitmap rb = getRecords(point.field, point.value);
+
+            if (rb != null)
+                r.add(rb);
+        }
+        return r;
+    }
+
+    @Override
+    public double getMR(Agent agent){
+        if (agent.getRelation().size() <= 1) return 0;
+
+        double z = getFr(agent), f = 1;// records.getCardinality();
+
+        int c = 1, l = 0;
+        for (Point point: agent.getRelation().values()) {
+            RoaringBitmap fieldrecords = getRecords(point.getField(), point.getValue());
+            if (fieldrecords != null) {
+                f = f * fieldrecords.getCardinality();
+                l++;
+                if (f > Double.MAX_VALUE / 1000000) { //prevents double value overflowing
+                    f = f / getDataSetSize();
+                    c++;
+                }
+            }
+        }
+        z = log(z / f) + (l - c) * log(getDataSetSize());
+        agent.setMR(z);
+        return z;
+    }
 
     private void makeFields() {
         fieldsList = new ArrayList<>();
@@ -262,4 +310,29 @@ public class TextIndex extends BitInvertedIndex {
         if (field.equals(textField)) return fields.get(textField+"0");
         return (fields.containsKey(field)?fields.get(field):-1);
     }
+
+    @Override
+    public void mergeAgents(Agent agent, Agent a1, Agent a2) {
+        if (agent.getCachedRecords() != null) return;
+
+        RoaringBitmap r1, r2;
+        r1 = (RoaringBitmap) getCash(a1);//cash.get(a1.getSignature());
+        if (r1 == null)
+            if (a1.getPoints().size() > 1)
+                putCash(a1, r1 = RoaringBitmap.and(getBitmapList(a1.getPoints()).listIterator(), 0L, (long)Integer.MAX_VALUE*2-1));//FastAggregation.and(getBitmapArray(a1.getPoints())));
+            else
+                putCash(a1, r1 = getRecords(a1.relation.firstEntry().getValue().getField(), a1.relation.firstEntry().getValue().getValue()));
+
+        r2 = (RoaringBitmap) getCash(a2);//cash.get(a2.getSignature());
+        if (r2 == null)
+            if (a2.getPoints().size() > 1)
+                putCash(a2, r2 = RoaringBitmap.and(getBitmapList(a2.getPoints()).listIterator(), 0L, (long)Integer.MAX_VALUE*2-1));
+            else
+                putCash(a2, r2 = getRecords(a2.relation.firstEntry().getValue().getField(), a2.relation.firstEntry().getValue().getValue()));
+
+        if (r1 == null || r2 == null) return;
+        putCash(agent, RoaringBitmap.and(r1, r2));
+
+    }
+
 }

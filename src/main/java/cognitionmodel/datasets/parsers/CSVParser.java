@@ -65,15 +65,17 @@ public class CSVParser implements TabularParser {
             terminalsByfieldIndex[i] = new HashSet<>();
 
         for (int i = 1; i < lines.length; i++) {
-            Tuple tuple = new Tuple().addAll(lines[i].split(delimiter,-1));
+            String[] ls = lines[i].split(delimiter,-1);
+            Tuple tuple = new Tuple().addAll(ls);
             if (tuple.size() < header.size())
                 for (int j = tuple.size(); j < header.size(); j++)
-                    tuple.add(new TupleElement(""));
+                    tuple.add(new TupleElement((Object) null));
 
             r.add(tuple);
 
             for (int j = 0; j < tuple.size(); j++)
                 terminalsByfieldIndex[j].add(tuple.get(j).getValue().toString());
+
         }
 
         return r;

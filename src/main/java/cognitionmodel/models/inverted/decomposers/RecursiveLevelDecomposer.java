@@ -105,7 +105,7 @@ public class RecursiveLevelDecomposer <T extends Agent> implements Decomposer<Ag
                     Agent na = new Agent(p, model.getInvertedIndex());
 
                     Agent ca = a.relation.size() == 0 ? na: Agent.merge(a, na, model.getInvertedIndex());
-                    if (!ca.getRecords().isEmpty() ) {
+                    if (ca.getFr() > 0) {
                         if (agentFilter == null ? true: agentFilter.apply(ca)) {
                             newlevel.add(ca);
                             agentMap.put(s, ca);

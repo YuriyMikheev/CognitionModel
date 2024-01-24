@@ -53,7 +53,7 @@ public class InvertedTabularAgentTest {
 
 //        tabularModel.predict(testDataSet.getRecords(), " INCOME", new Powerfunction(null, 10, 1), false, 4, a -> a.getMR() > 0).show(tabularModel.getDataSet().getFieldIndex(" INCOME"));
      //   tabularModel.predict(testDataSet.getRecords(), " INCOME", new Powerfunction(null, 11.2, 2), false, 4, a -> a.getMR() > 0).show(tabularModel.getDataSet().getFieldIndex(" INCOME"));
-        tabularModel.predict1(testDataSet.getRecords(), " INCOME", new Powerfunction(null, 7, 1), false, 14, a -> a.getMR() > -10.01, null).show(tabularModel.getDataSet().getFieldIndex(" INCOME"));
+        tabularModel.predict1(testDataSet.getRecords(), " INCOME", new Powerfunction(null, 10, 1), false, 14, a -> a.getMR() > -10.01, null).show(tabularModel.getDataSet().getFieldIndex(" INCOME"));
 
     }
 
@@ -73,7 +73,7 @@ public class InvertedTabularAgentTest {
         TableDataSet testDataSet = new TableDataSet(new FileInputStream(new File("D:\\works\\Data\\Census\\census-income.test")),
                 new CSVParser(",","\n"));
 
-        tabularModel.predict(testDataSet.getRecords(), " TAXINC", new Powerfunction(null, 7,1), false, 4,  a -> a.getMR() > 0).show(tabularModel.getDataSet().getFieldIndex(" TAXINC"));
+        tabularModel.predict1(testDataSet.getRecords(), " TAXINC", new Powerfunction(null, 7,1), false, 5,  a -> a.getMR() > 0, null).show(tabularModel.getDataSet().getFieldIndex(" TAXINC"));
 
     }
 
@@ -93,7 +93,7 @@ public class InvertedTabularAgentTest {
 
         //tabularModel.getInvertedIndex().setConfidenceIntervals(0.90);
 
-        tabularModel.predict1(testDataSet.getRecords(), "lettr", new Powerfunction(null, 0,1), false, 20, null, null).show(tabularModel.getDataSet().getFieldIndex("lettr"));
+        tabularModel.predict1(testDataSet.getRecords(), "lettr", null, false, 20, null, null).show(tabularModel.getDataSet().getFieldIndex("lettr"));
 
     }
 
@@ -265,7 +265,7 @@ public class InvertedTabularAgentTest {
                 new CSVParser(",","\n"));
 
 
-        tabularModel.predict1(testDataSet.getRecords(), "class", null, false, 5,  a -> a.getMR() > -10, null).show(tabularModel.getDataSet().getFieldIndex("class"));
+        tabularModel.predict1(testDataSet.getRecords(), "class", null, false, 4,  a -> a.getMR() > 0.23, null).show(tabularModel.getDataSet().getFieldIndex("class"));
 
     }
 

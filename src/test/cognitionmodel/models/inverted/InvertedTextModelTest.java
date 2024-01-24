@@ -33,7 +33,7 @@ public class InvertedTextModelTest {
     }
     @Test
     public void generateFolder() throws IOException {
-        InvertedTextModel textModel = new InvertedTextModel(new TextDataSet("F:\\Pile\\clean\\books3\\books3\\the-eye.eu\\public\\Books\\Bibliotik\\0\\"), "text", "");
+        InvertedTextModel textModel = new InvertedTextModel(new TextDataSet("F:\\Pile\\clean\\books3\\books3\\the-eye.eu\\public\\Books\\Bibliotik\\E\\"), "text", "");
 
        // textModel.generate("Hello! How are you?");
         textModel.generate("Hello! How are you? I want you to help me! I'm down");
@@ -44,5 +44,5 @@ public class InvertedTextModelTest {
 //1.7, 19, 46, 67, 274
 //0.7, 3, 5, 7, 20
 //153 966 938, 752 336 265, 1 242 683 689, 1 716 001 536, 4 294 967 295
-//421, 777, 967 ,1091, 1496   ///проверить композер! теряет одиночные токены, делает дубли
+//421, 777, 967 ,1091, 1496   ///проверить композер!  делает дубли
 }
