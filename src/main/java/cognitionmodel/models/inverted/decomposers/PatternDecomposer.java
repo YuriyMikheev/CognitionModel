@@ -157,7 +157,7 @@ public class PatternDecomposer <T extends Agent> implements Decomposer {
                 }
 
 
-                if (a.getRecords().isEmpty()){// | !(agentFilter == null ? true: agentFilter.apply(a))) {//agent checking
+                if (a.getFr() == 0){// | !(agentFilter == null ? true: agentFilter.apply(a))) {//agent checking
                     patternSet.setInActive(pattern, true);
                 } else {
                     if (agentFilter == null ? true: agentFilter.apply(a)) {

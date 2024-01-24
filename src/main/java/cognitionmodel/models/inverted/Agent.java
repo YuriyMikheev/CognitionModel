@@ -18,10 +18,10 @@ public class Agent  {
     public TreeMap<String, Point> relation = new TreeMap<String, Point>();
 
     //HashMap<String, RoaringBitmap> recordsByField = new HashMap<>(); // records common for all points from relation
-    RoaringBitmap records = null;//new RoaringBitmap(); // records common for all points from relation
+    //RoaringBitmap records = null;//new RoaringBitmap(); // records common for all points from relation
     String signature = "";
-    private double z = 0, p = NaN, cp = NaN;
-    private long fr = 0;
+    private double z = NaN, p = NaN, cp = NaN, prodP= NaN;
+    private long fr = -1;
     private InvertedIndex invertedIndex;
     private Object predictingValue = null;
     private boolean hasPredictingField = false;
@@ -29,6 +29,8 @@ public class Agent  {
     private BitSet fields4view = new BitSet();
     private BitSet fields = new BitSet();
     private RoaringBitmap values = new RoaringBitmap();
+
+    private Object cachedRecords = null;
 
 
 
@@ -75,7 +77,7 @@ public class Agent  {
 
     protected void resign(){
         signature = relation.keySet().toString();
-        z = NaN; p = NaN; cp = NaN;
+        z = NaN; p = NaN; cp = NaN; prodP = NaN;
     }
 
     public Object getRelationValue(String field){
@@ -87,9 +89,9 @@ public class Agent  {
 
 
 
-    public RoaringBitmap getRecords() {
+/*    public RoaringBitmap getRecords() {
         return records;
-    }
+    }*/
 
     public Object getPredictingValue() {
         return predictingValue;
@@ -136,17 +138,31 @@ public class Agent  {
      * @return
      */
     public double getP(){
-        if (records == null) return p;
-        return (Double.isNaN(p)?(p=(double)records.getCardinality()/invertedIndex.getDataSetSize()): p);
+/*        if (records == null) return p;
+        return (Double.isNaN(p)?(p=(double)records.getCardinality()/invertedIndex.getDataSetSize()): p);*/
+        return (Double.isNaN(p)? p = invertedIndex.getP(this) : p);
     }
+
+    /**
+     * Gets probability of the relation as if relations are independent
+     * That is production of the all relations probabilities
+     * @return
+     */
+    public double getProductP(){
+/*        if (records == null) return p;
+        return (Double.isNaN(p)?(p=(double)records.getCardinality()/invertedIndex.getDataSetSize()): p);*/
+        return (Double.isNaN(prodP)? p = invertedIndex.getProductP(this) : prodP);
+    }
+
 
     /**
      * Gets frequency of the relation
      * @return
      */
     public double getFr(){
-        if (records == null) return fr;
-        return fr = records.getCardinality();
+/*        if (records == null) return fr;
+        return fr = records.getCardinality();*/
+        return (fr < 0 ? fr = round(invertedIndex.getFr(this)) : fr);
     }
 
 
@@ -191,7 +207,9 @@ public class Agent  {
         relation.put(point.toString(), point);
         fields4view.set(invertedIndex.getFieldIndex(point.getField()), true);
         fields.set(invertedIndex.getFieldIndex(point.getField()), true);
-        records = new RoaringBitmap();
+        resign();
+
+/*        records = new RoaringBitmap();
 
         RoaringBitmap rb;
         if ((rb = invertedIndex.getRecords(point.getField(), point.getValue())) != null) {
@@ -199,8 +217,7 @@ public class Agent  {
                 records.or(rb);
             } else
                 records.and(rb);
-            resign();
-        }
+        }*/
     }
 
     /**
@@ -210,22 +227,22 @@ public class Agent  {
 
     public void addPoint(Point[] points){
 
-        LinkedList<RoaringBitmap> roaringBitmaps = new LinkedList<>();
+     //   LinkedList<RoaringBitmap> roaringBitmaps = new LinkedList<>();
 
         for (Point point: points) {
             relation.put(point.toString(), point);
             fields4view.set(invertedIndex.getFieldIndex(point.getField()), true);
             fields.set(invertedIndex.getFieldIndex(point.getField()), true);
 
-            RoaringBitmap rb =  invertedIndex.getRecords(point.getField(), point.getValue());
+/*            RoaringBitmap rb =  invertedIndex.getRecords(point.getField(), point.getValue());
             if (rb != null) {
                 roaringBitmaps.add(rb);
-            }/* else
+            }*//* else
                     System.err.println(point + " do not exist in model");*/
 
         }
 
-        records = RoaringBitmap.and(roaringBitmaps.listIterator(), 0, round(invertedIndex.getDataSetSize()));
+      //  records = RoaringBitmap.and(roaringBitmaps.listIterator(), 0, round(invertedIndex.getDataSetSize()));
         resign();
     }
 
@@ -237,22 +254,22 @@ public class Agent  {
 
     public void addPoint(Collection<Point> points){
 
-        LinkedList<RoaringBitmap> roaringBitmaps = new LinkedList<>();
+    //    LinkedList<RoaringBitmap> roaringBitmaps = new LinkedList<>();
 
         for (Point point: points) {
             relation.put(point.toString(), point);
             fields4view.set(invertedIndex.getFieldIndex(point.getField()), true);
             fields.set(invertedIndex.getFieldIndex(point.getField()), true);
-
+/*
             RoaringBitmap rb =  invertedIndex.getRecords(point.getField(), point.getValue());
             if (rb != null) {
                 roaringBitmaps.add(rb);
-            }/* else
+            }*//* else
                     System.err.println(point + " do not exist in model");*/
 
         }
 
-        records = RoaringBitmap.and(roaringBitmaps.listIterator(), 0, round(invertedIndex.getDataSetSize()));
+     //   records = RoaringBitmap.and(roaringBitmaps.listIterator(), 0, round(invertedIndex.getDataSetSize()));
         resign();
     }
 
@@ -260,28 +277,29 @@ public class Agent  {
         return signature;
     }
 
+    public void setMR(double mr) {
+        this.z = mr;
+    }
+
     /**
      * Calculates regularity measure = ln(P(relation)/production of all Pj), P(relation) - probability of relation,  Pj - probability of value j
      * @return - regularity measure for the relation
      */
 
+
     public double getMR(){
-        if (Double.isNaN(z))
-            return z = getMR(this.records);
-        else return z;
-    }
-
-    public double getMR(RoaringBitmap records){
-        if (records == null) return z;
+        if (!Double.isNaN(z)) return z;
         if (relation.size() < 1) return 0;
-        if (records.isEmpty()) return z;
-       // if (recordsByField.size() < 2) return 0;
 
-        z = records.getCardinality();
-        double f = 1;
-  //      return z == 0 ? -relation.values().size()*log(invertedIndex.getDataSetSize()) :log(z);
-        int c = 1, l = 0;
-        for (Point point: relation.values()) {
+        z = invertedIndex.getMR(this);
+
+/*       // if (recordsByField.size() < 2) return 0;
+
+        z = getFr();// records.getCardinality();
+        double f = getProductP();
+    //    return z == 0 ? -relation.values().size()*log(invertedIndex.getDataSetSize()) :log(z);
+   //     int c = 1, l = 0;
+*//*        for (Point point: relation.values()) {
             RoaringBitmap fieldrecords = invertedIndex.getRecords(point.getField(), point.getValue());
             if (fieldrecords != null) {
                 f = f * fieldrecords.getCardinality();
@@ -291,9 +309,10 @@ public class Agent  {
                     c++;
                 }
             }
-        }
+        }*//*
 
-        z = log(z / f) + (l - c) * log(invertedIndex.getDataSetSize());
+
+        z = log(z / f) + (relation.size() - 1) * log(invertedIndex.getDataSetSize());// + (l - c) * log(invertedIndex.getDataSetSize());*/
 
         return z;
     }
@@ -317,7 +336,7 @@ public class Agent  {
      * @return true if relation is possible
      */
 
-    public boolean isPossible(){
+/*    public boolean isPossible(){
         if (relation.size() < 1) return false;
         if (records.isEmpty()) return false;
 
@@ -337,7 +356,7 @@ public class Agent  {
 
         double ps = log(f) - (l - c) * log(invertedIndex.getDataSetSize());
         return ps >= 0;
-    }
+    }*/
 
     public InvertedIndex getInvertedIndex() {
         return invertedIndex;
@@ -346,12 +365,11 @@ public class Agent  {
     public void freeze(){
         getP();
         getMR();
-        records = null;
+       // records = null;
     }
 
     public static Agent merge(Agent a1, Agent a2, InvertedIndex invertedIndex) {
         if (a1 == null & a2 == null) throw new IllegalArgumentException("Can't merge two null agents");
-        if (a1.getRecords() == null || a2.getRecords() == null) throw new IllegalArgumentException("Can't merge frozen agent");
 
         if (a1 == null) return a2;
         if (a2 == null) return a1;
@@ -376,8 +394,9 @@ public class Agent  {
         r.resign();
         r.predictingValue = a1.predictingValue != null ? a1.predictingValue: a2.predictingValue != null ? a2.predictingValue: null;
         r.hasPredictingField = r.predictingValue != null;
+        r.prodP = a1.prodP * a2.prodP;
 
-        r.records = new RoaringBitmap();
+/*        r.records = new RoaringBitmap();
 
 
         if (a1.records != null) {
@@ -386,10 +405,21 @@ public class Agent  {
                 r.records.and(a2.records);
         } else
         if (a2.records != null)
-            r.records.or(a2.records);
+            r.records.or(a2.records);*/
+        invertedIndex.mergeAgents(r, a1, a2);
 
         return r;
     }
 
+    public Collection<Point> getPoints(){
+        return relation.values();
+    }
 
+    public Object getCachedRecords() {
+        return cachedRecords;
+    }
+
+    public void setCachedRecords(Object cachedRecords) {
+        this.cachedRecords = cachedRecords;
+    }
 }

@@ -3,6 +3,7 @@ package cognitionmodel.models.inverted.index;
 import cognitionmodel.datasets.TableDataSet;
 import cognitionmodel.datasets.Tuple;
 import cognitionmodel.datasets.TupleElement;
+import cognitionmodel.models.inverted.Agent;
 import cognitionmodel.models.inverted.InvertedTabularModel;
 import org.roaringbitmap.RoaringBitmap;
 
@@ -10,6 +11,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 import static java.lang.Math.abs;
+import static java.lang.Math.log;
 
 public class BitInvertedIndex implements InvertedIndex{
 
@@ -20,7 +22,6 @@ public class BitInvertedIndex implements InvertedIndex{
     protected ArrayList<String> fieldsList;
     protected double[] confidenceLevels = null;
     protected int[] di2i, i2di;
-
 
     protected BitInvertedIndex(){
 
@@ -54,7 +55,7 @@ public class BitInvertedIndex implements InvertedIndex{
 
                     //if (tupleElement.getType() == TupleElement.Type.Int) val = (int)tupleElement.getValue() * 1.0;
                         //else
-                            val = tupleElement.getValue();
+                    val = tupleElement.getValue();
                     if (tupleElement.getType() != TupleElement.Type.Empty)
                         try {
                             if (invertedIndex.get(fieldName).containsKey(val))
@@ -198,10 +199,140 @@ public class BitInvertedIndex implements InvertedIndex{
         }
     }
 
+
+    private RoaringBitmap[] getBitmapArray(Collection<Point> points){
+        RoaringBitmap[] r = new RoaringBitmap[points.size()];
+        int i = 0;
+        for (Point point : points) {
+            RoaringBitmap rb = getRecords(point.field, point.value);
+            if (rb != null)
+                r[i++] = rb;
+        }
+        if (i < points.size())
+            r = Arrays.copyOf(r,i);
+
+        return r;
+    }
+
+    private List<RoaringBitmap> getBitmapList(Collection<Point> points){
+        LinkedList<RoaringBitmap> r = new LinkedList<>();
+        for (Point point : points) {
+            RoaringBitmap rb = getRecords(point.field, point.value);
+            if (rb != null)
+                r.add(rb);
+        }
+        return r;
+    }
+
+
     @Override
     public double getDataSetSize() {
         return dataSet.size();
     }
+
+    @Override
+    public double getP(Agent agent) {
+        return getFr(agent)/getDataSetSize();
+    }
+
+    @Override
+    public double getFr(Agent agent) {
+        if (agent.getPoints().isEmpty()) return -1;
+
+        RoaringBitmap rb = (RoaringBitmap) getCash(agent);//agent.getCachedRecords();
+        if (rb == null) {
+            rb = RoaringBitmap.and(getBitmapList(agent.getPoints()).listIterator(), 0L, (long)Integer.MAX_VALUE*2-1);
+            putCash(agent, rb);
+            //cash.put(agent.getSignature(), rb);
+        }
+        return rb.getCardinality();
+    }
+
+    @Override
+    public double getProductP(Agent agent) {
+        int c = 1, l = 0;
+        double f = 1;
+        for (Point point: agent.getRelation().values()) {
+            RoaringBitmap fieldrecords = getRecords(point.getField(), point.getValue());
+            if (fieldrecords != null) {
+                f = f * fieldrecords.getCardinality();
+/*                l++;
+                if (f > Double.MAX_VALUE / 1000000) { //prevents double value overloading
+                    f = f / getDataSetSize();
+                    c++;
+                }*/
+            }
+        }
+        return f;
+    }
+
+    @Override
+    public double getMR(Agent agent){
+        if (agent.getRelation().size() <= 1) return 0;
+
+        double z = getFr(agent), f = 1;// records.getCardinality();
+        int c = 1, l = 0;
+        for (Point point: agent.getRelation().values()) {
+            RoaringBitmap fieldrecords = getRecords(point.getField(), point.getValue());
+            if (fieldrecords != null) {
+                f = f * fieldrecords.getCardinality();
+                l++;
+                if (f > Double.MAX_VALUE / 1000000) { //prevents double value overflowing
+                    f = f / getDataSetSize();
+                    c++;
+                }
+            }
+        }
+        z = log(z / f) + (l - c) * log(getDataSetSize());
+        agent.setMR(z);
+
+        return z;
+    }
+
+    @Override
+    public void mergeAgents(Agent agent, Agent a1, Agent a2) {
+        if (agent.getCachedRecords() != null) return;
+
+        RoaringBitmap r1, r2;
+        r1 = (RoaringBitmap) getCash(a1);//cash.get(a1.getSignature());
+        if (r1 == null)
+            if (a1.getPoints().size() > 1)
+                putCash(a1, r1 = RoaringBitmap.and(getBitmapList(a1.getPoints()).listIterator(), 0L, (long)Integer.MAX_VALUE*2-1));//FastAggregation.and(getBitmapArray(a1.getPoints())));
+            else
+                putCash(a1, r1 = getRecords(a1.relation.firstEntry().getValue().getField(), a1.relation.firstEntry().getValue().getValue()));
+
+        r2 = (RoaringBitmap) getCash(a2);//cash.get(a2.getSignature());
+        if (r2 == null)
+            if (a2.getPoints().size() > 1)
+                putCash(a2, r2 = RoaringBitmap.and(getBitmapList(a2.getPoints()).listIterator(), 0L, (long)Integer.MAX_VALUE*2-1));
+            else
+                putCash(a2, r2 = getRecords(a2.relation.firstEntry().getValue().getField(), a2.relation.firstEntry().getValue().getValue()));
+
+        if (r1 == null || r2 == null) return;
+        putCash(agent, RoaringBitmap.and(r1, r2));
+
+    }
+
+    @Override
+    public void putCash(Agent agent, Object map) {
+        agent.setCachedRecords(map);
+    }
+
+    @Override
+    public Object getCash(Agent agent){
+        return agent.getCachedRecords();
+    }
+
+    @Override
+    public void clearCash(Agent agent) {
+        agent.setCachedRecords(null);
+    }
+
+    @Override
+    public void clearCash(List<Agent> agents) {
+        agents.forEach(agent -> agent.setCachedRecords(null));
+    }
+
 
     public InvertedTabularModel getModel() {
         return model;
@@ -230,4 +361,6 @@ public class BitInvertedIndex implements InvertedIndex{
     public int[] getI2di() {
         return i2di;
     }
+
+
 }
