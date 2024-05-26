@@ -99,12 +99,13 @@ public class IterativeDecomposer implements Decomposer {
 
     private void doDecompose(List<Agent> agents, Tuple record, HashMap<Object,  LinkedList<Agent>> resultMap){
 
-        List<Agent> alist = agents;
+        List<Agent> alist = agents;//, badAgents = new LinkedList<>();
+
 
         do {
             LinkedList<Agent> newlevel = new LinkedList<>(), badAgents = new LinkedList<>();//badAgents.clear();
             for (Agent a : alist) {
-                for (Iterator<Point> pointIterator = getAgentFieldsIterator(a, record); pointIterator.hasNext(); ) {
+                for (PointIterator pointIterator = getAgentFieldsIterator(a, record); pointIterator.hasNext(); ) {
                     Point p = pointIterator.next();
 
                     Agent na = new Agent(p, invertedIndex);
@@ -112,14 +113,13 @@ public class IterativeDecomposer implements Decomposer {
                         na.setPredictingValue(p.getValue());
 
                     Agent ca = a.getRelation().size() == 0 ? na : Agent.merge(a, na, invertedIndex);
-                    if (ca.getFr() > 0) {
-                        if (agentFilter == null || agentFilter.apply(ca) || ca.getRelation().size() == 1) {
+                    if (ca.getFr() > 0 && (agentFilter == null || agentFilter.apply(ca) || ca.getRelation().size() == 1)) {
                             newlevel.add(ca);
                             Object co = ca.getPredictingValue();
                             if (co == null) co = "null";
                             if (!resultMap.containsKey(co)) resultMap.put(co, new LinkedList<>());
                             if (ca.relation.size() > 1 || co.equals("null")) resultMap.get(co).add(ca);
-                        }
+
                     } else {
                         badAgents.add(ca);
                     }
@@ -138,10 +138,12 @@ public class IterativeDecomposer implements Decomposer {
     }
 
     private void checkAgents(Agent agent, LinkedList<Agent> level){
-        BitSet b = BitSet.valueOf(agent.getFields4view().toLongArray()); //b.set(model.getInvertedIndex().getFieldIndex(field));
+//        long[] b = agent.getFields4view().toLongArray();
+        long[] b = agent.getFields().toLongArray();
         for (Agent a: level){
-            BitSet bt = BitSet.valueOf(b.toLongArray());
-            bt.andNot(a.getFields4view());
+            BitSet bt = BitSet.valueOf(b);
+//            bt.andNot(a.getFields4view());
+            bt.andNot(a.getFields());
             if (a.getPredictingValue() != null & agent.getPredictingValue() != null)
                 bt.set(predictingFieldInvertedIndex, !a.getPredictingValue().toString().equals(agent.getPredictingValue().toString()));
             if (bt.cardinality() == 1) {
@@ -159,59 +161,81 @@ public class IterativeDecomposer implements Decomposer {
         return b.toString() + (point.getField().equals(predicttingField) ? point.getValue() : "");
     }
 
-    private Iterator<Point> getAgentFieldsIterator(Agent agent, Tuple record){
 
-        return new Iterator<Point>() {
-            Agent ag = agent;
+    private class PointIterator implements Iterator<Point>{
+        Agent ag ;
 
-            int start = ag.getFields4view().isEmpty()? -1: ag.getFields4view().stream().max().getAsInt(), fi = start, vi = -1;
-            Tuple rec = record;// Tuple.copy(record, start, Integer.MAX_VALUE);
+        //int start = ag.getFields4view().isEmpty()? -1: ag.getFields4view().stream().max().getAsInt(), fi = start, vi = -1;
+       int start = -1, fi = start, vi = -1;
+        Tuple rec;// Tuple.copy(record, start, Integer.MAX_VALUE);
 
-            private List<Object> values = null;
-            @Override
-            public boolean hasNext() {
-                int i = ag.getFields4view().nextClearBit(fi + 1);
+        private List<Object> values = null;
+       // private BitSet bits;
 
-                if (values != null) {
-                    int j = (int)ag.getValues().nextAbsentValue(vi + 1);
+        public PointIterator(Agent agent, Tuple record){
+            ag = agent;
+            rec = record;
+            start = ag.getFields4view().isEmpty()? -1: ag.getFields().stream().max().getAsInt(); fi = start; vi = -1;
+/*            bits = BitSet.valueOf(ag.getFields4view().toLongArray());
+            bits.andNot();*/
+        }
 
-                    return (j < values.size()  | (i < invertedIndex.getFields().size()-1));
-                }
-                return i < invertedIndex.getFields().size();// | (valuesIterator != null ? valuesIterator.hasNext(): false);
 
+        @Override
+        public boolean hasNext() {
+            int i = ag.getFields4view().nextClearBit(fi + 1);
+            //int ifi = ((BitInvertedIndex)invertedIndex).invertedIndexToDatasetFieldIndex(i);
+            if (i >= rec.size()) return false;
+
+            if (values != null) {
+                int j = (int)ag.getValues().nextAbsentValue(vi + 1);
+
+                return (j < values.size()  | (i < invertedIndex.getFields().size()-1));
+            }
+            return i < invertedIndex.getFields().size();// | (valuesIterator != null ? valuesIterator.hasNext(): false);
+
+        }
+
+        @Override
+        public Point next() {
+            int ofi = fi;
+            fi = ag.getFields4view().nextClearBit(fi + 1);
+            if (fi >= invertedIndex.getFields().size()) return null;
+            int ifi = ((BitInvertedIndex)invertedIndex).invertedIndexToDatasetFieldIndex(fi);
+
+            if (ifi >= rec.size()) return null;
+
+            String field = ((BitInvertedIndex) invertedIndex).getFieldsList().get(fi);
+            if (rec.get(ifi) == null & values == null) {
+                values =  invertedIndex.getAllValues(field);
             }
 
-            @Override
-            public Point next() {
-                int ofi = fi;
-                fi = ag.getFields4view().nextClearBit(fi + 1);
-                if (fi >= invertedIndex.getFields().size()) return null;
-                int ifi = ((BitInvertedIndex)invertedIndex).invertedIndexToDatasetFieldIndex(fi);
+            if (values != null) {
+                int j = (int)ag.getValues().nextAbsentValue(vi + 1);
 
-                String field = ((BitInvertedIndex) invertedIndex).getFieldsList().get(fi);
-                if (rec.get(ifi) == null & values == null) {
-                    values =  invertedIndex.getAllValues(field);
+                if (j < values.size()) {
+                    fi = ofi;
+                    vi = j;
+                    return new Point(field, values.get(j));
+                } else {
+                    values = null;
+                    vi = -1;
+                    fi = ag.getFields4view().nextClearBit(fi + 1);
+                    if (fi >= invertedIndex.getFields().size()) return null;
+                    ifi = ((BitInvertedIndex) invertedIndex).invertedIndexToDatasetFieldIndex(fi);
                 }
-
-                if (values != null) {
-                    int j = (int)ag.getValues().nextAbsentValue(vi + 1);
-
-                    if (j < values.size()) {
-                        fi = ofi;
-                        vi = j;
-                        return new Point(field, values.get(j));
-                    } else {
-                        values = null;
-                        vi = -1;
-                        fi = ag.getFields4view().nextClearBit(fi + 1);
-                        if (fi >= invertedIndex.getFields().size()) return null;
-                        ifi = ((BitInvertedIndex) invertedIndex).invertedIndexToDatasetFieldIndex(fi);
-                    }
-                }
-                return new Point(field, rec.get(ifi).getValue());
-
             }
-        };
+            return new Point(field, rec.get(ifi).getValue());
+
+        }
+
+    }
+
+    private PointIterator getAgentFieldsIterator(Agent agent, Tuple record){
+
+        PointIterator iterator =  new PointIterator(agent, record);
+
+        return iterator;
     }
 
 }

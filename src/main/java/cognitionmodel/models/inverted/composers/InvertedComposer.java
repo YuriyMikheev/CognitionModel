@@ -27,7 +27,6 @@ public class InvertedComposer implements Composer {
     private class CompositionIndex {
         ArrayList<Composition> compositions = new ArrayList<>();
         BitSet[] index = new BitSet[fieldsLength];
-        //  HashMap<String, Composition> maxcompositions = new HashMap<>();
 
         private boolean changed = true;
 
@@ -43,6 +42,7 @@ public class InvertedComposer implements Composer {
                 index[i] = new BitSet();
 
             compositions.sort(Comparator.comparing(Composition::getMr).reversed());
+        //    compositions.sort((c1, c2) -> c1.getMr()/c1.getFields().cardinality() < c2.getMr()/c2.getFields().cardinality()? 1:-1);
 
             int idx = 0;
             for (Composition composition : compositions) {
@@ -67,8 +67,8 @@ public class InvertedComposer implements Composer {
             BitSet rset = new BitSet();
             rset.set(0, compositions.size());
 
-            for (int nextbit = fields.nextClearBit(0); nextbit >= 0 & nextbit < fieldsLength; nextbit = fields.nextClearBit(nextbit + 1))
-                rset.and(index[nextbit]);
+            for (int nextbit = fields.nextSetBit(0); nextbit >= 0 & nextbit < fieldsLength; nextbit = fields.nextSetBit(nextbit + 1))
+                rset.andNot(index[nextbit]);
 
             for (int nextbit = rset.nextSetBit(0); nextbit >= 0 & nextbit < compositions.size(); nextbit = rset.nextSetBit(nextbit + 1))
                 result.add(compositions.get(nextbit));
@@ -79,9 +79,8 @@ public class InvertedComposer implements Composer {
         public Composition getMax(BitSet fields) {
             reindex();
 
-            Composition result = new Composition();
-            result.setMr(-100000000);
-            HashSet<String> ca = new HashSet<>();
+/*            Composition result = new Composition();
+            result.setMr(-100000000);*/
 
             BitSet rset = new BitSet();
             rset.set(0, compositions.size());
@@ -169,7 +168,7 @@ public class InvertedComposer implements Composer {
         return cl.isEmpty() ? null: cl.get(0);
     }
 
-    private List<Composition> composeToSortedList(LinkedList<Agent> agentList, HashMap<String, Agent> zeroMap){
+    private List<Composition> composeToSortedListo(LinkedList<Agent> agentList, HashMap<String, Agent> zeroMap){
         PriorityQueue<Composition> bestCompositions = new PriorityQueue<>(Comparator.comparing(Composition::getMr).reversed());
         CompositionIndex compositionIndex = new CompositionIndex();
 
@@ -178,6 +177,8 @@ public class InvertedComposer implements Composer {
             bestCompositions.add(composition);
             compositionIndex.add(composition);
         }
+
+        HashMap<String, Composition> maxCompositions = new HashMap<>();
 
         PriorityQueue<Composition> nbc = null;
         boolean f = false;
@@ -189,19 +190,21 @@ public class InvertedComposer implements Composer {
 
                     boolean fl = false;
                     Composition composition1 = compositionIndex.getMax(composition.getFields());
-                    if (composition1 != null)
-                    {
+                    if (composition1 != null) {
                         Composition oc = composition.clone();
                         if (oc.add(composition1)) {
-                            nbc.add(oc);
-                            fl = f = true;
+
+                            //nbc.add(oc);
+                            fl = f = addToQ(oc, nbc, maxCompositions);//true;
                         }
                     }
                     if (!fl) {
-                        nbc.add(composition);
+                        addToQ(composition, nbc, maxCompositions);
+                      //  nbc.add(composition);
                     }
                 } else {
-                    nbc.add(composition);
+                    addToQ(composition, nbc, maxCompositions);
+                    //nbc.add(composition);
                 }
             } catch (CloneNotSupportedException e) {
                 throw new RuntimeException(e);
@@ -213,8 +216,81 @@ public class InvertedComposer implements Composer {
 
         } while (f);
 
-        return bestCompositions.stream().collect(Collectors.toList());
+        return  maxCompositions.values().stream().sorted(Comparator.comparing(Composition::getMr).reversed()).collect(Collectors.toList());//bestCompositions.stream().collect(Collectors.toList());
     }
+
+
+    private List<Composition> composeToSortedList(LinkedList<Agent> agentList, HashMap<String, Agent> zeroMap){
+        PriorityQueue<Composition> bestCompositions = new PriorityQueue<>(Comparator.comparing(Composition::getMr).reversed());
+        CompositionIndex compositionIndex = new CompositionIndex();
+
+        for (Agent agent : agentList) {
+            Composition composition = new Composition(agent, predictingIndex, predictionfunction, zeroMap);
+            bestCompositions.add(composition);
+            compositionIndex.add(composition);
+        }
+
+
+        PriorityQueue<Composition> nbc = null, onbc = null;
+        boolean f = false;
+        HashMap<String, Composition> maxCompositions = new HashMap<>();
+
+        do {
+            nbc = new PriorityQueue<>(Comparator.comparing(Composition::getMr).reversed()); f = false;
+            while (!bestCompositions.isEmpty()) try {
+                Composition composition = bestCompositions.poll(); //nbc.add(composition);
+                if (composition.getFields().cardinality() < fieldsLength - 1) {
+
+                    boolean fl = false;
+                    List<Composition> compositionL1 = compositionIndex.get(composition.getFields());
+                    if (!compositionL1.isEmpty()) {
+                        for (Iterator<Composition> ci = compositionL1.iterator(); ci.hasNext(); ) {
+                            Composition oc = composition.clone();
+                            if (oc.add(ci.next())) {
+                                fl = fl || addToQ(oc, nbc, maxCompositions);//true;
+                            }
+                        }
+                        f = fl || f;
+                    }
+                    if (!fl) {
+                        addToQ(composition, nbc, maxCompositions);
+                    }
+                } else {
+                    addToQ(composition, nbc, maxCompositions);
+                }
+            } catch (CloneNotSupportedException e) {
+                throw new RuntimeException(e);
+            }
+
+            bestCompositions.clear();
+            for (Iterator<Composition> iterator = nbc.iterator(); iterator.hasNext() & bestCompositions.size() < maxN;)
+                bestCompositions.add(iterator.next());
+
+        } while (f);
+
+        return maxCompositions.values().stream().sorted(Comparator.comparing(Composition::getMr).reversed()).collect(Collectors.toList());
+    }
+
+
+    private boolean addToQ(Composition composition, PriorityQueue<Composition> q, HashMap<String, Composition> maxCompositions){
+//        String cs = composition.getAgents().stream().sorted((a1, a2) -> a1.getFields().nextSetBit(0) < a2.getFields().nextSetBit(0) ? -1:1).map(Agent::getPoints).collect(Collectors.toList()).toString();
+        String cs = composition.getFields().toString();
+        if (maxCompositions.get(cs) == null) {
+            maxCompositions.put(cs, composition);
+            q.add(composition);
+        } else
+        if (maxCompositions.get(cs).getMr() < composition.getMr()) {
+            q.add(composition);
+            maxCompositions.put(cs, composition);
+        } else {
+            if (maxCompositions.get(cs).getMr() != composition.getMr()) q.add(maxCompositions.get(cs));
+            return false;
+        }
+
+        return true;
+    }
+
+
 
 
 }

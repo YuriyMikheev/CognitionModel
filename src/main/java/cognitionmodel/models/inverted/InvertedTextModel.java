@@ -3,17 +3,16 @@ package cognitionmodel.models.inverted;
 import cognitionmodel.datasets.TableDataSet;
 import cognitionmodel.datasets.Tuple;
 import cognitionmodel.models.inverted.composers.Composition;
-import cognitionmodel.models.inverted.composers.InvertedComposer;
+import cognitionmodel.models.inverted.composers.InvertedComposerFull;
 import cognitionmodel.models.inverted.decomposers.IterativeDecomposer;
 import cognitionmodel.models.inverted.index.Point;
 import cognitionmodel.models.inverted.index.TextIndex;
 import org.fusesource.jansi.Ansi;
 
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
+import java.util.*;
+import java.util.concurrent.TimeUnit;
 
+import static java.lang.Math.abs;
 import static org.fusesource.jansi.Ansi.ansi;
 
 public class InvertedTextModel {
@@ -22,28 +21,89 @@ public class InvertedTextModel {
 
     private TextIndex textIndex;
     private String indexField;
-
+    private double minMr = -10;
+    int depth = Integer.MAX_VALUE, range = Integer.MAX_VALUE, maxComp = 10;
 
     public InvertedTextModel(TableDataSet dataSet, String indexField, String datasetInfo) {
         this.dataSet = dataSet;
         this.indexField = indexField;
-        textIndex = new TextIndex(this, indexField, dataSet, datasetInfo);
+        setTextIndex(new TextIndex(this, indexField, dataSet, datasetInfo));
+    }
+
+    public InvertedTextModel(TextIndex textIndex, String indexField, String datasetInfo) {
+        this.dataSet = dataSet;
+        this.indexField = indexField;
+        setTextIndex(textIndex);
+    }
+
+    public void setTextIndex(TextIndex textIndex){
+        this.textIndex = textIndex;
+        getTextIndex().makeShiftedIndexes(1000, -1);
+    }
+
+    public int getDepth() {
+        return depth;
+    }
+
+    public void setDepth(int depth) {
+        this.depth = depth;
+    }
+
+    public double getMinMr() {
+        return minMr;
+    }
+
+    public void setMinMr(double minMr) {
+        this.minMr = minMr;
+    }
+
+    public int getRange() {
+        return range;
+    }
+
+    public void setRange(int range) {
+        this.range = range;
+    }
+
+    public int getMaxComp() {
+        return maxComp;
+    }
+
+    public void setMaxComp(int maxComp) {
+        this.maxComp = maxComp;
+    }
+
+    private int agentFieldsRange(Agent a){
+        if (a.getRelation().isEmpty()) return 0;
+        BitSet b = a.getFields();
+        return -b.nextSetBit(0)+b.length()-1;
     }
 
     public String generate(String request){
         String answer = "";
 
         Tuple requestTuple = new Tuple().addAll(textIndex.getEncoder().encode(request));
-        getTextIndex().makeShiftedIndexes(requestTuple.size(), -1);
 
-        IterativeDecomposer decomposer = new IterativeDecomposer(textIndex, "", false, requestTuple.size(),null);
-        InvertedComposer composer = new InvertedComposer(requestTuple.size(), -1, null);
+        IterativeDecomposer decomposer = new IterativeDecomposer(textIndex, "", false, depth, a-> a.getMR() > minMr && agentFieldsRange(a) < range);
+      //  IterativeTextDecomposer decomposer = new IterativeTextDecomposer(textIndex, "", false, depth, a-> a.getMR() > minMr); decomposer.setRange(range);
+        InvertedComposerFull composer = new InvertedComposerFull(requestTuple.size(), -1, null);
+        composer.setMaxN(10000);
 
         long t = System.currentTimeMillis();
         HashMap<Object, LinkedList<Agent>> d = decomposer.decompose(requestTuple,"");
-        HashMap<Object, List<Composition>> cl = composer.composeToSortedCompositions(d, c-> c.getFields().cardinality() == requestTuple.size());
-        System.out.println(System.currentTimeMillis() - t);
+        t = (System.currentTimeMillis() - t);
+        System.out.println(String.format("Decomposer working time %02d:%02d:%02d", TimeUnit.MILLISECONDS.toHours(t), TimeUnit.MILLISECONDS.toMinutes(t) - TimeUnit.HOURS.toMinutes(TimeUnit.MILLISECONDS.toHours(t)),
+                TimeUnit.MILLISECONDS.toSeconds(t) - TimeUnit.MINUTES.toSeconds(TimeUnit.MILLISECONDS.toMinutes(t))));
+        System.out.println("Agents: " + d.get("null").size());
 
+        t = System.currentTimeMillis();
+        HashMap<Object, List<Composition>> cl = composer.composeToSortedCompositions(d,  c->true);//;c-> c.getFields().cardinality() == requestTuple.size());
+        t = (System.currentTimeMillis() - t);
+        System.out.println(String.format("Composer working time %02d:%02d:%02d", TimeUnit.MILLISECONDS.toHours(t), TimeUnit.MILLISECONDS.toMinutes(t) - TimeUnit.HOURS.toMinutes(TimeUnit.MILLISECONDS.toHours(t)),
+                TimeUnit.MILLISECONDS.toSeconds(t) - TimeUnit.MINUTES.toSeconds(TimeUnit.MILLISECONDS.toMinutes(t))));
+        System.out.println("Compositions: " + cl.get("null").size());
+
+        System.out.println("length "+requestTuple.size());
 /*
         for (Agent a: d.get("null").stream().sorted((a1, a2)-> a1.getMR() > a2.getMR()? -1:1).collect(Collectors.toList())){
             String s = "";
@@ -59,9 +119,13 @@ public class InvertedTextModel {
             System.out.println(s);
         }
 */
-
-        for (Composition c: cl.get("null"))
-            System.out.println(compositionToColourString(c, "text"));
+        int i = 0;
+        if (cl.get("null")!=null)
+            for (Composition c: cl.get("null"))
+                if (i++ < 10) answer += compositionToColourString(c.complementComposition(d.get("null")), "text")+"; "+c.getAgents().size()+"\n";
+                    else break;
+        else
+            System.err.println("nothing!");
 
         return answer;
     }
@@ -99,7 +163,7 @@ public class InvertedTextModel {
             for (Point p: a.getRelation().values()) {
                 ll.add((Integer) p.getValue());
                 int j = Integer.parseInt(p.getField().substring(textField.length()));
-                sa[j] = agentColors[i] + textIndex.getEncoder().decode(ll) + ansi().fgDefault();
+                sa[j] = agentColors[i % 32] + textIndex.getEncoder().decode(ll) + ansi().reset();
                 ll.clear();
             }
             i++;

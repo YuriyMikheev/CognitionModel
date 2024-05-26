@@ -1,4 +1,4 @@
-package cognitionmodel;
+package cognitionmodel.examples;
 
 import cognitionmodel.datasets.*;
 import cognitionmodel.datasets.parsers.CSVParser;

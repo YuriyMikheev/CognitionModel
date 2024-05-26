@@ -17,8 +17,7 @@ import static java.lang.Math.round;
 public class Agent  {
     public TreeMap<String, Point> relation = new TreeMap<String, Point>();
 
-    //HashMap<String, RoaringBitmap> recordsByField = new HashMap<>(); // records common for all points from relation
-    //RoaringBitmap records = null;//new RoaringBitmap(); // records common for all points from relation
+
     String signature = "";
     private double z = NaN, p = NaN, cp = NaN, prodP= NaN;
     private long fr = -1;

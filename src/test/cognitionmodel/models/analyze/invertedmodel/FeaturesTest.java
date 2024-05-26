@@ -4,7 +4,7 @@ import cognitionmodel.datasets.parsers.CSVParser;
 import cognitionmodel.datasets.TableDataSet;
 import cognitionmodel.models.inverted.Agent;
 import cognitionmodel.models.inverted.InvertedTabularModel;
-import cognitionmodel.models.inverted.decomposers.RecursiveLevelValuesDecomposer;
+import cognitionmodel.models.inverted.decomposers.RecursiveDecomposer;
 import cognitionmodel.predictors.predictionfunctions.Powerfunction;
 import org.junit.Test;
 
@@ -50,7 +50,7 @@ public class FeaturesTest {
 
  //       tabularModel.predict(testDataSet.getRecords(), " INCOME", new Powerfunction(null, 5, 1), false, 5, a -> a.getMR() > 0 & a.getFr() > 5).show(tabularModel.getDataSet().getFieldIndex(" INCOME"));
 
-        HashMap<String, Features.Err> ferr = Features.errorAgentsMap(tabularModel, (a, b) -> {return 1.0;}," INCOME",new RecursiveLevelValuesDecomposer(tabularModel.getInvertedIndex(), " INCOME", false, 4, a -> ((Agent)a).getMR() > 0), new Powerfunction(null, 5, 1));
+        HashMap<String, Features.Err> ferr = Features.errorAgentsMap(tabularModel, (a, b) -> {return 1.0;}," INCOME",new RecursiveDecomposer(tabularModel.getInvertedIndex(), " INCOME", false, 4, a -> ((Agent)a).getMR() > 0), new Powerfunction(null, 5, 1));
         System.out.println("Features cumulative errors");
 
        // ferr.entrySet().stream().filter(e -> e.getValue().fe > 0).sorted(Comparator.comparing(e -> -e.getValue().fe/(e.getValue().fe+e.getValue().ft))).collect(toList()).forEach(e -> System.out.println(e.getKey()+"\t"+(double)e.getValue().fe/(e.getValue().fe+e.getValue().ft)));

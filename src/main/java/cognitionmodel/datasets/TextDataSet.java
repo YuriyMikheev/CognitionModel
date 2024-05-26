@@ -2,6 +2,8 @@ package cognitionmodel.datasets;
 
 import cognitionmodel.datasets.parsers.JsonlParser;
 import cognitionmodel.datasets.parsers.TabularParser;
+import cognitionmodel.models.inverted.index.TextIndex;
+import cognitionmodel.models.inverted.index.TextIndexMaker;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 
@@ -44,7 +46,7 @@ public class TextDataSet extends TableDataSet{
 
     public TextDataSet(String folder) throws IOException {
         super(null,  new JsonlParser(null, new String(new byte[]{0})));
-        Set<String> fileList = listFiles(folder);
+        Set<String> fileList = TextIndexMaker.filesList(folder);
 
 
         for (String fl: fileList){
@@ -57,22 +59,10 @@ public class TextDataSet extends TableDataSet{
 
             getRecords().addAll(getParser().parse(jo.toString().getBytes()));
         }
-        System.out.println("Dataset loaded");
+        System.out.println(folder + " dataset loaded");
     }
 
-    private Set<String> listFiles(String dir) throws IOException {
-        Set<String> fileList = new HashSet<>();
-        Files.walkFileTree(Paths.get(dir), new SimpleFileVisitor<Path>() {
-            @Override
-            public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
-                if (!Files.isDirectory(file)) {
-                    fileList.add(file.toAbsolutePath().toString());
-                }
-                return FileVisitResult.CONTINUE;
-            }
-        });
-        return fileList;
-    }
+
 
     public Tuple getHeader() {
         return ((TabularParser)getParser()).getHeader();

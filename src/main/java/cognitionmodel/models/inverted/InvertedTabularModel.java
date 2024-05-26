@@ -234,6 +234,8 @@ public class InvertedTabularModel {
         //   RecursiveLevelValuesDecomposer decomposer = new RecursiveLevelValuesDecomposer(getInvertedIndex(), predictingfield, modelcashed, maxDepth,  agentFilter);
         IterativeDecomposer decomposer = new IterativeDecomposer(getInvertedIndex(), predictingfield, modelcashed, maxDepth,  agentFilter);
         InvertedComposer composer = new InvertedComposer(((BitInvertedIndex) getInvertedIndex()).getFieldsAmount(), predictingFieldIndex, predictionfunction);
+        composer.setMaxN(3);
+
         Producer producer = new Classifier(invertedIndex, predictingfield, predictionfunction);
 
         LinkedList<CompletableFuture<Integer>> cfl = new LinkedList<>();

@@ -20,11 +20,13 @@ public class Composition implements Cloneable{
     private int length;
     private  HashMap<String, Agent> zeroMap;
     private LinkedList<Agent> agents = new LinkedList<>();
+    private BitSet fieldsIndex = new BitSet();
 
     public Composition(Agent agent, int predictingIndex, Predictionfunction predictionfunction, HashMap<String, Agent> zeroMap){
         this.predictingIndex = predictingIndex;
         this.predictionfunction = predictionfunction;
         this.zeroMap = zeroMap;
+
         add(agent);
     }
     public Composition(Agent agent, int predictingIndex, HashMap<String, Agent> zeroMap){
@@ -61,9 +63,10 @@ public class Composition implements Cloneable{
             agents.addAll(composition.agents);
             mr = mr + composition.mr;
             p = p * composition.p;
-            f = f + composition.f;
+            //f = f + composition.f;
             pf = pf + composition.pf;
             fields.or(composition.fields);
+            fieldsIndex.and(composition.fieldsIndex);
             if (predictingIndex != -1) fields.set(predictingIndex, false);
             length = fields.cardinality();
             return true;
@@ -82,7 +85,7 @@ public class Composition implements Cloneable{
     private void recalculate(Agent agent){
         mr = mr + agent.getMR();
         p = p * agent.getP();
-        f = f + agent.getFr();
+       // f = f + agent.getFr();
 
 
         if (predictionfunction != null) {
@@ -111,6 +114,14 @@ public class Composition implements Cloneable{
         return f;
     }
 
+    public BitSet getFieldsIndex() {
+        return fieldsIndex;
+    }
+
+    public void setFieldsIndex(BitSet fieldsIndex) {
+        this.fieldsIndex = fieldsIndex;
+    }
+
     @Override
     protected Composition clone() throws CloneNotSupportedException {
 
@@ -125,6 +136,7 @@ public class Composition implements Cloneable{
         composition.predictingIndex = predictingIndex;
         composition.length = length;
         composition.predictionfunction = predictionfunction;
+        composition.fieldsIndex = BitSet.valueOf(fieldsIndex.toLongArray());
 
         return composition;
     }
@@ -155,4 +167,22 @@ public class Composition implements Cloneable{
         if (c1.length + c2.length >= fieldsLength) return false;
         return !c1.getFields().intersects(c2.fields);
     }
+
+    /**
+     * Complements composition with the points that are absent into it. Each absent point is represented by agent.
+     * Puts that agents into "null"
+     * @param agentList
+     * @return - do change and return
+     */
+    public Composition complementComposition(LinkedList<Agent> agentList){
+        for (Agent a: agentList)
+            if (a.getRelation().size() == 1) {
+                BitSet bitSet = BitSet.valueOf(a.getFields().toLongArray());
+                bitSet.and(fields);
+                if (bitSet.cardinality() == 0)
+                    add(a);
+            }
+        return this;
+    }
+
 }

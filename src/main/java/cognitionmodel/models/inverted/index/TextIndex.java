@@ -9,6 +9,10 @@ import cognitionmodel.models.inverted.InvertedTextModel;
 import org.apache.commons.math3.exception.OutOfRangeException;
 import org.roaringbitmap.*;
 
+import java.io.*;
+import java.nio.ByteBuffer;
+import java.nio.CharBuffer;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
@@ -30,14 +34,15 @@ public class TextIndex extends BitInvertedIndex {
         throw new RuntimeException("TextIndex requires more parameters to be constructed.");
     }
 
-    private String[] textData = new String[]{"datasetInfo", "indexStart", "IndexEnd"};
-    private ModelType modelType = ModelType.GPT_4_32K;
-    private String textField;
+    String[] textData = new String[]{"datasetInfo", "indexStart", "IndexEnd"};
+    ModelType modelType = ModelType.GPT_4_32K;
+    String textField;
     private InvertedTextModel model;
-    private static long maxIndex = 0;
-    private int maxShortOffset = -1, maxLongOffset = -1;
+    static long maxIndex = 0;
+    int maxShortOffset = -1;
+    int maxLongOffset = -1;
 
-    private Encoding encoder;
+    Encoding encoder;
 
     public TextIndex(InvertedTextModel model, String textField) {
         this.model = model;
@@ -71,6 +76,10 @@ public class TextIndex extends BitInvertedIndex {
 
     public void setMaxLongOffset(int maxLongOffset) {
         this.maxLongOffset = maxLongOffset;
+    }
+
+    public String getTextField() {
+        return textField;
     }
 
     public void makeIndex(TableDataSet dataSet, String datasetInfo) {
@@ -130,7 +139,7 @@ public class TextIndex extends BitInvertedIndex {
                             else
                                 tm.put(e.getKey(), e.getValue().get());
                     }
-                    return ttm;
+                    return null;
                 }));
                 synchronized (this) {
                     i.getAndIncrement();
@@ -146,7 +155,7 @@ public class TextIndex extends BitInvertedIndex {
             System.err.println("Out of max index capacity");
         }
 
-        System.out.println("Optimized: "+optimize()+" bytes");
+       // System.out.println("Optimized: "+optimize()+" bytes");
 
         if (maxShortOffset != -1 & maxLongOffset != -1)
             makeShiftedIndexes(maxShortOffset, maxLongOffset);
@@ -199,12 +208,14 @@ public class TextIndex extends BitInvertedIndex {
     public RoaringBitmap getRecords(String field, Object value){
         if (field.contains(textField))
             if (!field.equals(textField+"0")){
-                RoaringBitmap rm =  RoaringBitmap.addOffset((RoaringBitmap) getMap(textField+"0").get(value), -Integer.parseInt(field.substring(textField.length())));
+                RoaringBitmap rm =  (RoaringBitmap) getMap(textField+"0").get(value);//
+                //RoaringBitmap rm =  RoaringBitmap.addOffset((RoaringBitmap) getMap(textField+"0").get(value), -Integer.parseInt(field.substring(textField.length())));
                 return rm;
         }
 
         return (RoaringBitmap) getMap(field).get(value);
     }
+
 
     @Override
     public double getFr(Agent agent) {
@@ -212,7 +223,7 @@ public class TextIndex extends BitInvertedIndex {
 
         RoaringBitmap rb = (RoaringBitmap) getCash(agent);//agent.getCachedRecords();
         if (rb == null) {
-            rb = RoaringBitmap.and(getBitmapList(agent.getPoints()).listIterator(), 0L, round(getDataSetSize()));
+            rb = RoaringBitmap.and(getBitmapList(agent.getPoints()).listIterator(), 0L, min(round(getDataSetSize()), 0xffffffffL));
             putCash(agent, rb);
             //cash.put(agent.getSignature(), rb);
         }
@@ -254,14 +265,15 @@ public class TextIndex extends BitInvertedIndex {
         return z;
     }
 
-    private void makeFields() {
+    void makeFields() {
         fieldsList = new ArrayList<>();
         fields.clear();
 
-        di2i = new int[1 + (maxShortOffset != -1 ? maxShortOffset - 1 : 0) + (maxLongOffset != -1 ? 1 : 0)];
+        List<String> fl = invertedIndex.keySet().stream().filter(s -> s.contains(textField)).sorted((s1, s2) -> Integer.parseInt(s1.replace(textField, "")) > Integer.parseInt(s2.replace(textField, "")) ? 1 : -1).collect(Collectors.toList());
+        di2i = new int[fl.size()];//int[1 + (maxShortOffset != -1 ? maxShortOffset - 1 : 0) + (maxLongOffset != -1 ? 1 : 0)];
         i2di = new int[di2i.length];
         int i = 0;
-        for (String f : invertedIndex.keySet().stream().filter(s -> s.contains(textField)).sorted((s1, s2) -> Integer.parseInt(s1.replace(textField, "")) > Integer.parseInt(s2.replace(textField, "")) ? 1 : -1).collect(Collectors.toList())) {
+        for (String f : fl) {
             di2i[i] = fields.size();
             i2di[fields.size()] = i;
             fields.put(f, fields.size());
@@ -290,7 +302,9 @@ public class TextIndex extends BitInvertedIndex {
         idx.add(index, index + 1l);
     }
 
-    private TreeMap<Object, RoaringBitmap> getIdx(String field) {
+    public TreeMap<Object, RoaringBitmap> getIdx(String field) {
+        if (field.equals(textField)) field = field+"0";
+
         if (!invertedIndex.containsKey(field))
             invertedIndex.put(field, new TreeMap<>());
 
@@ -316,23 +330,173 @@ public class TextIndex extends BitInvertedIndex {
         if (agent.getCachedRecords() != null) return;
 
         RoaringBitmap r1, r2;
+
         r1 = (RoaringBitmap) getCash(a1);//cash.get(a1.getSignature());
         if (r1 == null)
             if (a1.getPoints().size() > 1)
-                putCash(a1, r1 = RoaringBitmap.and(getBitmapList(a1.getPoints()).listIterator(), 0L, (long)Integer.MAX_VALUE*2-1));//FastAggregation.and(getBitmapArray(a1.getPoints())));
+                 putCash(a1, r1 = RoaringBitmap.and(getBitmapList(a1.getPoints()).listIterator(), 0L, maxIndex));//FastAggregation.and(getBitmapArray(a1.getPoints())));
             else
+                //putCash(a1, r1 = (RoaringBitmap) getMap(f1 = a1.relation.firstEntry().getValue().getField()).get(a1.relation.firstEntry().getValue().getValue()));//getRecords(a1.relation.firstEntry().getValue().getField(), a1.relation.firstEntry().getValue().getValue()));
                 putCash(a1, r1 = getRecords(a1.relation.firstEntry().getValue().getField(), a1.relation.firstEntry().getValue().getValue()));
 
         r2 = (RoaringBitmap) getCash(a2);//cash.get(a2.getSignature());
         if (r2 == null)
             if (a2.getPoints().size() > 1)
-                putCash(a2, r2 = RoaringBitmap.and(getBitmapList(a2.getPoints()).listIterator(), 0L, (long)Integer.MAX_VALUE*2-1));
+                putCash(a2, r2 = RoaringBitmap.and(getBitmapList(a2.getPoints()).listIterator(), 0L, maxIndex));
             else
+                //putCash(a2, r2 = (RoaringBitmap) getMap(f2 = a2.relation.firstEntry().getValue().getField()).get(a2.relation.firstEntry().getValue().getValue()));//getRecords(a2.relation.firstEntry().getValue().getField(), a2.relation.firstEntry().getValue().getValue()));
                 putCash(a2, r2 = getRecords(a2.relation.firstEntry().getValue().getField(), a2.relation.firstEntry().getValue().getValue()));
 
         if (r1 == null || r2 == null) return;
-        putCash(agent, RoaringBitmap.and(r1, r2));
+/*
+        Integer s1 = fields.get(f1), s2 = fields.get(f2);
 
+        if (s1 < s2) r2 = RoaringBitmap.addOffset(r2, s1 - s2);
+            else
+                if (s1 > s2) r1 = RoaringBitmap.addOffset(r1, s2 - s1);*/
+
+        RoaringBitmap rm = and(r1, r2, a1.getFields().nextSetBit(0)-a2.getFields().nextSetBit(0));
+       //RoaringBitmap rm = RoaringBitmap.and(r1, RoaringBitmap.addOffset(r2, a1.getFields().nextSetBit(0)-a2.getFields().nextSetBit(0)));
+
+        putCash(agent, rm);
+        //agent.getFr();
     }
+
+
+
+    public static RoaringBitmap and(RoaringBitmap r1, RoaringBitmap r2, int shift4r2){
+        if (r1.isEmpty() || r2.isEmpty()) return null;
+
+        RoaringBitmap roaringBitmap = new RoaringBitmap();
+
+        BatchedIterator mbi;
+        BatchedIterator bbi;
+        boolean rev = false;
+        if (r1.first() > r2.first())
+        {
+            bbi = new BatchedIterator(r1);
+            mbi = new BatchedIterator(r2);
+        } else {
+            bbi = new BatchedIterator(r2);
+            mbi = new BatchedIterator(r1);
+            shift4r2 = -shift4r2;
+            rev = true;
+        }
+
+
+        long x = 0, y = bbi.nextAfter(0);
+        while (mbi.hasNext() && bbi.hasNext() && x !=-1 && y!= -1){
+            x = mbi.nextAfter(y-shift4r2);
+            if (x == y-shift4r2 & x != -1) {
+                if (rev) roaringBitmap.add(x, x+1);
+                    else roaringBitmap.add(y, y+1);
+                y = bbi.nextAfter(x+1+shift4r2);
+            } else
+                y = bbi.nextAfter(x+shift4r2);
+
+        }
+
+        return roaringBitmap;
+    }
+
+
+    public void save(OutputStream outputStream) throws IOException {
+
+        ObjectOutputStream writer = new ObjectOutputStream(outputStream);
+
+        writer.writeUTF(modelType.getName());
+        writer.writeUTF(textField);
+        writer.writeLong(maxIndex);
+        writer.writeInt(maxShortOffset);
+        writer.writeInt(maxLongOffset);
+
+        writer.writeInt(textData.length);
+        Arrays.stream(textData).forEach((f-> {
+            try {
+                writer.writeUTF(f);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }));
+
+        List<String> ff = Arrays.stream(textData).collect(Collectors.toList());
+        ff.add(textField+"0");
+
+        for (String fi: ff) {
+            TreeMap<Object, RoaringBitmap> tm = getIdx(fi);
+            writer.writeInt(tm.size());
+            for (Map.Entry<Object, RoaringBitmap> e : tm.entrySet()) {
+                writer.writeObject(e.getKey());
+                RoaringBitmap rb = e.getValue();
+                byte[] array = new byte[rb.serializedSizeInBytes()];
+                writer.writeInt(array.length);
+                e.getValue().serialize(ByteBuffer.wrap(array));
+                writer.write(array);
+            }
+        }
+        writer.close();
+        outputStream.close();
+    }
+
+    public void load(InputStream inputStream) throws IOException, ClassNotFoundException {
+
+        ObjectInputStream reader = new ObjectInputStream(inputStream);
+
+        modelType = ModelType.fromName(reader.readUTF()).get();
+
+        textField = reader.readUTF();
+        maxIndex = reader.readLong();
+        maxShortOffset = reader.readInt();
+        maxLongOffset = reader.readInt();
+        int fs = reader.readInt();
+
+        for (int i = 0; i < fs; i++)
+            textData[i] = reader.readUTF();
+
+        List<String> ff = Arrays.stream(textData).collect(Collectors.toList());
+        ff.add(textField+"0");
+
+        for (String fi: ff) {
+            TreeMap<Object, RoaringBitmap> tm = getIdx(fi);
+            int n = reader.readInt();
+            int pos = 0;
+            for (int i = 0; i < n; i++) {
+                RoaringBitmap rb = new RoaringBitmap();
+                Object k = reader.readObject();
+                byte[] array = new byte[reader.readInt()];
+                int totalRead = 0;
+                while (totalRead < array.length) {
+                    int read = reader.read(array, totalRead, array.length - totalRead);
+                    if (read == -1) {
+                        throw new EOFException("Unexpected EOF stream");
+                    }
+                    totalRead += read;
+                }
+                rb.deserialize(ByteBuffer.wrap(array));
+                tm.put(k, rb);
+            }
+        }
+
+        EncodingRegistry registry = Encodings.newDefaultEncodingRegistry();
+        encoder = registry.getEncodingForModel(modelType);//registry.getEncoding(EncodingType.CL100K_BASE);
+
+        if (maxShortOffset != -1 & maxLongOffset != -1)
+            makeShiftedIndexes(maxShortOffset, maxLongOffset);
+        else
+            makeFields();
+
+        reader.close();
+        inputStream.close();
+    }
+
+    public double size(){
+        double s = 0;
+        TreeMap<Object, RoaringBitmap> tm =  getIdx(textField+"0");
+        for (Map.Entry<Object, RoaringBitmap> e : tm.entrySet()) {
+            s += e.getValue().getLongSizeInBytes();
+        }
+        return s;
+    }
+
 
 }

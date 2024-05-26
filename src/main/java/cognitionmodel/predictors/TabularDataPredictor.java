@@ -5,7 +5,6 @@ import cognitionmodel.datasets.Tuple;
 import cognitionmodel.datasets.TupleElement;
 import cognitionmodel.models.TabularModel;
 import cognitionmodel.predictors.predictionfunctions.Predictionfunction;
-import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
@@ -31,7 +30,6 @@ public class TabularDataPredictor implements Predictor{
      */
 
 
-    @NotNull
     public static PredictionResults predict(TabularModel model, TableDataSet dataSet, int signatureIndex, Predictionfunction predictionfunction){
 
         int[] altTerminals = model.termsByField(signatureIndex);

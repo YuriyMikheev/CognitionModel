@@ -93,7 +93,7 @@ public class InvertedTabularAgentTest {
 
         //tabularModel.getInvertedIndex().setConfidenceIntervals(0.90);
 
-        tabularModel.predict1(testDataSet.getRecords(), "lettr", null, false, 20, null, null).show(tabularModel.getDataSet().getFieldIndex("lettr"));
+        tabularModel.predict(testDataSet.getRecords(), "lettr", new Powerfunction(null, 0,1), false, 5, null, null).show(tabularModel.getDataSet().getFieldIndex("lettr"));
 
     }
 
@@ -134,7 +134,7 @@ public class InvertedTabularAgentTest {
     @Test
     public void createDota2Test() throws IOException {
 
-        TableDataSet arrfDataSet = new TableDataSet(new FileInputStream(new File("E:\\Weka-3-8\\data\\dota2.arff")),
+        TableDataSet arrfDataSet = new TableDataSet(new FileInputStream(new File("F:\\Datasets\\Weka-3-8\\data\\dota2.arff")),
                 new ArffParser(false, "Cluster_ID","Game_mode","Game_type"));
 
         int game_mode = 8;
@@ -184,14 +184,14 @@ public class InvertedTabularAgentTest {
 
         arrfDataSet = arrfDataSet1;*/
 
-       // TableDataSet[] dataSets = TableDataSet.split(arrfDataSet, 0.5);// "Team_won", 1);
-      //dataSets = TableDataSet.split(dataSets[1], 0.1, "Team_won", 1);
+        TableDataSet[] dataSets = TableDataSet.split(arrfDataSet, 0.7);// "Team_won", 1)
+        dataSets = TableDataSet.split(dataSets[1], 0.2, "Team_won", 1);
 
-        TableDataSet[]  dataSets = TableDataSet.split(arrfDataSet, 0.05);//, "Team_won", 1);
+       // TableDataSet[]  dataSets = TableDataSet.split(arrfDataSet, 0.05);//, "Team_won", 1);
 
         InvertedTabularModel tabularModel = new InvertedTabularModel(dataSets[0]);
 
-        PredictionResults predictionResults = tabularModel.predict(dataSets[1].getRecords(), "Team_won", new PowerProbfunction(null, 1,1), false, 150, a->a.getRelation().values().stream().noneMatch(p->p.getValue().equals(0)), null);
+        PredictionResults predictionResults = tabularModel.predict1(dataSets[1].getRecords(), "Team_won", new PowerProbfunction(null, 1,1), false, 150, a->a.getRelation().values().stream().noneMatch(p->p.getValue().equals(0)), null);
         predictionResults.show(tabularModel.getDataSet().getFieldIndex("Team_won"));
       //  predictionResults.toCSVFile("dota2.predict.txt");
     }
