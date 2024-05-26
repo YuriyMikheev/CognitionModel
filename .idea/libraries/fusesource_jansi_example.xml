@@ -1,0 +1,11 @@
+<component name="libraryTable">
+  <library name="fusesource.jansi.example" type="repository">
+    <properties maven-id="org.fusesource.jansi:example:1.18" />
+    <CLASSES>
+      <root url="jar://$MAVEN_REPOSITORY$/org/fusesource/jansi/example/1.18/example-1.18.jar!/" />
+      <root url="jar://$MAVEN_REPOSITORY$/org/fusesource/jansi/jansi/1.18/jansi-1.18.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>

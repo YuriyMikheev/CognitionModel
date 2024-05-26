@@ -4,7 +4,7 @@ import cognitionmodel.datasets.Tuple;
 import cognitionmodel.models.inverted.Agent;
 import cognitionmodel.models.inverted.index.BitInvertedIndex;
 import cognitionmodel.models.inverted.InvertedTabularModel;
-import cognitionmodel.models.inverted.decomposers.RecursiveLevelValuesDecomposer;
+import cognitionmodel.models.inverted.decomposers.RecursiveDecomposer;
 import cognitionmodel.predictors.PredictionResults;
 import cognitionmodel.predictors.predictionfunctions.Predictionfunction;
 
@@ -31,7 +31,7 @@ public class Features {
         }
     }
 
-    public static HashMap<String, Err> errorAgentsMap(InvertedTabularModel model, BiFunction<Agent, Agent, Double> errorFunction, String predictingfield, RecursiveLevelValuesDecomposer decomposer, Predictionfunction predictionfunction){
+    public static HashMap<String, Err> errorAgentsMap(InvertedTabularModel model, BiFunction<Agent, Agent, Double> errorFunction, String predictingfield, RecursiveDecomposer decomposer, Predictionfunction predictionfunction){
         HashMap<String, Err> ferr = new HashMap<String, Err>();
 
         int si = model.getDataSet().getFieldIndex(predictingfield);

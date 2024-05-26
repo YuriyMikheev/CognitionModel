@@ -7,6 +7,7 @@ import org.junit.Test;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 
 public class InvertedTextModelTest {
@@ -33,14 +34,31 @@ public class InvertedTextModelTest {
     }
     @Test
     public void generateFolder() throws IOException {
-        InvertedTextModel textModel = new InvertedTextModel(new TextDataSet("F:\\Pile\\clean\\books3\\books3\\the-eye.eu\\public\\Books\\Bibliotik\\E\\"), "text", "");
+        InvertedTextModel textModel = new InvertedTextModel(new TextDataSet("F:\\Pile\\clean\\books3\\books3\\the-eye.eu\\public\\Books\\Bibliotik\\T\\"), "text", "");
 
        // textModel.generate("Hello! How are you?");
-        textModel.generate("Hello! How are you? I want you to help me! I'm down");
+        System.out.println(textModel.generate("Hello! How are you? I want you to help me! I'm down"));
         //   textModel.generate("There is a list of some of the symptoms you may experience during the third trimester");
         System.out.println((long) textModel.getTextIndex().getDataSetSize());
+
+        textModel.getTextIndex().save(new FileOutputStream("F:\\Pile\\clean\\books3\\books3\\the-eye.eu\\public\\Books\\Bibliotik\\T.txtidx"));
     }
 
+
+    @Test
+    public void loadidxTest() throws IOException, ClassNotFoundException {
+        InvertedTextModel textModel = new InvertedTextModel((TableDataSet) null, "text", "");
+        textModel.getTextIndex().load(new FileInputStream("E:\\Idx\\2.txtidx"));
+
+        // textModel.generate("Hello! How are you?");
+        System.out.println(textModel.generate("Hello! How are you? I want you to help me! I'm down"));
+        //   textModel.generate("There is a list of some of the symptoms you may experience during the third trimester");
+        System.out.println((long) textModel.getTextIndex().getDataSetSize());
+
+    }
+
+
+//1, E, M, T
 //1.7, 19, 46, 67, 274
 //0.7, 3, 5, 7, 20
 //153 966 938, 752 336 265, 1 242 683 689, 1 716 001 536, 4 294 967 295
