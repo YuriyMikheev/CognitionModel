@@ -5,6 +5,7 @@ import org.junit.Test;
 
 import java.util.Random;
 
+import static java.lang.Math.abs;
 import static org.junit.Assert.*;
 
 public class TextTokensTest {
@@ -38,7 +39,8 @@ public class TextTokensTest {
 
         TextTokens textTokens = new TextTokens();
 
-        long maxi = Integer.MAX_VALUE + 100l;
+        long maxi = Integer.MAX_VALUE + 100l + Integer.MAX_VALUE  + Integer.MAX_VALUE;
+        System.out.println(maxi);
 
         for (long i = 0; i < maxi; i++) {
             textTokens.add((int) i);
@@ -52,6 +54,14 @@ public class TextTokensTest {
             j++;
             if (j % 10000000 == 0) System.out.println(j);
 
+        }
+
+        Random random  = new Random();
+
+        for (int  i = 0; i < 10000; i++ ){
+            j = abs(random.nextLong()) % maxi;
+            if (textTokens.get(j) != (int)j)
+                assertTrue(j+"", textTokens.get(j) == (int)j);
         }
 
 

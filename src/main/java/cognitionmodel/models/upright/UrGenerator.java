@@ -5,6 +5,7 @@ import cognitionmodel.models.inverted.index.TextIndex;
 
 import java.io.IOException;
 import java.util.*;
+import java.util.stream.Collectors;
 
 import static java.lang.Math.log;
 
@@ -31,28 +32,40 @@ public class UrGenerator {
         return dataSet;
     }
 
-    public LinkedList<Integer> newTokens(List<UrAgent> agents, int attentionSize){
+    public List<UrPoint> newTokens(List<UrAgent> agents, int attentionSize, int variants){
         //Integer maxToken = (Integer) textIndex.getIdx(textIndex.getTextField()).lastKey();
-        int[] maxIdx = new int[attentionSize];
+        List<Integer>[] maxIdx = new List[attentionSize];
 
-        LinkedList<Integer> r = new LinkedList<>();
+        LinkedList<UrPoint> r = new LinkedList<>();
 
         long lastIdx = agents.stream().mapToLong(a-> a.getRelations().getLast().getPosition()).max().getAsLong();
 
-        double s = textIndex.size();
+        double s = dataSet.getTextTokens().size();
         for (int i = 0; i < attentionSize; i++) {
             HashMap<Integer, Double> newIdx = new HashMap<>();
-            for (UrAgent agent : agents) {
-                BatchedIterator iterator = new BatchedIterator(agent.getIdx());
-                int agentLast = agent.getRelations().getLast().getPosition();
-                while (iterator.hasNext()){
-                    long idx = iterator.next() + lastIdx - agentLast + i + 1;
-                    double d = dp(lastIdx - agentLast + i + 1, agent, dataSet.getFreqs()[dataSet.getTextTokens().get(idx)])*s;
-                    newIdx.compute(dataSet.getTextTokens().get(idx), (k,v) -> (v == null? d : v + d));
+            for (UrAgent agent : agents)
+                if (!agent.getIdx().isEmpty()){
+                    HashMap<Integer, Double> newAIdx = new HashMap<>();
+                    BatchedIterator iterator = new BatchedIterator(agent.getIdx());
+                    int agentLast = agent.getRelations().getLast().getPosition();
+                    while (iterator.hasNext()){
+                        long idx = iterator.next() + lastIdx - agentLast + i + 1;
+                        if (idx < dataSet.getTextTokens().size()) {
+                            int newToken = dataSet.getTextTokens().get(idx);
+                            newAIdx.compute(newToken, (k, v) -> (v == null ? 1 : v + 1));
+                        }
+                    }
+                    newAIdx.entrySet().forEach(e -> newIdx.compute(e.getKey(), (k,v)->{
+//                        double d = agent.getMr() + log(e.getValue()/agent.getF()) - log(agent.getP())-log(dataSet.getFreqs()[k]/s);
+                        double d = log(e.getValue()/agent.getF()) - log(dataSet.getFreqs()[k]/s);
+                        return v == null ? d : v + d;
+                    }));
+
                 }
-            }
-            maxIdx[i] = newIdx.entrySet().stream().max(Comparator.comparing(Map.Entry::getValue)).orElseThrow().getKey();
-            r.add(maxIdx[i]);
+            maxIdx[i] = newIdx.entrySet().stream().sorted((e1, e2) -> e1.getValue() < e2.getValue()? 1: e1.getValue() > e2.getValue()? -1:0).limit(variants).map(e->e.getKey()).collect(Collectors.toList());
+            //r.add(new UrPoint(i+(int)lastIdx, maxIdx[i].get(0)));
+            int finalI = i;
+            r.addAll(maxIdx[i].stream().map(e-> new UrPoint(finalI +(int)lastIdx, e)).collect(Collectors.toList()));
         }
 
         return r;
@@ -60,8 +73,8 @@ public class UrGenerator {
 
 
     //сила влияния агента на это месте
-    private double dp(long distance, UrAgent agent, int freq){
-        return (agent.getMr()/(distance))/freq;
+    private double dp(long distance, UrAgent agent, double lp){
+        return (agent.getMr())/(agent.getF()*distance) + lp;
     }
 
 

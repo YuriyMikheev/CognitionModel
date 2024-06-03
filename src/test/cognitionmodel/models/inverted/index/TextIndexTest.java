@@ -1,8 +1,13 @@
 package cognitionmodel.models.inverted.index;
 
+import cognitionmodel.datasets.TextDataSet;
+import cognitionmodel.models.inverted.InvertedTextModel;
+import cognitionmodel.models.upright.UprightInvertedTextModel;
 import org.junit.Test;
 import org.roaringbitmap.RoaringBitmap;
 
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.util.Random;
 
 import static java.lang.Math.random;
@@ -123,4 +128,39 @@ public class TextIndexTest {
 
         }
     }
+
+    @Test
+    public void save() throws IOException, ClassNotFoundException {
+
+        String sourceFolder = "E:\\Idx\\2";
+        String destinationFile = "E:\\Idx\\2test.txtidx";
+
+        InvertedTextModel textModel = new InvertedTextModel(new TextDataSet(sourceFolder), "text", sourceFolder);
+
+        textModel.getTextIndex().optimize();
+
+        textModel.getTextIndex().save(new FileOutputStream(destinationFile));
+        System.out.println(sourceFolder + " index completed");
+
+        UprightInvertedTextModel textModel1 = new UprightInvertedTextModel(destinationFile);
+        System.out.println("Dataset is loaded");
+    }
+
+    @Test
+    public void roaringSize(){
+
+        RoaringBitmap r = new RoaringBitmap();
+
+        r.add(Integer.MAX_VALUE);
+
+        r.add(Integer.MAX_VALUE*2l, Integer.MAX_VALUE*2l+1l);
+
+
+        for (long i = 1; i < 4; i++)
+            r.add(Integer.MAX_VALUE*i, Integer.MAX_VALUE*i+1l);
+
+        System.out.println(r);
+
+    }
+
 }

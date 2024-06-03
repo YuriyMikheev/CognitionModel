@@ -93,30 +93,7 @@ public class TextTokens implements Iterable<Integer>{
 
     @Override
     public Iterator<Integer> iterator() {
-        return new Iterator<Integer>() {
-
-            private long i = 0, j = 0;
-            private int[] curarr = getArr(i);
-            @Override
-            public boolean hasNext() {
-                return i < size();
-            }
-
-            @Override
-            public Integer next() {
-                int x;
-                try{
-                    x = curarr[(int) j];
-                } catch (ArrayIndexOutOfBoundsException e){
-                    if ( i >= size()) return null;
-                    curarr = getArr(i); j = 0;
-                    x = curarr[(int)j];
-                }
-
-                i++; j++;
-                return x;
-            }
-        };
+        return iterator(0);
     }
 
     public long getMaxToken() {

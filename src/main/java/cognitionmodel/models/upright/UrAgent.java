@@ -21,7 +21,7 @@ public class UrAgent{
 
     private BitSet fields = new BitSet();
 
-    public static final double zeroMr = 0.001;// zeroMR gives more MR to the compositions that have more agents
+    public static final double zeroMr = 0;// zeroMR gives more MR to the compositions that have more agents
 
     public UrAgent(LinkedList<UrPoint> relations, long f, int[] tokensFreqs, long datasize) {
         this(relations, f, tokensFreqs, datasize, 0);
@@ -63,7 +63,9 @@ public class UrAgent{
         return tokens.isEmpty()? tokens = relations.toString(): tokens;
     }
 
-
+    public double getP(){
+        return ((double) f)/datasize;
+    }
     public BitSet getFields() {
         return fields;
     }

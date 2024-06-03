@@ -34,11 +34,11 @@ public class TextIndex extends BitInvertedIndex {
         throw new RuntimeException("TextIndex requires more parameters to be constructed.");
     }
 
-    String[] textData = new String[]{"datasetInfo", "indexStart", "IndexEnd"};
+    String[] textData = new String[]{"datasetInfo", "indexStart", "indexEnd", "fileName"};
     ModelType modelType = ModelType.GPT_4_32K;
     String textField;
     private InvertedTextModel model;
-    static long maxIndex = 0;
+    long maxIndex = 0;
     int maxShortOffset = -1;
     int maxLongOffset = -1;
 
@@ -92,13 +92,13 @@ public class TextIndex extends BitInvertedIndex {
 
         TreeMap<Object, RoaringBitmap> tm =  getIdx(tfs);
 
-
         AtomicInteger i = new AtomicInteger();
         try {
             LinkedList<CompletableFuture<Object>> cfl = new LinkedList<>();
 
             for (Tuple tuple : dataSet) {
-                cfl.add(CompletableFuture.supplyAsync(() -> {
+                //cfl.add(CompletableFuture.supplyAsync(() ->
+                {
                     int j = 0;
                     int fi = i.get();
                     HashMap<Object, RoaringBitmapWriter<RoaringBitmap>> ttm = new HashMap<>();
@@ -108,9 +108,10 @@ public class TextIndex extends BitInvertedIndex {
                             String text = tupleElement.getValue().toString();
                             List<Integer> tokens = encoder.encode(text);
                             long index = addMaxIndex(tokens.size());
-                            if (maxIndex >= 0xffffffffL) return null;
-                               // throw new OutOfRangeException(maxIndex + tokens.size(), 0, 0xffffffff);
                             putValue("indexStart", index, fi);
+                            putValue("indexEnd", index+tokens.size(), fi);
+/*                            if (maxIndex >= 0xffffffffL) //return null;
+                                throw new OutOfRangeException(maxIndex + tokens.size(), 0, 0xffffffff );*/
                             for (Integer t : tokens) {
                                 RoaringBitmapWriter<RoaringBitmap> idx;
                                 if (ttm.containsKey(t))
@@ -122,7 +123,6 @@ public class TextIndex extends BitInvertedIndex {
                                 }
                                 idx.add(index++, index);
                             }
-                            putValue("indexEnd", index, fi);
                         } else {
                             String fieldName = dataSet.getHeader().get(j).getValue().toString();
                             Object val = tupleElement.getValue();
@@ -139,27 +139,28 @@ public class TextIndex extends BitInvertedIndex {
                             else
                                 tm.put(e.getKey(), e.getValue().get());
                     }
-                    return null;
-                }));
+                   // return null;
+                }
+                //));
                 synchronized (this) {
                     i.getAndIncrement();
                 }
-                if (i.get() % (int) (dataSet.getRecords().size() * 0.01 + 1) == 0 | i.get() == dataSet.getRecords().size())
+               // if (i.get() % (int) (dataSet.getRecords().size() * 0.01 + 1) == 0 | i.get() == dataSet.getRecords().size())
                 //if (i.get() % 10 == 0 || i.get() == dataSet.getRecords().size())
-                {
+ /*               {
                     cfl.stream().map(CompletableFuture::join).collect(Collectors.toList());
                     cfl.clear();
-                }
+                }*/
             }
-        } catch (OutOfRangeException e) {
-            System.err.println("Out of max index capacity");
+        } catch (IllegalArgumentException e) {
+            System.err.println("Out of max index capacity " + e.getMessage());
         }
 
        // System.out.println("Optimized: "+optimize()+" bytes");
-
+/*
         if (maxShortOffset != -1 & maxLongOffset != -1)
             makeShiftedIndexes(maxShortOffset, maxLongOffset);
-        else
+        else*/
             makeFields();
 
     }
@@ -409,8 +410,8 @@ public class TextIndex extends BitInvertedIndex {
         writer.writeLong(maxIndex);
         writer.writeInt(maxShortOffset);
         writer.writeInt(maxLongOffset);
-
         writer.writeInt(textData.length);
+
         Arrays.stream(textData).forEach((f-> {
             try {
                 writer.writeUTF(f);
@@ -459,7 +460,6 @@ public class TextIndex extends BitInvertedIndex {
         for (String fi: ff) {
             TreeMap<Object, RoaringBitmap> tm = getIdx(fi);
             int n = reader.readInt();
-            int pos = 0;
             for (int i = 0; i < n; i++) {
                 RoaringBitmap rb = new RoaringBitmap();
                 Object k = reader.readObject();
@@ -480,9 +480,9 @@ public class TextIndex extends BitInvertedIndex {
         EncodingRegistry registry = Encodings.newDefaultEncodingRegistry();
         encoder = registry.getEncodingForModel(modelType);//registry.getEncoding(EncodingType.CL100K_BASE);
 
-        if (maxShortOffset != -1 & maxLongOffset != -1)
+/*        if (maxShortOffset != -1 & maxLongOffset != -1)
             makeShiftedIndexes(maxShortOffset, maxLongOffset);
-        else
+        else*/
             makeFields();
 
         reader.close();

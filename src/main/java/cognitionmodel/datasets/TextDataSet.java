@@ -49,7 +49,7 @@ public class TextDataSet extends TableDataSet{
         Set<String> fileList = TextIndexMaker.filesList(folder);
 
 
-        for (String fl: fileList){
+        for (String fl: fileList.stream().sorted().collect(Collectors.toList())){
            // String content = "{\"text\":\""+new String(new FileInputStream(fl).readAllBytes()).replace("\"","\\\"").replace("\n","\\\n")+"\",\"file\":\""+fl+"\"}";
 
             HashMap<String, String> js = new HashMap<>();
