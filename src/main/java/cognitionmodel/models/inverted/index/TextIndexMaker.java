@@ -40,7 +40,7 @@ public class TextIndexMaker {
     }
 
     public static void makeTextFoldersIndex(String sourcesFolder) throws IOException {
-        for (String f: foldersList(sourcesFolder))
+        for (String f: foldersList(sourcesFolder).stream().collect(Collectors.toList()))
             if (!Files.exists(Path.of(f+".txtidx")))
                 makeTextFolderIndex(f, f+".txtidx");
             else

@@ -20,4 +20,9 @@ public class UprightTextDataSetTest {
     public void makeTokenizedData() throws IOException {
         UprightTextDataSet.makeTokenizedData("E:\\Idx\\");
     }
+
+    @Test
+    public void makeTokenizedDataFromOneFolder() throws IOException {
+        UprightTextDataSet.makeTextFolderTokenizedData("E:\\Idx\\2", "E:\\Idx\\02.txttkz");
+    }
 }

@@ -15,7 +15,7 @@ public class UprightTextComposer  {
 
  
     private class UrCompositionIndex {
-        ArrayList<UrComposition> UrCompositions = new ArrayList<>();
+        ArrayList<UrComposition> urCompositions = new ArrayList<>();
         BitSet[] index ;
 
         private boolean changed = true;
@@ -32,11 +32,11 @@ public class UprightTextComposer  {
             for (int i = 0; i < index.length; i++)
                 index[i] = new BitSet();
 
-            UrCompositions.sort(Comparator.comparing(UrComposition::getMr).reversed());
+            urCompositions.sort(Comparator.comparing(UrComposition::getMr).reversed());
 
             int idx = 0;
-            for (UrComposition UrComposition : UrCompositions) {
-                for (int i : UrComposition.getFields().stream().toArray())
+            for (UrComposition urComposition : urCompositions) {
+                for (int i : urComposition.getFields().stream().toArray())
                     index[i].set(idx);
                 idx++;
             }
@@ -44,8 +44,8 @@ public class UprightTextComposer  {
             changed = false;
         }
 
-        public void add(UrComposition UrComposition) {
-            UrCompositions.add(UrComposition);
+        public void add(UrComposition urComposition) {
+            urCompositions.add(urComposition);
             changed = true;
         }
 
@@ -54,13 +54,13 @@ public class UprightTextComposer  {
             LinkedList<UrComposition> result = new LinkedList<>();
 
             BitSet rset = new BitSet();
-            rset.set(0, UrCompositions.size());
+            rset.set(0, urCompositions.size());
 
             for (int nextbit = fields.nextSetBit(0); nextbit >= 0 & nextbit < index.length; nextbit = fields.nextSetBit(nextbit + 1))
                 rset.andNot(index[nextbit]);
 
-            for (int nextbit = rset.nextSetBit(0); nextbit >= 0 & nextbit < UrCompositions.size(); nextbit = rset.nextSetBit(nextbit + 1))
-                result.add(UrCompositions.get(nextbit));
+            for (int nextbit = rset.nextSetBit(0); nextbit >= 0 & nextbit < urCompositions.size(); nextbit = rset.nextSetBit(nextbit + 1))
+                result.add(urCompositions.get(nextbit));
 
             return result;
         }
@@ -69,13 +69,13 @@ public class UprightTextComposer  {
             reindex();
 
             BitSet rset = new BitSet();
-            rset.set(0, UrCompositions.size());
+            rset.set(0, urCompositions.size());
 
             for (int nextbit = fields.nextSetBit(0); nextbit >= 0 & nextbit < index.length; nextbit = fields.nextSetBit(nextbit + 1))
                 rset.andNot(index[nextbit]);
 
             int nextbit = rset.nextSetBit(0);
-            return nextbit < 0 ? null : UrCompositions.get(nextbit);
+            return nextbit < 0 ? null : urCompositions.get(nextbit);
         }
 
 
@@ -108,14 +108,16 @@ public class UprightTextComposer  {
 
   
 
-    public List<UrComposition> composeToSortedList(Collection<UrAgent> UrAgentList){
+    public List<UrComposition> composeToSortedList(Collection<UrAgent> urAgents){
         PriorityQueue<UrComposition> bestUrCompositions = new PriorityQueue<>(Comparator.comparing(UrComposition::getMr).reversed());
-        UrCompositionIndex UrCompositionIndex = new UrCompositionIndex(length);
+        UrCompositionIndex urCompositionIndex = new UrCompositionIndex(length);
+        LinkedList<UrComposition> oneAgenComps = new LinkedList<>();
 
-        for (UrAgent urAgent : UrAgentList) {
-            UrComposition UrComposition = new UrComposition(urAgent);
-            bestUrCompositions.add(UrComposition);
-            UrCompositionIndex.add(UrComposition);
+        for (UrAgent urAgent : urAgents) {
+            UrComposition urComposition = new UrComposition(urAgent);
+            bestUrCompositions.add(urComposition);
+            urCompositionIndex.add(urComposition);
+            oneAgenComps.add(urComposition);
         }
 
 
@@ -127,10 +129,10 @@ public class UprightTextComposer  {
             nbc = new PriorityQueue<>(Comparator.comparing(UrComposition::getMr).reversed()); f = false;
             while (!bestUrCompositions.isEmpty()) try {
                 UrComposition UrComposition = bestUrCompositions.poll(); //nbc.add(UrComposition);
-                if (UrComposition.getFields().cardinality() < length - 1) {
+                if (UrComposition.getFields().cardinality() < length) {
 
                     boolean fl = false;
-                    List<UrComposition> UrCompositionL1 = UrCompositionIndex.get(UrComposition.getFields());
+                    List<UrComposition> UrCompositionL1 = urCompositionIndex.get(UrComposition.getFields());
                     if (!UrCompositionL1.isEmpty()) {
                         for (Iterator<UrComposition> ci = UrCompositionL1.iterator(); ci.hasNext(); ) {
                             UrComposition oc = UrComposition.clone();
@@ -151,8 +153,8 @@ public class UprightTextComposer  {
             }
 
             bestUrCompositions.clear();
-            for (Iterator<UrComposition> iterator = nbc.iterator(); iterator.hasNext() & bestUrCompositions.size() < maxN;)
-                bestUrCompositions.add(iterator.next());
+            while (!nbc.isEmpty() && bestUrCompositions.size() < maxN)
+                bestUrCompositions.add(nbc.poll());
 
         } while (f);
 

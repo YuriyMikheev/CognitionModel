@@ -38,7 +38,7 @@ public class InvertedTextModel {
 
     public void setTextIndex(TextIndex textIndex){
         this.textIndex = textIndex;
-        getTextIndex().makeShiftedIndexes(1000, -1);
+        //getTextIndex().makeShiftedIndexes(1000, -1);
     }
 
     public int getDepth() {

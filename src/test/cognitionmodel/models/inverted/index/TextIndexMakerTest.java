@@ -17,7 +17,7 @@ public class TextIndexMakerTest {
     @Test
     public void makeTextFolderIndex() throws IOException {
 
-        TextIndexMaker.makeTextFolderIndex("E:\\Idx\\0\\", "E:\\Idx\\01.txtidx");
+        TextIndexMaker.makeTextFolderIndex("E:\\Idx\\T1\\", "E:\\Idx\\T1.txtidx");
 
     }
 }

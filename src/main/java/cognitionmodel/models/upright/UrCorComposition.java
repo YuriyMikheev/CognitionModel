@@ -1,8 +1,6 @@
 package cognitionmodel.models.upright;
 
 
-import org.roaringbitmap.RoaringBitmap;
-
 import java.util.BitSet;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -10,7 +8,7 @@ import java.util.List;
 
 import static java.lang.Math.abs;
 
-public class UrComposition implements Cloneable{
+public class UrCorComposition implements Cloneable{
 
     private double p = 1, mr, f, pf, s;
 
@@ -18,45 +16,36 @@ public class UrComposition implements Cloneable{
     private int length;
     private LinkedList<UrAgent> urAgents = new LinkedList<>();
     private BitSet fieldsIndex = new BitSet();
-    private RoaringBitmap indexes = new RoaringBitmap();
 
-    public UrComposition(UrAgent UrAgent){
-        add(UrAgent);
+    public UrCorComposition(UrAgent urAgent){
+        add(urAgent);
     }
-    public UrComposition(UrAgent UrAgent, int predictingIndex){
-        add(UrAgent);
-    }
-
-    public UrComposition(List<UrAgent> UrAgents, int predictingIndex, HashMap<String, UrAgent> zeroMap){
-        for (UrAgent UrAgent: UrAgents)
-            add(UrAgent);
+    public UrCorComposition(UrAgent urAgent, int predictingIndex){
+        add(urAgent);
     }
 
-    public UrComposition(){
+    public UrCorComposition(List<UrAgent> UrAgents, int predictingIndex, HashMap<String, UrAgent> zeroMap){
+        for (UrAgent agent: UrAgents)
+            add(agent);
     }
 
-    public boolean add(UrAgent agent){
-        if (!fields.intersects(agent.getFields()))
-      //  if (!RoaringBitmap.intersects(indexes, agent.getIdx()))
-        {
-            urAgents.add(agent);
-            fields.or(agent.getFields());
-            recalculate(agent);
+    public UrCorComposition(){
+    }
+
+    public boolean add(UrAgent UrAgent){
+        if (!fields.intersects(UrAgent.getFields())) {
+            urAgents.add(UrAgent);
+            fields.or(UrAgent.getFields());
+            recalculate(UrAgent);
             length = fields.cardinality();
-/*            if (urAgents.size() > 1)
-                indexes.and(RoaringBitmap.addOffset(agent.getIdx(), -agent.getRelations().getFirst().getPosition() + urAgents.getFirst().getRelations().getFirst().getPosition()));
-            else
-                indexes.or(agent.getIdx());*/
             return true;
         }
 
         return false;
     }
 
-    public boolean add(UrComposition composition){
-        if (!fields.intersects(composition.getFields()))
-        //if (!RoaringBitmap.intersects(indexes, composition.indexes))
-        {
+    public boolean add(UrCorComposition composition){
+        if (!fields.intersects(composition.getFields())) {
             urAgents.addAll(composition.urAgents);
             mr = mr + composition.mr;
             s = s + composition.s;
@@ -66,7 +55,6 @@ public class UrComposition implements Cloneable{
             fields.or(composition.fields);
             fieldsIndex.and(composition.fieldsIndex);
             length = fields.cardinality();
-            indexes.and(composition.indexes);
             return true;
         }
         return false;
@@ -110,9 +98,9 @@ public class UrComposition implements Cloneable{
     }
 
     @Override
-    protected UrComposition clone() throws CloneNotSupportedException {
+    protected UrCorComposition clone() throws CloneNotSupportedException {
 
-        UrComposition composition = new UrComposition();
+        UrCorComposition composition = new UrCorComposition();
 
         composition.fields = (BitSet) fields.clone();
         composition.f = f;
@@ -123,7 +111,6 @@ public class UrComposition implements Cloneable{
         composition.urAgents.addAll(urAgents);
         composition.length = length;
         composition.fieldsIndex = BitSet.valueOf(fieldsIndex.toLongArray());
-        composition.indexes = indexes.clone();
 
         return composition;
     }
@@ -144,7 +131,7 @@ public class UrComposition implements Cloneable{
      * @param c2
      * @return - true in case of they can be composed
      */
-    public static boolean check(UrComposition c1, UrComposition c2, int fieldsLength){
+    public static boolean check(UrCorComposition c1, UrCorComposition c2, int fieldsLength){
         if (c1.length + c2.length >= fieldsLength) return false;
         return !c1.getFields().intersects(c2.fields);
     }

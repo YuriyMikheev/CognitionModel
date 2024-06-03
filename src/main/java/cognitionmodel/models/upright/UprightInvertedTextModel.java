@@ -13,7 +13,6 @@ import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 
 import static java.lang.Math.*;
@@ -40,7 +39,10 @@ public class UprightInvertedTextModel {
         for (Map.Entry<Object, RoaringBitmap> e: textIndex.getIdx(textIndex.getTextField()).entrySet())
             tokenFreqs[(Integer) e.getKey()] = e.getValue().getCardinality();
         generator = new UrGenerator(textIndex, indexFile.substring(0, indexFile.length() - 3)+"tkz");
-
+/*        long e = dataConsistencyCheck();
+        if (e != 0){
+            throw new IllegalStateException("Dataset and index are inconsistent in "+e + " cases");
+        }*/
     }
 
     public String getIndexFile() {
@@ -89,39 +91,59 @@ public class UprightInvertedTextModel {
         System.out.println(in.size()+" tokens in text");
 
         minMrDelta = 1;
-        batchSize = 10000000;
+        batchSize = 1000000;
 
         ArrayList<UrAgent> al = new ArrayList<>(makeAgentsList(in, attentionSize));
+
+        HashMap<Integer, UrAgent> agentHashMap = new HashMap<>();
+        for (UrAgent a: al)
+            if (a.getRelations().size() == 1)
+                agentHashMap.put(a.getRelations().getFirst().getPosition(), a);
+
+        System.out.println(al.stream().mapToDouble(a->a.getMr()*a.getP()).sum() + " information");
 
         al = new ArrayList<>(al.stream().filter(a->a.getF() > minF).toList());
 
         System.out.println(al.size() + " agents");
-        System.out.println(al.stream().mapToDouble(a->a.getMr()*a.getF()/a.getDatasize()).sum() + " information");
+
 
         t = (System.currentTimeMillis() - t);
         r = r + String.format("Decomposer working time %02d:%02d:%02d", TimeUnit.MILLISECONDS.toHours(t), TimeUnit.MILLISECONDS.toMinutes(t) - TimeUnit.HOURS.toMinutes(TimeUnit.MILLISECONDS.toHours(t)),
                 TimeUnit.MILLISECONDS.toSeconds(t) - TimeUnit.MINUTES.toSeconds(TimeUnit.MILLISECONDS.toMinutes(t)))+"\n";
+        List<UrComposition> compositions;
 
-        UprightTextComposer composer = new UprightTextComposer(in.size()*2, in.size());
+        UprightTextComposer composer = new UprightTextComposer(in.size() * 2, in.size());
 
         t = System.currentTimeMillis();
 
-        List<UrComposition> compositions = composer.composeToSortedList(al);
+        compositions = composer.composeToSortedList(al);
+
+
         t = (System.currentTimeMillis() - t);
 
         r = r + String.format("Composer working time %02d:%02d:%02d", TimeUnit.MILLISECONDS.toHours(t), TimeUnit.MILLISECONDS.toMinutes(t) - TimeUnit.HOURS.toMinutes(TimeUnit.MILLISECONDS.toHours(t)),
                 TimeUnit.MILLISECONDS.toSeconds(t) - TimeUnit.MINUTES.toSeconds(TimeUnit.MILLISECONDS.toMinutes(t)))+"\n";
 
+        UrComposition composition = compositions.get(0);
+        if (composition.getFields().cardinality() < in.size()) {
+            for (int i = -1; (i = composition.getFields().nextClearBit(i + 1)) < in.size(); ) {
+                UrAgent a = agentHashMap.get(i);
+                if (a != null) {
+                    if (!composition.add(a))
+                        System.err.println(i + " can't add 1-point agent");
+                }
+                else
+                    System.err.println(i+" agent is null");
+            }
+        }
 
-/*
-        for (int i = 0; i < (min(10, compositions.size())); i++)
-            r = r + compositionToColourString(compositions.get(i), in.size())+"; "+compositions.get(i).getUrAgents().size()+"\n";
-*/
 
+        for (int i = 0; i < (min(1, compositions.size())); i++)
+            r = r + compositionToColourString(compositions.get(i), in.size())+"; "+compositions.get(i).getUrAgents().size()+"; "+compositions.get(i).getP()+"\n";
 
-        LinkedList<Integer> newTokens = generator.newTokens(al, attentionSize);
+        List<UrPoint> newTokens = generator.newTokens(composition.getUrAgents(), attentionSize, 3);
 
-        r = text + "\t" + textIndex.getEncoder().decode(newTokens);
+        r = text + "\n" + r + "\n" + textIndex.getEncoder().decode(newTokens.stream().map(UrPoint::getToken).collect(Collectors.toList()));
 
         return r;
     }
@@ -226,12 +248,12 @@ public class UprightInvertedTextModel {
 
                     if (!nlist.isEmpty()) {
                         for (UrAgent a : nlist) {
-                            if (ti - a.getStartpos() < attentionSize) {
+                            if ((ti - a.getStartpos() < attentionSize)){// && (idxPoint.getPostion() - a.getRelations().getFirst().getPosition() < attentionSize)) {
                                 if (!nset.contains(a.getTokens())) {
                                     nnlist.add(a);
                                     nset.add(a.getTokens());
                                 }
-                                if (a.getRelations().getLast().getPosition() < idxPoint.getPostion())
+                                if (a.getRelations().getLast().getPosition() < idxPoint.getPostion())//{
                                     if ((idxPoint.getPostion() - a.getRelations().getFirst().getPosition()) < attentionSize) {
                                         nset.remove(a.getTokens());
                                         a.addPoint(new UrPoint(idxPoint.getPostion(), idxPoint.getToken()));
@@ -330,5 +352,21 @@ public class UprightInvertedTextModel {
     }
 
 
+    public long dataConsistencyCheck(){
+
+        TreeMap<Object, RoaringBitmap> idx =  textIndex.getIdx(textIndex.getTextField());
+        long err = 0;
+
+        for (Map.Entry<Object, RoaringBitmap> e: idx.entrySet()){
+            for (Integer i : e.getValue()) {
+                if ((Integer) e.getKey() != generator.getDataSet().getTextTokens().get(i))
+                    err++;
+
+            }
+        }
+
+
+        return err;
+    }
 
 }

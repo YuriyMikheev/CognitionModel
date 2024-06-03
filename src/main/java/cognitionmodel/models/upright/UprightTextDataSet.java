@@ -47,7 +47,7 @@ public class UprightTextDataSet implements Iterable<Integer>{
         Set<String> files = TextIndexMaker.filesList(folder).stream().filter(f->!(f.contains(".txtidx")||f.contains(".txttkz"))).collect(Collectors.toSet());
 
 
-        for (String f : files) try {
+        for (String f : files.stream().sorted().collect(Collectors.toList())) try {
             //System.out.println(f);
             String text = new String(new FileInputStream(f).readAllBytes());//Files.readString(Paths.get(f), StandardCharsets.UTF_8);
             List<Integer> tokens = encoder.encode(text);
@@ -127,12 +127,12 @@ public class UprightTextDataSet implements Iterable<Integer>{
     }
 
     public static void makeTokenizedData(String sourcesFolder) throws IOException {
-        for (String f: TextIndexMaker.foldersList(sourcesFolder))
+        for (String f: TextIndexMaker.foldersList(sourcesFolder).stream().sorted().collect(Collectors.toList()))
             if (!f.equals(sourcesFolder))
                 if (!Files.exists(Path.of(f+".txttkz"))) {
                     makeTextFolderTokenizedData(f, f+".txttkz");
                 } else
-                    System.err.println(f+".txtidx exists. Skip making index of "+f);
+                    System.err.println(f+".txttkz exists. Skip making index of "+f);
     }
 
     public static void makeTextFolderTokenizedData(String folder, String destinationFile) throws IOException {

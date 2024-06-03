@@ -1,8 +1,14 @@
 package cognitionmodel.models.upright;
 
+import cognitionmodel.datasets.TextDataSet;
+import cognitionmodel.models.inverted.InvertedTextModel;
 import org.junit.Test;
+import org.roaringbitmap.RoaringBitmap;
 
 import java.io.IOException;
+import java.util.LinkedList;
+import java.util.Map;
+import java.util.TreeMap;
 
 import static org.junit.Assert.*;
 
@@ -10,7 +16,7 @@ public class UprightInvertedTextModelTest {
 
     @Test
     public void generate() throws IOException, ClassNotFoundException {
-        UprightInvertedTextModel textModel = new UprightInvertedTextModel("E:\\Idx\\2.txtidx");
+        UprightInvertedTextModel textModel = new UprightInvertedTextModel("E:\\Idx\\R.txtidx");
         System.out.println("Dataset is loaded");
         System.out.println(textModel.generate("Hello! How are you? I want you to help me! I'm down", 7));
         System.out.println(textModel.generate("Hello! How are you? I want you to help me! I'm down Hello! How are you? I want you to help me! I'm down", 7));
@@ -19,9 +25,9 @@ public class UprightInvertedTextModelTest {
 
     @Test
     public void generate1() throws IOException, ClassNotFoundException {
-        UprightInvertedTextModel textModel = new UprightInvertedTextModel("E:\\Idx\\2.txtidx");
+        UprightInvertedTextModel textModel = new UprightInvertedTextModel("E:\\Idx\\A.txtidx");
         System.out.println("Dataset is loaded");
-        int a = 7;
+        int a = 3;
         System.out.println(textModel.generate("The framework that has been laid out by negotiators", a));
         System.out.println(textModel.generate("The framework that has been laid out by negotiators says that during a first six-week pause in the fighting", a));
         System.out.println(textModel.generate("The framework that has been laid out by negotiators says that during a first six-week pause in the fighting, Hamas should release 40 of the remaining hostages, including all the women as well as sick and elderly men. In exchange, hundreds of Palestinian prisoners would be released from Israeli prisons.", a));
@@ -49,5 +55,78 @@ public class UprightInvertedTextModelTest {
                 "\n" +
                 "You can find some zombies up here to get armor from, but further in an empowered Knight will attack. This is a one-off attack (although he does have a Riot Soldier), so grenade and fire belch him to death and collect the goodies here. Locate the booster nearby and use it to go kill a Cyber Mancubus up above (with more zombies to get armor from and another Riot Soldier) and we can continue on in peace.", 7));
     }
+
+    @Test
+    public void dataConsistencyCheck() throws IOException, ClassNotFoundException {
+
+        UprightInvertedTextModel textModel = new UprightInvertedTextModel("E:\\Idx\\2.txtidx");
+        System.out.println("Dataset is loaded");
+
+        TreeMap<Object, RoaringBitmap> idx =  textModel.getTextIndex().getIdx(textModel.getTextIndex().getTextField());
+        long err = 0;
+
+        LinkedList<Integer> tokenList = new LinkedList<>();
+        LinkedList<Integer> itokenList = new LinkedList<>();
+
+        int i = 0;
+        for (int token: textModel.generator.getDataSet().getTextTokens()){
+            tokenList.add(token);
+            itokenList.add(textModel.generator.getDataSet().getTextTokens().get(idx.get(token).nextValue(i)));
+            i++;
+            if (i % 10 == 0){
+                System.out.println(textModel.getTextIndex().getEncoder().decode(tokenList));
+                System.out.println("_____________________________________________________________");
+                System.out.println(textModel.getTextIndex().getEncoder().decode(itokenList));
+                System.out.println("!!!!!!!!!!!!!!!!!!!!");
+                tokenList.clear();
+                itokenList.clear();
+            }
+            if (i > 100) break;
+        }
+
+        System.out.println("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
+    }
+
+
+    @Test
+    public void dataConsistencyCheck1() throws IOException, ClassNotFoundException {
+
+        String sourceFolder = "E:\\Idx\\S";
+
+        InvertedTextModel textModel = new InvertedTextModel(new TextDataSet(sourceFolder), "text", sourceFolder);
+
+        textModel.getTextIndex().optimize();
+
+        UprightTextDataSet dataSet = new UprightTextDataSet();
+        dataSet.makeFromFolder(sourceFolder);
+
+
+        System.out.println("Dataset is loaded");
+
+        TreeMap<Object, RoaringBitmap> idx =  textModel.getTextIndex().getIdx(textModel.getTextIndex().getTextField());
+        long err = 0;
+
+        LinkedList<Integer> tokenList = new LinkedList<>();
+        LinkedList<Integer> itokenList = new LinkedList<>();
+
+        int i = 0;
+        for (int token: dataSet.getTextTokens()){
+            tokenList.add(token);
+            itokenList.add(dataSet.getTextTokens().get(idx.get(token).nextValue(i)));
+            i++;
+            if (i % 10 == 0){
+                System.out.println(textModel.getTextIndex().getEncoder().decode(tokenList));
+                System.out.println("_____________________________________________________________");
+                System.out.println(textModel.getTextIndex().getEncoder().decode(itokenList));
+                System.out.println("!!!!!!!!!!!!!!!!!!!!");
+                tokenList.clear();
+                itokenList.clear();
+            }
+            if (i > 100) break;
+        }
+
+        System.out.println("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
+    }
+
 
 }

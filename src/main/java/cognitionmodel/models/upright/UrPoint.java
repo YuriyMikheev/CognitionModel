@@ -18,7 +18,7 @@ public class UrPoint {
             this.position = position;
         }
 
-        public int getToken() {
+        public Integer getToken() {
             return token;
         }
 
