@@ -13,12 +13,16 @@ public class UprightTextModel {
 
 
     private UprightTextDataSet dataSet;
-
+    HashMap<Object, Long> tokensFreq;
     public UprightTextModel(String tokensFile) throws IOException {
         dataSet = new UprightTextDataSet(tokensFile);
+        for (int i = 0; i < dataSet.getFreqs().length; i++)
+            tokensFreq.put(i, Long.valueOf(dataSet.getFreqs()[i]));
     }
     public UprightTextModel(UprightTextDataSet dataSet){
         this.dataSet = dataSet;
+        for (int i = 0; i < dataSet.getFreqs().length; i++)
+            tokensFreq.put(i, Long.valueOf(dataSet.getFreqs()[i]));
     }
 
 
@@ -90,7 +94,7 @@ public class UprightTextModel {
                                     al.add(p);
                                     String s = al.toString();
                                     if (!agents.containsKey(s))
-                                        agents.put(s, new UrAgent(al, 1, dataSet.getFreqs(), dataSet.getTextTokens().size()));
+                                        agents.put(s, new UrAgent(al, 1, dataSet.getTextTokens().size()));
                                     else
                                         agents.get(s).incF(1);
                                 }
@@ -115,7 +119,7 @@ public class UprightTextModel {
 
         List<UrAgent> al = new ArrayList<>(agents.values());
 
-        al.sort((a1,a2) -> a1.getRelations().size() == a2.getRelations().size()? 0: a1.getRelations().size() > a2.getRelations().size()? 1:-1);
+        al.sort((a1,a2) -> a1.getPoints().size() == a2.getPoints().size()? 0: a1.getPoints().size() > a2.getPoints().size()? 1:-1);
 
         return al;
     }
@@ -145,20 +149,19 @@ public class UprightTextModel {
                 LinkedList<UrAgent> nnlist = new LinkedList<>();
 
                 for (UrAgent a: nlist){
-                    int i1 = a.getRelations().getFirst().getPosition();
+                    int i1 = a.getPoints().getFirst().getPosition();
                     int i0 = i1;
                     while (i1 != -1 && i1 <= i0 + attentionSize) {
-                        if (i1 - a.getRelations().getFirst().getPosition() == ti - a.getStartpos()) {
-                            LinkedList<UrPoint> pl = new LinkedList<>(a.getRelations());
+                        if (i1 - a.getPoints().getFirst().getPosition() == ti - a.getStartpos()) {
+                            LinkedList<UrPoint> pl = new LinkedList<>(a.getPoints());
                             pl.add(new UrPoint(i1, token));
                             String s = pl.toString();
                             if (!nagents.containsKey(s)) {
-                                UrAgent nag = new UrAgent(pl, 1, dataSet.getFreqs(), dataSet.getTextTokens().size(), a.getStartpos());
+                                UrAgent nag = new UrAgent(pl, 1, dataSet.getTextTokens().size(), a.getStartpos());
                                 nagents.put(s, nag);
                                 nnlist.add(nag);
                             } else
                                 incAgentF(nagents.get(s),1);
-                            //break;
                         }
                         i1 = (int)pos.nextValue(i1+1);
                     }
@@ -167,7 +170,7 @@ public class UprightTextModel {
                 for (int i1 : pos) {
                     UrPoint p1 = new UrPoint(i1, token);
                     String s = "["+p1+"]";
-                    UrAgent nag = new UrAgent(p1, 1, dataSet.getFreqs(), dataSet.getTextTokens().size(), ti);
+                    UrAgent nag = new UrAgent(p1, 1,  dataSet.getTextTokens().size(), ti);
                     nagents.put(s, nag);
                     nlist.add(nag);
                 }
@@ -178,7 +181,7 @@ public class UprightTextModel {
                 UrAgent nag;
                 while (!nlist.isEmpty() && (nag = nlist.getFirst()).getStartpos() + attentionSize <= ti) {
                     nlist.removeFirst();
-                    String s = nag.getRelations().toString();
+                    String s = nag.getPoints().toString();
                     nagents.remove(s);
                     if (!agents.containsKey(s))
                         agents.put(s, nag);
@@ -188,17 +191,16 @@ public class UprightTextModel {
             }
         }
 
-
         List<UrAgent> al = new ArrayList<>(agents.values());
 
-        al.sort((a1,a2) -> a1.getRelations().size() == a2.getRelations().size()? 0: a1.getRelations().size() > a2.getRelations().size()? 1:-1);
+        al.sort((a1,a2) -> a1.getPoints().size() == a2.getPoints().size()? 0: a1.getPoints().size() > a2.getPoints().size()? 1:-1);
 
         return al;
     }
 
 
     private void incAgentF(UrAgent agent, long f){
-        if (agent.getRelations().size() > 1) agent.incF(f);
+        if (agent.getPoints().size() > 1) agent.incF(f);
     }
 
     public String compositionToColourString(UrComposition composition, int length){
@@ -222,8 +224,8 @@ public class UprightTextModel {
         int i = 0;
         List<Integer> ll = new LinkedList<>();
         for (UrAgent a: composition.getUrAgents()){
-            for (UrPoint p: a.getRelations()) {
-                ll.add(p.getToken());
+            for (UrPoint p: a.getPoints()) {
+                ll.add((int)p.getToken());
                 sa[p.getPosition()] = agentColors[i % 32] + dataSet.getEncoder().decode(ll) + ansi().reset();
                 ll.clear();
             }
@@ -232,7 +234,6 @@ public class UprightTextModel {
 
         for (String s: sa)
             cs = cs + s;
-
 
         return cs + " ; "+composition.getMr();
     }

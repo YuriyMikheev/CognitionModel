@@ -5,17 +5,19 @@ import org.roaringbitmap.RoaringBitmap;
 
 import java.util.BitSet;
 import java.util.LinkedList;
+import java.util.List;
+import java.util.stream.Collectors;
 
 import static java.lang.Double.NaN;
 import static java.lang.Math.log;
 
 public class UrAgent{
-    private String tokens = "";
-    private LinkedList<UrPoint> relations = new LinkedList<>();
+    private String agentHash = "";
+    private LinkedList<UrPoint> points = new LinkedList<>();
     private long f = 0, datasize = 0;
     private double mr = NaN;
 
-    private int[] tokensFreqs;
+    //private HashMap<Object, Long> tokensFreqs;
     private long startpos;
     private RoaringBitmap idx = new RoaringBitmap();
 
@@ -23,44 +25,74 @@ public class UrAgent{
 
     public static final double zeroMr = 0;// zeroMR gives more MR to the compositions that have more agents
 
-    public UrAgent(LinkedList<UrPoint> relations, long f, int[] tokensFreqs, long datasize) {
-        this(relations, f, tokensFreqs, datasize, 0);
+    public UrAgent(List<UrPoint> points, long f,  long datasize) {
+        this(points, f, datasize, 0);
 
     }
 
-    public UrAgent(LinkedList<UrPoint> relations, long f, int[] tokensFreqs, long datasize, long startpos) {
-        this.relations = new LinkedList<>(); this.relations.addAll(relations);
-        this.tokens = relations.toString();
+    public UrAgent(List<UrPoint> points, long f, long datasize, long startpos) {
+        this.points = new LinkedList<>(); this.points.addAll(points);
+        this.agentHash = points.toString();
         this.f = f;
-        this.tokensFreqs = tokensFreqs;
+       // this.tokensFreqs = tokensFreqs;
         this.datasize = datasize;
-        for (UrPoint point: relations)
+        for (UrPoint point: points)
             fields.set(point.getPosition());
         this.startpos = startpos;
+        idx.add(startpos, startpos+1);
     }
 
-    public UrAgent(UrPoint relation, long f, int[] tokensFreqs, long datasize) {
-        this(relation, f, tokensFreqs, datasize, 0);
+    public UrAgent(UrPoint point, long f, long datasize) {
+        this(point, f, datasize, 0);
     }
 
-    public UrAgent(UrPoint relation, long f, int[] tokensFreqs, long datasize, long startpos) {
-        this.relations = new LinkedList<>();
-        relations.add(relation);
-        this.tokens = relations.toString();
+    public UrAgent(UrPoint point, RoaringBitmap idx, long datasize) {
+        this(point, idx.getLongCardinality(), datasize, 0);
+        this.idx = idx;
+    }
+
+
+    public UrAgent(UrPoint point, long f, long datasize, long startpos) {
+        this.points = new LinkedList<>();
+        points.add(point);
+        this.agentHash = points.toString();
         this.f = f;
-        this.tokensFreqs = tokensFreqs;
+      // this.tokensFreqs = tokensFreqs;
         this.datasize = datasize;
-        fields.set(relation.getPosition());
+        fields.set(point.getPosition());
         this.startpos = startpos;
+        idx.add(startpos, startpos+1);
 
+    }
+
+    public void setIdx(RoaringBitmap idx) {
+        this.idx = idx;
     }
 
     public long getStartpos() {
         return startpos;
     }
 
-    public String getTokens() {
-        return tokens.isEmpty()? tokens = relations.toString(): tokens;
+    public String getAgentHash() {
+        return agentHash.isEmpty()? agentHash = points.toString(): agentHash;
+    }
+
+    public void setAgentHash(String agentHash) {
+        this.agentHash = agentHash;
+    }
+
+    public List<Integer> getTokens(){
+
+        LinkedList<Integer> tokens = new LinkedList<>();
+
+        for (UrPoint point: points) {
+            if (point.getToken() instanceof UrAgent)
+                tokens.addAll(((UrAgent) point.getToken()).getTokens());
+            else
+                tokens.add((Integer) point.getToken());
+        }
+
+        return tokens;
     }
 
     public double getP(){
@@ -70,8 +102,8 @@ public class UrAgent{
         return fields;
     }
 
-    public LinkedList<UrPoint> getRelations() {
-        return relations;
+    public LinkedList<UrPoint> getPoints() {
+        return points;
     }
 
     public long getF() {
@@ -83,22 +115,27 @@ public class UrAgent{
     }
 
     public void addPoint(UrPoint point){
-        relations.add(point);
+        points.add(point);
         mr = NaN;
         fields.set(point.getPosition());
-        tokens = "";
+        agentHash = "";
     }
 
     public double getMr() {
         if (Double.isNaN(mr)){
             double z = f, fr = 1;// records.getCardinality();
-            if (relations.size() < 2) return mr = zeroMr;
+            if (points.size() < 2) {
+                if (points.size() == 1)
+                    if (points.getFirst().token instanceof UrAgent)
+                        return mr = ((UrAgent) points.getFirst().token).getMr();
+                return mr = zeroMr;
+            }
 
             int c = 1, l = 0;
-            for (UrPoint point: relations) {
-                fr = fr * tokensFreqs[point.getToken()];
+            for (UrPoint point: points) {
+                fr = fr * ((UrAgent)point.getToken()).getIdx().getCardinality();//tokensFreqs.get(point.getToken());
                 l++;
-                if (fr > Double.MAX_VALUE / 1000000) { //prevents double value overflowing
+                if (fr > Double.MAX_VALUE / 200000) { //prevents double value overflowing
                     fr = fr / datasize;
                     c++;
                 }
@@ -111,13 +148,13 @@ public class UrAgent{
     }
 
     @Override
-    public String toString() {
-        return relations +"\t"+relations.size() + "\t"+getF() + "\t"+getMr();
+    public String toString(){
+        return points +"\t"+ points.size() + "\t"+getF() + "\t"+getMr();
     }
 
-    /*    public void setMr(double mr) {
-        this.mr = mr;
-    }*/
+    public String getInfo(){
+        return points.stream().map(p->p.getToken()).collect(Collectors.toList()).toString();
+    }
 
     public long incF(long d){
         return f = f + d;
@@ -127,11 +164,24 @@ public class UrAgent{
     }
 
     public RoaringBitmap getIdx() {
+
         return idx;
     }
 
     public long getDatasize(){
         return datasize;
     }
+
+    public int getFirstPos(){
+        if (points.isEmpty()) return -1;
+        return points.getFirst().getPosition();
+    }
+
+    public UrAgent clone(){
+        UrAgent na = new UrAgent(getPoints(), f,  datasize);
+        na.idx = idx;
+        return na;
+    }
+
 
 }

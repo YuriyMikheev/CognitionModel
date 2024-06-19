@@ -2,12 +2,18 @@ package cognitionmodel.models.upright;
 
 public class UrPoint {
         int position;
-        int token;
+        Object token;
         int tag = 0;
 
-        public UrPoint(int position, int token) {
+        public UrPoint(int position, Object token) {
             this.position = position;
             this.token = token;
+        }
+
+        public UrPoint(int position, Object token, int tag) {
+            this.position = position;
+            this.token = token;
+            this.tag = tag;
         }
 
         public int getPosition() {
@@ -18,7 +24,7 @@ public class UrPoint {
             this.position = position;
         }
 
-        public Integer getToken() {
+        public Object getToken() {
             return token;
         }
 
@@ -28,6 +34,8 @@ public class UrPoint {
 
     @Override
     public String toString() {
+        if (token instanceof UrAgent)
+            return position+":"+ ((UrAgent) token).getInfo();
         return position+":"+token;
     }
 
