@@ -23,6 +23,8 @@ public class UrAgent{
 
     private BitSet fields = new BitSet();
 
+    private int relation = UrRelation.RELATION_UNDEFINED;
+
     public static final double zeroMr = 0;// zeroMR gives more MR to the compositions that have more agents
 
     public UrAgent(List<UrPoint> points, long f,  long datasize) {
@@ -183,5 +185,11 @@ public class UrAgent{
         return na;
     }
 
+    public int getRelation() {
+        return relation;
+    }
 
+    public void setRelation(int relation) {
+        this.relation = relation;
+    }
 }

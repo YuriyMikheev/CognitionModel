@@ -163,7 +163,6 @@ public class UprightTextComposer  {
 
 
     private boolean addToQ(UrComposition UrComposition, PriorityQueue<UrComposition> q, HashMap<String, UrComposition> maxUrCompositions){
-//        String cs = UrComposition.getUrAgents().stream().sorted((a1, a2) -> a1.getFields().nextSetBit(0) < a2.getFields().nextSetBit(0) ? -1:1).map(UrAgent::getPoints).collect(Collectors.toList()).toString();
         String cs = UrComposition.getFields().toString();
         if (maxUrCompositions.get(cs) == null) {
             maxUrCompositions.put(cs, UrComposition);

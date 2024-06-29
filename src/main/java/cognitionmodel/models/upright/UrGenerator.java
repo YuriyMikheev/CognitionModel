@@ -43,7 +43,9 @@ public class UrGenerator {
 
         LinkedList<UrPoint> r = new LinkedList<>();
 
+
         long lastIdx = agents.stream().mapToLong(a-> a.getPoints().getLast().getPosition()).max().getAsLong();
+        agents = agents.stream().filter(a-> a.getPoints().getLast().getPosition() > lastIdx - attentionSize).collect(Collectors.toList());
 
         double s = dataSet.getTextTokens().size();
         for (int i = 0; i < attentionSize; i++) {
@@ -65,9 +67,9 @@ public class UrGenerator {
                 }
                 long dist = lastIdx - agentLast + i + 1;
                 newAIdx.entrySet().forEach(e -> newIdx.compute(e.getKey(), (k, v) -> {
-                        double d = agent.getMr() + log(e.getValue()/agent.getF()) - log(agent.getP())-log(dataSet.getFreqs()[k]/s);
-                   // double d = log(e.getValue() / agent.getF()) - log(dataSet.getFreqs()[k] / s);
-                    return v == null ? d : max(v,d);
+                     // double d = agent.getMr() + log(e.getValue()/agent.getF()) - log(agent.getP())-log(dataSet.getFreqs()[k]/s);
+                    double d = (e.getValue() / (agent.getF()));// - log(dataSet.getFreqs()[k] / s);
+                    return v == null ? d : v + d;
                 }));
 
             }
