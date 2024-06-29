@@ -3,14 +3,14 @@ package cognitionmodel.models.upright;
 public class UrPoint {
         int position;
         Object token;
-        int tag = 0;
+        long tag = 0;
 
         public UrPoint(int position, Object token) {
             this.position = position;
             this.token = token;
         }
 
-        public UrPoint(int position, Object token, int tag) {
+        public UrPoint(int position, Object token, long tag) {
             this.position = position;
             this.token = token;
             this.tag = tag;
@@ -39,7 +39,7 @@ public class UrPoint {
         return position+":"+token;
     }
 
-    public int getTag() {
+    public long getTag() {
         return tag;
     }
 

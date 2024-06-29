@@ -47,6 +47,15 @@ public class UprightInvertedTextModelTest {
     }
 
     @Test
+    public void generate3() throws IOException, ClassNotFoundException {
+        UprightInvertedTextModel textModel = new UprightInvertedTextModel("E:\\Idx\\3.txtidx");
+        System.out.println("Dataset is loaded");
+        int a = 7;
+        System.out.println(textModel.generate("It would have been unsettling to see such a human response in that gray, menacing Hell beast if not for the other demons Ines had met.", a));
+    }
+
+
+    @Test
     public void generate2() throws IOException, ClassNotFoundException {
         UprightInvertedTextModel textModel = new UprightInvertedTextModel("E:\\Idx\\2.txtidx");
         System.out.println("Dataset is loaded");

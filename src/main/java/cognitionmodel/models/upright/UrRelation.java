@@ -1,6 +1,8 @@
 package cognitionmodel.models.upright;
 
 import java.util.HashMap;
+import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -10,22 +12,22 @@ public class UrRelation {
 
     private Function<List<UrPoint>, List<UrAgent>> transformFunction;
 
-
+    public  static final int RELATION_UNDEFINED = 0;
     public  static final int RELATION_POINTED = 1;
     public  static final int RELATION_SIMILARITY = 2;
     public  static final int RELATION_ORDER = 3;
+    public  static final int RELATION_ORDER_FULL = 4;
     private long datasetsize;
     private List<UrAgent>in;
 
 
-    public UrRelation(Function<List<UrPoint>, List<UrAgent>> transformFunction, List<UrAgent> in, long datasetsize) {
+    public UrRelation(Function<List<UrPoint>, List<UrAgent>> transformFunction, long datasetsize) {
         this.transformFunction = transformFunction;
         this.datasetsize = datasetsize;
-        this.in = in;
     }
 
-    public UrRelation(int transformationType, List<UrAgent> in, long datasetsize) {
-        this(null, in, datasetsize);
+    public UrRelation(int transformationType, long datasetsize) {
+        this(null, datasetsize);
 
         if (transformationType == RELATION_POINTED)
             this.transformFunction = new Function<List<UrPoint>, List<UrAgent>>() {
@@ -34,27 +36,48 @@ public class UrRelation {
 
                     HashMap<String, UrAgent> result = new HashMap<>();
 
-                    for (UrPoint p1 : points) {
-                        UrAgent na = new UrAgent(p1, 1, datasetsize);
-                        for (UrPoint p2 : points) {
-
-/*
-                        if (idxPoint.getPosition() - a.getPoints().getLast().getPosition() == ti - a.getIdx().last())
-                            if (in.get((int) (idxPoint.getPosition() - ti + a.getIdx().last())) == a.getPoints().getLast().getToken())
-*/
-                            //if (p2.getPosition() - p1.getPosition() == )
+                    while (!points.isEmpty()) {
+                        Iterator<UrPoint> pointIterator = points.listIterator();
+                        UrPoint p1 = pointIterator.next(); pointIterator.remove();
+                        UrAgent na = new UrAgent(p1, 1, datasetsize); na.setRelation(transformationType);
+                        while (pointIterator.hasNext()) {
+                            UrPoint p2 = pointIterator.next();
+                            if (p2.getPosition() - p1.getPosition() == p2.getTag() - p1.getTag()) {
+                                na.addPoint(p2);
+                                pointIterator.remove();
+                            }
                         }
-
                         result.compute(na.getAgentHash(), (k, v) -> v == null ? na : addAgent(v, na));
                     }
-
 
                     return result.values().stream().toList();
                 }
             };
 
+        if (transformationType == RELATION_ORDER_FULL)
+            this.transformFunction = new Function<List<UrPoint>, List<UrAgent>>() {
+                @Override
+                public List<UrAgent> apply(List<UrPoint> points) {
 
+                    HashMap<String, UrAgent> result = new HashMap<>();
 
+                    while (!points.isEmpty()) {
+                        Iterator<UrPoint> pointIterator = points.listIterator();
+                        UrPoint p1 = pointIterator.next(); pointIterator.remove();
+                        UrAgent na = new UrAgent(p1, 1, datasetsize); na.setRelation(transformationType);
+                        while (pointIterator.hasNext()) {
+                            UrPoint p2 = pointIterator.next();
+                            if (p2.getPosition() - p1.getPosition() == p2.getTag() - p1.getTag()) {
+                                na.addPoint(p2);
+                                pointIterator.remove();
+                            }
+                        }
+                        result.compute(na.getAgentHash(), (k, v) -> v == null ? na : addAgent(v, na));
+                    }
+
+                    return result.values().stream().toList();
+                }
+            };
 
         if (transformationType == RELATION_SIMILARITY)
             this.transformFunction = new Function<List<UrPoint>, List<UrAgent>>() {
@@ -62,17 +85,13 @@ public class UrRelation {
                 public List<UrAgent> apply(List<UrPoint> points) {
 
                     HashMap<String, UrAgent> result = new HashMap<>();
-
-                    UrAgent na = new UrAgent(points, 1, datasetsize);
-
-                    na.setAgentHash(points.stream().map(p -> p.getToken()).sorted().collect(Collectors.toList()).toString());
-
+                    UrAgent na = new UrAgent(points, 1, datasetsize); na.setRelation(transformationType);
+                    na.setAgentHash(points.stream().map(p -> ((UrAgent)p.getToken()).getTokens().toString()).sorted().collect(Collectors.toList()).toString());
                     result.compute(na.getAgentHash(), (k, v) -> v == null? na: addAgent(v, na));
 
                     return result.values().stream().toList();
                 }
             };
-
 
         if (transformationType == RELATION_ORDER)
             this.transformFunction = new Function<List<UrPoint>, List<UrAgent>>() {
@@ -80,11 +99,8 @@ public class UrRelation {
                 public List<UrAgent> apply(List<UrPoint> points) {
 
                     HashMap<String, UrAgent> result = new HashMap<>();
-
-                    UrAgent na = new UrAgent(points, 1, datasetsize);
-
-                    na.setAgentHash(points.stream().map(p -> p.getToken()).collect(Collectors.toList()).toString());
-
+                    UrAgent na = new UrAgent(points, 1, datasetsize); na.setRelation(transformationType);
+                    na.setAgentHash(points.stream().map(p -> ((UrAgent)p.getToken()).getTokens().toString()).collect(Collectors.toList()).toString());
                     result.compute(na.getAgentHash(), (k, v) -> v == null? na: addAgent(v, na));
 
                     return result.values().stream().toList();
