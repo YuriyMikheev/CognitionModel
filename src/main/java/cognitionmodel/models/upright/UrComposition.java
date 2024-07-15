@@ -9,6 +9,7 @@ import java.util.LinkedList;
 import java.util.List;
 
 import static java.lang.Math.abs;
+import static java.lang.Math.log;
 
 public class UrComposition implements Cloneable{
 
@@ -82,7 +83,7 @@ public class UrComposition implements Cloneable{
 
     private void recalculate(UrAgent urAgent){
         mr = mr + urAgent.getMr();
-        s = s +  urAgent.getMr()*urAgent.getF()/urAgent.getDatasize();
+        s = s - urAgent.getP()*log(urAgent.getP());
         p = p * urAgent.getP();
     }
 
@@ -134,10 +135,10 @@ public class UrComposition implements Cloneable{
 
     }
 
-    public void setMr(double mr) {
+    /*public void setMr(double mr) {
         this.mr = mr;
     }
-
+*/
     /**
      * Checks whether two compositions can be composed or not
      * @param c1

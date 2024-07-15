@@ -28,7 +28,7 @@ public class UprightInvertedTextModel {
         textIndex = new TextIndex(null, "text", null, "");//textModel.getTextIndex();
         this.indexFile = indexFile;
         textIndex.load(new FileInputStream(indexFile));
-        generator = new UrGenerator(textIndex, indexFile.substring(0, indexFile.length() - 3)+"tkz");
+        generator = new UrGenerator(textIndex, indexFile.substring(0, indexFile.length() - 3)+"tkz", new int[]{UrRelation.RELATION_POINTED});
     }
 
     public String getIndexFile() {
@@ -46,20 +46,21 @@ public class UprightInvertedTextModel {
 
     public String generate(String text, int attentionSize) throws IOException {
         List<Integer> in = (textIndex.getEncoder().encode(text));
+
+
         String r = "";
         long t = System.currentTimeMillis();
 
         int minF = 10;
-
+        System.out.println(in.size()+" tokens in text");
 /*        double tf = Arrays.stream(generator.getDataSet().freqs).sum();
         double infd = Arrays.stream(generator.getDataSet().freqs).filter(f->f != 0).mapToDouble(f->-f*(1.0*f/tf)*log(1.0*f/tf)).sum();
 
         System.out.println(infd+" dataset information amount");
         System.out.println(tf+" tokens in dataset");*/
 
-        System.out.println(in.size()+" tokens in text");
-
-        UrDecomposer decomposer = new UrDecomposer(1, 10000000, round(textIndex.getDataSetSize()), new int[]{UrRelation.RELATION_POINTED});
+/*
+        UrDecomposer decomposer = new UrDecomposer(0.1, 1000000, round(textIndex.getDataSetSize()), new int[]{UrRelation.RELATION_POINTED});
 
         LinkedList<UrAgent> al = new LinkedList<>(decomposer.decompose(in, attentionSize, textIndex.getIdx(textIndex.getTextField())));
 
@@ -68,17 +69,15 @@ public class UprightInvertedTextModel {
             if (a.getPoints().size() == 1)
                 agentHashMap.put(a.getPoints().getFirst().getPosition(), a);
 
-        System.out.println(al.stream().mapToDouble(a->a.getMr()*a.getP()).sum() + " information");
+        System.out.println(al.stream().mapToDouble(a->a.getMr()*a.getP()).sum() + " structural information");
         System.out.println(al.stream().mapToDouble(a->a.getMr()).sum() + " Mr accumulative");
-
-//       al = new ArrayList<>(al.stream().filter(a->(a.getF() > minF) || a.getPoints().size() == 1).toList());
 
         System.out.println(al.size() + " agents");
 
 
         t = (System.currentTimeMillis() - t);
         r = r + String.format("Decomposer working time %02d:%02d:%02d", TimeUnit.MILLISECONDS.toHours(t), TimeUnit.MILLISECONDS.toMinutes(t) - TimeUnit.HOURS.toMinutes(TimeUnit.MILLISECONDS.toHours(t)),
-                TimeUnit.MILLISECONDS.toSeconds(t) - TimeUnit.MINUTES.toSeconds(TimeUnit.MILLISECONDS.toMinutes(t)))+"\n";
+                TimeUnit.MILLISECONDS.toSeconds(t) - TimeUnit.MINUTES.toSeconds(TimeUnit.MILLISECONDS.toMinutes(t)))+"\n";*/
    /*     List<UrComposition> compositions;
 
         UprightTextComposer composer = new UprightTextComposer(in.size() * 2, in.size());
@@ -114,26 +113,49 @@ public class UprightInvertedTextModel {
 
        // al = new ArrayList<>(decomposer.decompose(composition.getUrAgents(), attentionSize));
 
-        LinkedList<UrAgent> nada = new LinkedList<>();
+/*        LinkedList<UrAgent> nada = new LinkedList<>();
 
+        //al = new LinkedList<>(al.stream().filter(a-> a.getPoints().size()>1).collect(Collectors.toList()));
 
-        int depth = 10;
+        int depth = 30;
 
-        List<UrPoint> newTokens = generator.newTokens(al, attentionSize, depth);
+        List<UrPoint> newTokens = generator.newTokens(al, new int[]{7}, depth);
+        System.out.println(tokensToStrings(newTokens));
 
         LinkedList<UrAgent> nal = decomposer.makeAgentList(in,textIndex.getIdx(textIndex.getTextField()));
+
+        HashSet<Integer> nth = new HashSet<>(newTokens.stream().map(UrPoint::getPosition).collect(Collectors.toSet()));
+        nal = new LinkedList<>(nal.stream().filter(a->a.getPoints().stream().filter(point -> nth.contains(point.getPosition())).collect(Collectors.toSet()).isEmpty()).collect(Collectors.toList()));
 
         for (UrPoint p : newTokens) {
             nada.add(new UrAgent(p, textIndex.getIdx(textIndex.getTextField()).get(p.getToken()), round(textIndex.getDataSetSize())));
         }
 
+
         nal.addAll(nada);
 
-        al = (LinkedList<UrAgent>) decomposer.decompose(nal, attentionSize);
+        al = (LinkedList<UrAgent>) decomposer.decompose(nal, attentionSize);*/
+        t = System.currentTimeMillis();
 
-        UprightTextComposer composer = new UprightTextComposer(al.size(), in.size() + al.size());
+        List<UrAgent> alf = generator.newAgents(makeAgentList(in,textIndex.getIdx(textIndex.getTextField())),attentionSize,10,new int[]{in.size(), in.size()+1});
+        System.out.println(alf.size()+" agents found");
 
-        List<UrComposition>  compositions = composer.composeToSortedList(al);
+        t = (System.currentTimeMillis() - t);
+        r = r + String.format("Generator working time %02d:%02d:%02d", TimeUnit.MILLISECONDS.toHours(t), TimeUnit.MILLISECONDS.toMinutes(t) - TimeUnit.HOURS.toMinutes(TimeUnit.MILLISECONDS.toHours(t)),
+                TimeUnit.MILLISECONDS.toSeconds(t) - TimeUnit.MINUTES.toSeconds(TimeUnit.MILLISECONDS.toMinutes(t)))+"\n";
+
+      //  List<UrAgent> alf = al.stream().filter(agent -> agent.getF() > minF).filter(agent -> agent.getMr() > 5).collect(Collectors.toList());
+       // System.out.println(alf.size()+" agents filtered");
+
+        UprightTextComposer composer = new UprightTextComposer(1000, in.size() + alf.size());
+
+        t = System.currentTimeMillis();
+
+        List<UrComposition>  compositions = composer.composeToSortedList(alf);
+
+        t = (System.currentTimeMillis() - t);
+        r = r + String.format("Composer working time %02d:%02d:%02d", TimeUnit.MILLISECONDS.toHours(t), TimeUnit.MILLISECONDS.toMinutes(t) - TimeUnit.HOURS.toMinutes(TimeUnit.MILLISECONDS.toHours(t)),
+                TimeUnit.MILLISECONDS.toSeconds(t) - TimeUnit.MINUTES.toSeconds(TimeUnit.MILLISECONDS.toMinutes(t)))+"\n";
 
         for (int i = 0; i < (min(3, compositions.size())); i++)
             r = r + compositionToColourString(compositions.get(i))+"; "+compositions.get(i).getUrAgents().size()+"; "+compositions.get(i).getP()+"\n";
@@ -181,7 +203,7 @@ public class UprightInvertedTextModel {
         for (String s: sa)
             cs = cs + s;
 
-        return composition.getMr()+" \t " + composition.getS()+" \t "+ cs;
+        return composition.getMr()+" \t " + composition.getP()*composition.getMr()+" \t " + composition.getS()+" \t "+ cs;
     }
 
 
@@ -199,5 +221,29 @@ public class UprightInvertedTextModel {
 
         return err;
     }
+
+    public String tokensToStrings(List<UrPoint> points){
+        LinkedList<Integer> t = new LinkedList<>();
+        for (UrPoint p : points) {
+            t.add((Integer) p.getToken());
+        }
+
+        return textIndex.getEncoder().decode(t);
+    }
+
+    public LinkedList<UrAgent> makeAgentList(List<Integer> in, Map<Object, RoaringBitmap> index){
+        int i = 0;
+        LinkedList<UrAgent> list = new LinkedList<>();
+        for (int t: in){
+            if (index.containsKey(t))
+                list.add(new UrAgent(new UrPoint(i, t), index.get(t), round(textIndex.getDataSetSize())));
+            else
+                System.err.println(in.get(i) + " token unknown");
+            i++;
+        }
+
+        return list;
+    }
+
 
 }

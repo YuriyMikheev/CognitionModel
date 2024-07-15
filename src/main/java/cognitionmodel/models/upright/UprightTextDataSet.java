@@ -6,6 +6,7 @@ import com.knuddels.jtokkit.Encodings;
 import com.knuddels.jtokkit.api.Encoding;
 import com.knuddels.jtokkit.api.EncodingRegistry;
 import com.knuddels.jtokkit.api.ModelType;
+import jnr.ffi.annotations.In;
 import org.apache.commons.math3.exception.OutOfRangeException;
 
 import java.io.*;
@@ -83,6 +84,23 @@ public class UprightTextDataSet implements Iterable<Integer>{
     @Override
     public Iterator<Integer> iterator() {
         return textTokens.iterator();
+    }
+
+
+    public List<Integer> getRange(long startIndex, long endIndex){
+        LinkedList<Integer> r = new LinkedList<>();
+        for (long i = startIndex; i <endIndex ; i++) {
+            r.add(textTokens.get(i));
+        }
+        return r;
+    }
+
+    public String getRangeToString(long startIndex, long endIndex){
+        LinkedList<Integer> r = new LinkedList<>();
+        for (long i = startIndex; i <endIndex ; i++) {
+            r.add(textTokens.get(i));
+        }
+        return encoder.decode(r);
     }
 
     public void save(OutputStream outputStream) throws IOException {

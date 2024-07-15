@@ -4,6 +4,7 @@ import cognitionmodel.models.inverted.index.Point;
 import org.roaringbitmap.RoaringBitmap;
 
 import java.util.BitSet;
+import java.util.Comparator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -114,10 +115,19 @@ public class UrAgent{
 
     public void setF(long f) {
         this.f = f;
+        mr = NaN;
     }
 
+
+
+
     public void addPoint(UrPoint point){
+        int lp = points.getLast().getPosition();
         points.add(point);
+        if (point.getPosition() < lp) {
+            points.sort(Comparator.comparing(UrPoint::getPosition));
+            if (point.getToken() instanceof  UrAgent) startpos = ((UrAgent) point.getToken()).getStartpos();
+        }
         mr = NaN;
         fields.set(point.getPosition());
         agentHash = "";
@@ -149,13 +159,17 @@ public class UrAgent{
         return mr;
     }
 
+    public void setMr(double mr) {
+        this.mr = mr;
+    }
+
     @Override
     public String toString(){
         return points +"\t"+ points.size() + "\t"+getF() + "\t"+getMr();
     }
 
     public String getInfo(){
-        return points.stream().map(p->p.getToken()).collect(Collectors.toList()).toString();
+        return points.stream().map(p->p.getToken() instanceof UrAgent? p.getToken(): UrPoint.tokensToStrings((Integer) p.getToken())).collect(Collectors.toList()).toString();
     }
 
     public long incF(long d){
