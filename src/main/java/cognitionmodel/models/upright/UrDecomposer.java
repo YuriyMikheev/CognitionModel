@@ -13,86 +13,36 @@ import static java.lang.Math.round;
 
 public class UrDecomposer {
 
-    private class IdxPoint{
-        int position;
-        Object token;
-        long idx;
-        Iterator<Long> iterator;
 
-        public IdxPoint(int position, Object token, Iterator<Long> iterator) {
-            this.position = position;
-            this.token = token;
-            this.iterator = iterator;
-            idx = nextIdx();
-        }
-
-        public long nextIdx(){
-            if (iterator.hasNext()) return idx = iterator.next();
-            else
-                return idx = -1;
-        }
-
-        public void setIdx(int idx) {
-            this.idx = idx;
-        }
-
-        public long getIdx() {
-            return idx;
-        }
-
-        public Object getToken() {
-            return token;
-        }
-
-        public void setToken(int token) {
-            this.token = token;
-        }
-
-        public int getPosition() {
-            return position;
-        }
-
-        public void setPosition(int position) {
-            this.position = position;
-        }
-
-        public Iterator<Long> getIterator() {
-            return iterator;
-        }
-
-        public void setIterator(Iterator<Long> iterator) {
-            this.iterator = iterator;
-        }
-    }
 
     double minMrDelta = 0.1;
-    long batchSize = 1000000, datSetSize = 0;
+    long batchSize = 1000000, dataSetSize = 0;
     private UrRelation relations[];
 
-    public UrDecomposer(double accuracy, long datSetSize){
-        this(accuracy*100, 10000000, datSetSize);
-        batchSize = round(datSetSize * accuracy);
+    public UrDecomposer(double accuracy, long dataSetSize){
+        this(accuracy*100, 10000000, dataSetSize);
+        batchSize = round(dataSetSize * accuracy);
     }
 
-    public UrDecomposer(double minMrDelta, long batchSize, long datSetSize) {
-        this(minMrDelta, batchSize, datSetSize, new UrRelation[]{  new UrRelation(UrRelation.RELATION_SIMILARITY, datSetSize),
-                new UrRelation(UrRelation.RELATION_ORDER, datSetSize),
-                new UrRelation(UrRelation.RELATION_POINTED, datSetSize)});
+    public UrDecomposer(double minMrDelta, long batchSize, long dataSetSize) {
+        this(minMrDelta, batchSize, dataSetSize, new UrRelation[]{  new UrRelation(UrRelation.RELATION_SIMILARITY, dataSetSize),
+                new UrRelation(UrRelation.RELATION_ORDER, dataSetSize),
+                new UrRelation(UrRelation.RELATION_POINTED, dataSetSize)});
     }
-    public UrDecomposer(double minMrDelta, long batchSize, long datSetSize, int[] relationTypes) {
+    public UrDecomposer(double minMrDelta, long batchSize, long dataSetSize, int[] relationTypes) {
         this.minMrDelta = minMrDelta;
         this.batchSize = batchSize;
-        this.datSetSize = datSetSize;
+        this.dataSetSize = dataSetSize;
 
-        relations = Arrays.stream(relationTypes).mapToObj(t-> new UrRelation(t, datSetSize)).collect(Collectors.toList()).toArray(new UrRelation[0]);
+        relations = Arrays.stream(relationTypes).mapToObj(t-> new UrRelation(t, dataSetSize)).collect(Collectors.toList()).toArray(new UrRelation[0]);
     }
 
 
 
-    public UrDecomposer(double minMrDelta, long batchSize, long datSetSize, UrRelation[] relations) {
+    public UrDecomposer(double minMrDelta, long batchSize, long dataSetSize, UrRelation[] relations) {
         this.minMrDelta = minMrDelta;
         this.batchSize = batchSize;
-        this.datSetSize = datSetSize;
+        this.dataSetSize = dataSetSize;
 
         this.relations = relations;
     }
@@ -120,7 +70,7 @@ public class UrDecomposer {
         LinkedList<UrAgent> list = new LinkedList<>();
         for (int t: in){
             if (index.containsKey(t))
-                list.add(new UrAgent(new UrPoint(i, t), index.get(t), datSetSize));
+                list.add(new UrAgent(new UrPoint(i, t), index.get(t), dataSetSize));
             else
                 System.err.println(in.get(i) + " token unknown");
             i++;
@@ -150,10 +100,10 @@ public class UrDecomposer {
             cfl.add(CompletableFuture.supplyAsync(() -> {
                 final double[] dmr = {0};
 
-                PriorityQueue<IdxPoint> tokens = new PriorityQueue<>(Comparator.comparing(IdxPoint::getIdx));
+                PriorityQueue<IndexPoint> tokens = new PriorityQueue<>(Comparator.comparing(IndexPoint::getIdx));
 
                 for (int i = finalK; i < min(finalK + attentionSize, in.size()); i++) {
-                    tokens.add(new IdxPoint(in.get(i).getPoints().getFirst().getPosition(), in.get(i), new BatchedIterator(in.get(i).getIdx())));
+                    tokens.add(new IndexPoint(in.get(i).getPoints().getFirst().getPosition(), in.get(i), new BatchedIterator(in.get(i).getIdx())));
                 }
 
                 LinkedList<UrAgent> nlist = new LinkedList<>();
@@ -161,10 +111,10 @@ public class UrDecomposer {
                 long  n = 0, sti = 0, ti = 0;
 
                 for (; !tokens.isEmpty(); ) {
-                    IdxPoint idxPoint = tokens.poll();
-                    ti = idxPoint.getIdx();
-                    idxPoint.nextIdx();
-                    if (ti != -1) tokens.add(idxPoint);
+                    IndexPoint indexPoint = tokens.poll();
+                    ti = indexPoint.getIdx();
+                    indexPoint.nextIdx();
+                    if (ti != -1) tokens.add(indexPoint);
                         else
                             continue;
 
@@ -173,18 +123,18 @@ public class UrDecomposer {
                     boolean dontAddNew = false;
                     for (UrAgent agent : nlist)
                         if (ti - agent.getStartpos() < attentionSize)
-                            if (idxPoint.getPosition() - agent.getFirstPos() < attentionSize && idxPoint.getPosition() > agent.getPoints().getLast().getPosition()) {
-                                agent.addPoint(new UrPoint(idxPoint.getPosition(), idxPoint.getToken(), ti));
+                            if (indexPoint.getPosition() - agent.getFirstPos() < attentionSize && indexPoint.getPosition() > agent.getPoints().getLast().getPosition()) {
+                                agent.addPoint(new UrPoint(indexPoint.getPosition(), indexPoint.getToken(), ti));
                                 dontAddNew = true;
                             }
 
                     if (!dontAddNew)
-                        nlist.add(new UrAgent(new UrPoint(idxPoint.getPosition(), idxPoint.getToken(), ti), 1, datSetSize, ti));
+                        nlist.add(new UrAgent(new UrPoint(indexPoint.getPosition(), indexPoint.getToken(), ti), 1, dataSetSize, ti));
 
                     while (!nlist.isEmpty() && ti - nlist.getFirst().getStartpos() >= attentionSize) {
                         UrAgent as = nlist.poll();
                         for (UrRelation relation: relations)
-                            for (UrAgent a: relation.apply(as.getPoints()))
+                            for (UrAgent a: relation.applyDecomposition(as.getPoints()))
                                 if (!agents.containsKey(a.getAgentHash()))
                                     agents.put(a.getAgentHash(), a);
                                 else
@@ -192,7 +142,7 @@ public class UrDecomposer {
                     }
 
                     if (n % batchSize == 0) {
-                        double ldmr = cset.stream().mapToDouble(a->agents.get(a).getMr()>0? agents.get(a).getMr():0).sum();
+                        double ldmr = agents.values().stream().mapToDouble(a->a.getMr()>0? a.getMr():0).sum();
                         if (ldmr - dmr[0] < minMrDelta)
                             break;
                         dmr[0] = ldmr;
@@ -205,10 +155,22 @@ public class UrDecomposer {
         }
         cfl.forEach(CompletableFuture::join);
 
-        List<UrAgent> al = new LinkedList<>(agents.values());
+        List<UrAgent> al = new ArrayList<>(agents.values());
 
         al.sort((a1,a2) -> a1.getPoints().size() == a2.getPoints().size()? 0: a1.getPoints().size() > a2.getPoints().size()? 1:-1);
 
+/*        int i = 1;
+        for (UrAgent a1: al) {
+            if (a1.getPoints().size() > 1)
+                for (Iterator<UrAgent> iterator = al.listIterator(i); iterator.hasNext(); ){
+                    UrAgent a2 = iterator.next();
+                    BitSet bs = BitSet.valueOf(a1.getFields().toLongArray());
+                    bs.and(a2.getFields());
+                    if (a1.getFields().cardinality() == bs.cardinality())
+                        a1.incF(a2.getF());
+                }
+            i++;
+        }*/
         System.out.println(nn[0] + " tokens analyzed");
 
         return al;
