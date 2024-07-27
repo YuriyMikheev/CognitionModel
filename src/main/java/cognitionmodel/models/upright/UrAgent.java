@@ -35,6 +35,8 @@ public class UrAgent{
 
     public UrAgent(List<UrPoint> points, long f, long datasize, long startpos) {
         this.points = new LinkedList<>(); this.points.addAll(points);
+        points.sort(Comparator.comparing(UrPoint::getPosition));
+
         this.agentHash = points.toString();
         this.f = f;
        // this.tokensFreqs = tokensFreqs;
@@ -145,7 +147,7 @@ public class UrAgent{
 
             int c = 1, l = 0;
             for (UrPoint point: points) {
-                fr = fr * ((UrAgent)point.getToken()).getIdx().getCardinality();//tokensFreqs.get(point.getToken());
+                fr = fr * ((UrAgent)point.getToken()).getF();//getIdx().getCardinality();//tokensFreqs.get(point.getToken());
                 l++;
                 if (fr > Double.MAX_VALUE / 200000) { //prevents double value overflowing
                     fr = fr / datasize;
