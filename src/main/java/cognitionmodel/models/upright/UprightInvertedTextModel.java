@@ -135,33 +135,53 @@ public class UprightInvertedTextModel {
         nal.addAll(nada);
 
         al = (LinkedList<UrAgent>) decomposer.decompose(nal, attentionSize);*/
-        t = System.currentTimeMillis();
 
-        List<UrAgent> alf = generator.newAgents(makeAgentList(in,textIndex.getIdx(textIndex.getTextField())),attentionSize,10,new int[]{in.size(), in.size()+1});
+       // UrGenerator generator1 = new UrGenerator(textIndex, generator.getDataSet(), new int[]{UrRelation.RELATION_ORDER});
+
+        generator.setBatchSize(1000000);
+
+        for (int k = 0; k < 10; k++) {
+
+
+            t = System.currentTimeMillis();
+
+            List<UrAgent> alf = generator.newAgents(makeAgentList(in, textIndex.getIdx(textIndex.getTextField())), attentionSize, 10, new int[]{in.size()});//, in.size()+1, in.size()+2});//, in.size()+3, in.size()+4});//,in.size()+5, in.size()+6});
+            System.out.println(alf.size() + " agents found");
+
+/*
+        alf = generator1.newAgents(alf, attentionSize,10,new int[]{});//, in.size()+3, in.size()+4,in.size()+5, in.size()+6});
         System.out.println(alf.size()+" agents found");
+*/
 
-        t = (System.currentTimeMillis() - t);
-        r = r + String.format("Generator working time %02d:%02d:%02d", TimeUnit.MILLISECONDS.toHours(t), TimeUnit.MILLISECONDS.toMinutes(t) - TimeUnit.HOURS.toMinutes(TimeUnit.MILLISECONDS.toHours(t)),
-                TimeUnit.MILLISECONDS.toSeconds(t) - TimeUnit.MINUTES.toSeconds(TimeUnit.MILLISECONDS.toMinutes(t)))+"\n";
 
-      //  List<UrAgent> alf = al.stream().filter(agent -> agent.getF() > minF).filter(agent -> agent.getMr() > 5).collect(Collectors.toList());
-       // System.out.println(alf.size()+" agents filtered");
+            t = (System.currentTimeMillis() - t);
+            r = r + String.format("Generator working time %02d:%02d:%02d", TimeUnit.MILLISECONDS.toHours(t), TimeUnit.MILLISECONDS.toMinutes(t) - TimeUnit.HOURS.toMinutes(TimeUnit.MILLISECONDS.toHours(t)),
+                    TimeUnit.MILLISECONDS.toSeconds(t) - TimeUnit.MINUTES.toSeconds(TimeUnit.MILLISECONDS.toMinutes(t))) + "\n";
 
-        UprightTextComposer composer = new UprightTextComposer(1000, in.size() + alf.size());
+            //  List<UrAgent> alf = al.stream().filter(agent -> agent.getF() > minF).filter(agent -> agent.getMr() > 5).collect(Collectors.toList());
+            // System.out.println(alf.size()+" agents filtered");
 
-        t = System.currentTimeMillis();
+            UprightTextComposer composer = new UprightTextComposer(alf.size(), in.size() + 10);
 
-        List<UrComposition>  compositions = composer.composeToSortedList(alf);
+            t = System.currentTimeMillis();
 
-        t = (System.currentTimeMillis() - t);
-        r = r + String.format("Composer working time %02d:%02d:%02d", TimeUnit.MILLISECONDS.toHours(t), TimeUnit.MILLISECONDS.toMinutes(t) - TimeUnit.HOURS.toMinutes(TimeUnit.MILLISECONDS.toHours(t)),
-                TimeUnit.MILLISECONDS.toSeconds(t) - TimeUnit.MINUTES.toSeconds(TimeUnit.MILLISECONDS.toMinutes(t)))+"\n";
+            List<UrComposition> compositions = composer.composeToSortedList(alf);
+            try {
+                UrAgent na = compositions.get(0).getUrAgents().stream().filter(a -> a.getFields().get(in.size())).findFirst().get();
+                in.add(na.getTokens().get(na.getTokens().size() - 1));
+            } catch (NoSuchElementException e){
 
-        for (int i = 0; i < (min(3, compositions.size())); i++)
-            r = r + compositionToColourString(compositions.get(i))+"; "+compositions.get(i).getUrAgents().size()+"; "+compositions.get(i).getP()+"\n";
+            }
 
-     //   r = text + "\n" + r + "\n" + textIndex.getEncoder().decode(newTokens.stream().map(p->(int)p.getToken()).collect(Collectors.toList()));
+            t = (System.currentTimeMillis() - t);
+            r = r + String.format("Composer working time %02d:%02d:%02d", TimeUnit.MILLISECONDS.toHours(t), TimeUnit.MILLISECONDS.toMinutes(t) - TimeUnit.HOURS.toMinutes(TimeUnit.MILLISECONDS.toHours(t)),
+                    TimeUnit.MILLISECONDS.toSeconds(t) - TimeUnit.MINUTES.toSeconds(TimeUnit.MILLISECONDS.toMinutes(t))) + "\n";
 
+            for (int i = 0; i < (min(3, compositions.size())); i++)
+                r = r + compositionToColourString(compositions.get(i)) + "; " + compositions.get(i).getUrAgents().size() + "; " + compositions.get(i).getP() + "\n";
+
+            //   r = text + "\n" + r + "\n" + textIndex.getEncoder().decode(newTokens.stream().map(p->(int)p.getToken()).collect(Collectors.toList()));
+        }
         return r;
     }
 
