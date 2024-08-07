@@ -42,7 +42,7 @@ public class UrAgent{
        // this.tokensFreqs = tokensFreqs;
         this.datasize = datasize;
         for (UrPoint point: points)
-            fields.set(point.getPosition());
+            setFields(point);//fields.set(point.getPosition());
         this.startpos = startpos;
         idx.add(startpos, startpos+1);
     }
@@ -64,7 +64,7 @@ public class UrAgent{
         this.f = f;
       // this.tokensFreqs = tokensFreqs;
         this.datasize = datasize;
-        fields.set(point.getPosition());
+        setFields(point);//fields.set(point.getPosition());
         this.startpos = startpos;
         idx.add(startpos, startpos+1);
 
@@ -100,6 +100,20 @@ public class UrAgent{
         return tokens;
     }
 
+    public List<UrPoint> getPointList(){
+
+        LinkedList<UrPoint> plist = new LinkedList<>();
+
+        for (UrPoint point: points) {
+            if (point.getToken() instanceof UrAgent)
+                plist.addAll(((UrAgent) point.getToken()).getPointList());
+            else
+                plist.add(point);
+        }
+
+        return plist;
+    }
+
     public double getP(){
         return ((double) f)/datasize;
     }
@@ -131,8 +145,15 @@ public class UrAgent{
             if (point.getToken() instanceof  UrAgent) startpos = ((UrAgent) point.getToken()).getStartpos();
         }
         mr = NaN;
-        fields.set(point.getPosition());
+        setFields(point);//fields.set(point.getPosition());
         agentHash = "";
+    }
+
+    private void setFields(UrPoint point){
+        if (point.getToken() instanceof UrAgent){
+            fields.or(((UrAgent) point.getToken()).getFields());
+        } else
+            fields.set(point.getPosition());
     }
 
     public double getMr() {
@@ -194,6 +215,12 @@ public class UrAgent{
         if (points.isEmpty()) return -1;
         return points.getFirst().getPosition();
     }
+
+    public int getLastPos(){
+        if (points.isEmpty()) return -1;
+        return points.getLast().getPosition();
+    }
+
 
     public UrAgent clone(){
         UrAgent na = new UrAgent(getPoints(), f,  datasize);

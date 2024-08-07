@@ -38,6 +38,32 @@ public class UprightInvertedTextModelTest {
         System.out.println(textModel.generate("Hamas has reported difficulty in identifying and locating 40 Israeli hostages needed for the first phase of a ceasefire deal, according to an Israeli official and a source familiar with the discussions. This raises concerns that more hostages may be deceased than publicly acknowledged. Negotiators have outlined a framework that calls for Hamas to release 40 of the remaining hostages, including all women, and sick and elderly men, during a six-week pause in the fighting. In return, hundreds of Palestinian prisoners would be released from Israeli prisons. However, Hamas has informed international mediators, including Qatar and Egypt, that they do not have 40 living hostages who fit these criteria, according to both sources. CNN's records also indicate fewer than 40 living hostages meet the proposed criteria. The inability or reluctance of Hamas to specify which hostages would be released alive is a significant barrier, the second source added. Since Hamas seems unable to meet the proposed number, Israel has urged Hamas to include younger male hostages, including soldiers, for the initial release, the Israeli official said. Throughout months of negotiations following the last ceasefire, Israel has consistently requested a list of hostages and their conditions. Hamas has argued that they need a break in the fighting to track and gather the hostages, similar to their argument in November before a week-long pause that ended when Hamas failed to deliver more hostages. Most of the nearly 100 remaining hostages are believed to be male IDF soldiers or men of military reserve age. Hamas is expected to use them in later phases to negotiate more significant concessions, including the release of high-level prisoners and a permanent end to the conflict.", a));
     }
 
+
+    @Test
+    public void generate1_1() throws IOException, ClassNotFoundException {
+        UprightInvertedTextModel textModel = new UprightInvertedTextModel("E:\\Idx\\S.txtidx");
+        System.out.println("Dataset is loaded");
+        int a = 7;
+        System.out.println(textModel.generate("The framework that has been laid out by negotiators", a));
+        System.out.println(textModel.generate("that during a first six-week pause in the fighting", a));
+        System.out.println(textModel.generate("Palestinian prisoners would be released from Israeli prisons.", a));
+        System.out.println(textModel.generate("who match those criteria for release, both sources said.", a));
+        System.out.println(textModel.generate("40 living hostages who meet the proposed criteria.", a));
+        System.out.println(textModel.generate("high-level prisoners and a permanent end to the war. ", a));
+        System.out.println(textModel.generate("high-level prisoners and a permanent end to the conflict.", a));
+    }
+
+    @Test
+    public void generate1_2() throws IOException, ClassNotFoundException {
+        UprightInvertedTextModel textModel = new UprightInvertedTextModel("E:\\Idx\\S.txtidx");
+        System.out.println("Dataset is loaded");
+        int a = 7;
+        System.out.println(textModel.generate("The framework that has been laid out by negotiators says that during a first six-week pause in the fighting", a));
+        System.out.println(textModel.generate("as well as sick and elderly men. In exchange, hundreds of Palestinian prisoners would be released from Israeli prisons.", a));
+        System.out.println(textModel.generate("include Qatar and Egypt — it does not have 40 living hostages who match those criteria for release, both sources said.", a));
+        System.out.println(textModel.generate("the conditions of the hostages also suggests there are fewer than 40 living hostages who meet the proposed criteria.", a));
+        System.out.println(textModel.generate("to try to negotiate more significant concessions, including more high-level prisoners and a permanent end to the war. ", a));
+    }
     @Test
     public void generateS() throws IOException, ClassNotFoundException {
         UprightInvertedTextModel textModel = new UprightInvertedTextModel("E:\\Idx\\S.txtidx");
