@@ -8,7 +8,7 @@ import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentSkipListMap;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 
 import static java.lang.Math.*;
@@ -110,31 +110,50 @@ public class UrGenerator {
         this.minF = minF;
     }
 
-    public List<UrAgent> newAgents(List<UrAgent> in, int attentionSize, int variants, int[] newPointsPositions){
+    public List<UrAgent> newAgents(List<UrAgent> inAgents, int attentionSize, int variants, int[] newPointsPositions){
 
-        if (in.isEmpty()) return new ArrayList<>();
+        if (inAgents.isEmpty()) return new ArrayList<>();
+
         ConcurrentHashMap<String, UrAgent> agents = new ConcurrentHashMap<>();
         ConcurrentHashMap<String, Long> tagents = new ConcurrentHashMap<>();
-
-        in.sort(Comparator.comparing(UrAgent::getFirstPos));
+        int step = attentionSize*2/3;
+        long dataSetSize = dataSet.getTextTokens().size();
+        LinkedList<CompletableFuture<Integer>> cfl = new LinkedList<>();
+        final long[] nn = {0};
+        //int minpoint =  Arrays.stream(newPointsPositions).min().getAsInt(), maxpoint = Arrays.stream(newPointsPositions).max().getAsInt();
 
         BitSet atp = new BitSet();
 
-        for (int attentionPoint : newPointsPositions) {
-            atp.set(attentionPoint);
+
+        List<UrAgent> in = inAgents.stream()
+                //.filter(a-> !a.getFields().intersects(atp)) // filter points are to be generated
+                .sorted(Comparator.comparing(UrAgent::getFirstPos)) // sort by agent beginning point
+                //.filter(a-> a.getPoints().getLast().getPosition() + 3*attentionSize > maxpoint && a.getFirstPos() - 3*attentionSize  < minpoint) //filter agents that can't influence generating
+                .collect(Collectors.toList());
+
+        LinkedList<UrAgent> oin = new LinkedList<>();
+
+
+        if (newPointsPositions.length > 0) {
+            for (int attentionPoint : newPointsPositions) {
+                atp.set(attentionPoint);
+            }
+
+            LinkedList<UrAgent> nin = new LinkedList<>();
+
+            for (Iterator<UrAgent> iterator = in.listIterator(); iterator.hasNext(); ) {
+                UrAgent agent = iterator.next();
+                if (atp.stream().anyMatch(p -> p < agent.getLastPos() + attentionSize && p > agent.getFirstPos() - attentionSize))
+                    nin.add(agent);
+                else
+                    oin.add(agent);
+            }
+            in = nin;
         }
-
-        in = in.stream().filter(a-> !a.getFields().intersects(atp)).collect(Collectors.toList());
-        int step = attentionSize*2/3;
-        long dataSetSize = dataSet.getTextTokens().size();
-
-        LinkedList<CompletableFuture<Integer>> cfl = new LinkedList<>();
-        final long[] nn = {0};
 
     //    List<Integer[]> combs = singlePoints(newPointsPositions, attentionSize);//allCombinations(newPointsPositions, attentionSize);
         List<Integer[]> combs = allCombinations(newPointsPositions, attentionSize);
     //    List<Integer[]> combs = longCombinations(newPointsPositions, attentionSize);
-        int minpoint = Arrays.stream(newPointsPositions).min().getAsInt(), maxpoint = Arrays.stream(newPointsPositions).max().getAsInt();
 
 
         for (int k = 0; k < in.size(); k += step) {
@@ -146,7 +165,7 @@ public class UrGenerator {
                 PriorityQueue<IndexPoint> tokens = new PriorityQueue<>(Comparator.comparing(IndexPoint::getIdx));
 
                 for (int i = finalK; i < min(finalK + attentionSize, finalIn.size()); i++) {
-                    tokens.add(new IndexPoint(finalIn.get(i).getPoints().getFirst().getPosition(), finalIn.get(i), new BatchedIterator(finalIn.get(i).getIdx())));
+                    tokens.add(new IndexPoint(finalIn.get(i).getFirstPos(), finalIn.get(i), new BatchedIterator(finalIn.get(i).getIdx())));
                 }
 
                 LinkedList<UrAgent> nlist = new LinkedList<>();
@@ -165,7 +184,8 @@ public class UrGenerator {
                     boolean dontAddNew = false;
                     for (UrAgent agent : nlist)
                         if (ti - agent.getStartpos() < attentionSize)
-                            if (indexPoint.getPosition() - agent.getFirstPos() < attentionSize && indexPoint.getPosition() > agent.getPoints().getLast().getPosition()) {
+ //                           if (indexPoint.getPosition() - agent.getFirstPos() < attentionSize && indexPoint.getPosition() > agent.getPoints().getLast().getPosition())
+                            {
                                 agent.addPoint(new UrPoint(indexPoint.getPosition(), indexPoint.getToken(), ti));
                                 dontAddNew = true;
                             }
@@ -178,11 +198,13 @@ public class UrGenerator {
 
                         LinkedList<NewAgentData> ptl = new LinkedList<>();
 
-                        if (as.getPoints().getLast().getPosition() + attentionSize > maxpoint  && as.getFirstPos() - attentionSize < maxpoint) {
+                        //if (as.getPoints().getLast().getPosition() + attentionSize > maxpoint  && as.getFirstPos() - attentionSize < minpoint)
+                        {
                             for (Integer[] ic : combs) {
-                                NewAgentData nad = new NewAgentData(finalIn.size() + attentionSize);
+                                NewAgentData nad = new NewAgentData(newPointsPositions.length);
                                 for (int i : ic)
-                                    if (as.getPoints().getLast().getPosition() + attentionSize > i && as.getFirstPos() - attentionSize < i) {
+//                                    if (as.getPoints().getLast().getPosition() + attentionSize > i && as.getFirstPos() - attentionSize < i)
+                                    {
                                         long idx = as.getStartpos() + i - as.getFirstPos();
                                         if (idx > 0 && idx < dataSetSize) {
                                             int t = dataSet.getTextTokens().get(idx);
@@ -193,7 +215,6 @@ public class UrGenerator {
                             }
                         }
 
-
                         for (UrRelation relation: relations) {
                             for (UrAgent a : relation.applyDecomposition(as.getPoints())) {
                                 if (!agents.containsKey(a.getAgentHash()))
@@ -202,7 +223,7 @@ public class UrGenerator {
                                     incAgentF(agents.get(a.getAgentHash()), 1, as.getStartpos());
 
                                 for(NewAgentData nad: ptl)
-                                    if (a.getFirstPos() - attentionSize < nad.getStartPoint() && a.getPoints().getLast().getPosition() + attentionSize > nad.getStartPoint())
+                                 //   if (a.getFirstPos() - attentionSize < nad.getStartPoint() && a.getPoints().getLast().getPosition() + attentionSize > nad.getStartPoint())
                                         tagents.compute(a.getAgentHash() + nad.getSignature(a.getPoints().getLast().getPosition() + attentionSize), (key, v) -> v == null ? 1 : v + 1);
                             }
                         }
@@ -226,9 +247,6 @@ public class UrGenerator {
         ConcurrentHashMap<String, ConcurrentHashMap<String, Double>> t4a = new ConcurrentHashMap<>();
         System.out.println(tagents.size()+" agents generated");
 
-        ConcurrentSkipListMap<Double, String> maxvars = new ConcurrentSkipListMap<>();
-        ConcurrentHashMap<String, Double> maxpt = new ConcurrentHashMap<>();
-
         tagents.forEach(threadsCount, (key, val) -> {
             if (val > minF) {
                 String[] keys = key.split(";");
@@ -241,55 +259,64 @@ public class UrGenerator {
                     d = d - log((double) dataSet.getFreqs()[t] / dataSetSize);
                 }
 
-                String pt = key.substring(keys[0].length() + 1, key.length());
+                try {
+                    String pt = key.substring(keys[0].length() + 1, key.length());
 
-                double finalD = d;
-               // Double pd = mrt.get(pt);
-                d = mrt.compute(pt, (k, v) -> v == null ? finalD : v + finalD);
+                    double finalD = d;
+                    // Double pd = mrt.get(pt);
+                    d = mrt.compute(pt, (k, v) -> v == null ? finalD : v + finalD);
 
-                ConcurrentHashMap<String, Double> as = t4a.get(pt);
-                if (as == null)
-                    t4a.put(pt, as = new ConcurrentHashMap<>());
-                as.put(a.getAgentHash(), d);
+                    ConcurrentHashMap<String, Double> as = t4a.get(pt);
+
+                    if (as == null)
+                        t4a.put(pt, as = new ConcurrentHashMap<>());
+                    as.put(a.getAgentHash(), d);
+
+                } catch (StringIndexOutOfBoundsException e){
+                    System.err.println(e);
+                }
+
             }
         });
 
         ConcurrentHashMap<String, Integer> ntl = new ConcurrentHashMap<>();
         mrt.entrySet().stream().parallel().sorted((a1,a2)-> a1.getValue() > a2.getValue() ?-1:a1.getValue() < a2.getValue()? 1: 0).limit(variants).map(Map.Entry::getKey).forEach(s-> ntl.put(s,1));
-//        mrt.entrySet().stream().filter(a -> a.getValue() >= maxvars.firstEntry().getKey()).map(Map.Entry::getKey).forEach(s-> ntl.put(s,1));
-
-//        double mind = maxvars.firstEntry().getKey();
-
         LinkedList<UrAgent> nal = new LinkedList<>();
 
-
         ntl.forEach(threadsCount, (s,v1) -> {
-            //if (v1 >= mind)
-            {
-                String[] keys = s.split(";");
+            String[] keys = s.split(";");
 
-                LinkedList<UrPoint> points = new LinkedList<>();
-                for (int i = 0; i < keys.length; i++) {
-                    String[] ps = keys[i].split(":");
-                    Integer p = Integer.parseInt(ps[0]);
-                    Integer t = Integer.parseInt(ps[1]);
-                    points.add(new UrPoint(p, new UrAgent(new UrPoint(p, t), dataSet.getFreqs()[t], dataSetSize)));
-                }
-
-                t4a.get(s).forEach((k, v) -> {
-                    LinkedList<UrPoint> apoints = new LinkedList<>(agents.get(k).getPoints());
-                    apoints.addAll(points);
-                    UrAgent na = new UrAgent(apoints, tagents.get(k + ";" + s), dataSetSize);
-                    na.getAgentHash();
-                    synchronized (this) {
-                        nal.add(na);
-                    }
-                });
+            LinkedList<UrPoint> points = new LinkedList<>();
+            for (int i = 0; i < keys.length; i++) {
+                String[] ps = keys[i].split(":");
+                Integer p = Integer.parseInt(ps[0]);
+                Integer t = Integer.parseInt(ps[1]);
+                points.add(new UrPoint(p, new UrAgent(new UrPoint(p, t), index.get(t), dataSetSize)));
             }
+
+            AtomicLong ff = new AtomicLong();
+
+            t4a.get(s).forEach((k, v) -> {
+                LinkedList<UrPoint> apoints = new LinkedList<>(agents.get(k).getPoints());
+                apoints.addAll(points);
+                UrAgent na = new UrAgent(apoints, ff.addAndGet(tagents.get(k + ";" + s)), dataSetSize);
+                na.getAgentHash();
+                synchronized (this) {
+                    nal.add(na);
+                }
+            });
+
+            UrAgent naa = points.size() > 1 ? new UrAgent(points, ff.get(), dataSetSize) : (UrAgent)points.getFirst().getToken(); // if points more than 1 agent freq is in context of all others agents
+            naa.getAgentHash();
+            synchronized (this) {
+                nal.add(naa);
+            }
+
         });
 
         List<UrAgent> al = new LinkedList<>(agents.values());
         al.addAll(nal);
+        al.addAll(oin);
 
         System.out.println(nal.size()+" new agents amount");
         //  al.sort((a1,a2) -> a1.getPoints().size() == a2.getPoints().size()? 0: a1.getPoints().size() > a2.getPoints().size()? 1:-1);
@@ -309,6 +336,9 @@ public class UrGenerator {
 
     public static List<Integer[]> allCombinations(int[] ints, int attentionSize){
         LinkedList<Integer[]> r = new LinkedList<>();
+
+        if (ints.length == 0) return r;
+
         int j = 0;
         LinkedList<Integer> nints = new LinkedList<>();
         do {

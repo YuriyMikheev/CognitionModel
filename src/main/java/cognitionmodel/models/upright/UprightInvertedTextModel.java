@@ -44,7 +44,7 @@ public class UprightInvertedTextModel {
     }
 
 
-    public String generate(String text, int attentionSize) throws IOException {
+    public String generate0(String text, int attentionSize) throws IOException {
         List<Integer> in = (textIndex.getEncoder().encode(text));
 
 
@@ -138,7 +138,7 @@ public class UprightInvertedTextModel {
 
        // UrGenerator generator1 = new UrGenerator(textIndex, generator.getDataSet(), new int[]{UrRelation.RELATION_ORDER});
 
-        generator.setBatchSize(1000000);
+        generator.setBatchSize(100000);
 
         for (int k = 0; k < 10; k++) {
 
@@ -166,16 +166,16 @@ public class UprightInvertedTextModel {
             t = System.currentTimeMillis();
 
             List<UrComposition> compositions = composer.composeToSortedList(alf);
+
+            t = (System.currentTimeMillis() - t);
+            r = r + String.format("Composer working time %02d:%02d:%02d", TimeUnit.MILLISECONDS.toHours(t), TimeUnit.MILLISECONDS.toMinutes(t) - TimeUnit.HOURS.toMinutes(TimeUnit.MILLISECONDS.toHours(t)),
+                    TimeUnit.MILLISECONDS.toSeconds(t) - TimeUnit.MINUTES.toSeconds(TimeUnit.MILLISECONDS.toMinutes(t))) + "\n";
             try {
                 UrAgent na = compositions.get(0).getUrAgents().stream().filter(a -> a.getFields().get(in.size())).findFirst().get();
                 in.add(na.getTokens().get(na.getTokens().size() - 1));
             } catch (NoSuchElementException e){
 
             }
-
-            t = (System.currentTimeMillis() - t);
-            r = r + String.format("Composer working time %02d:%02d:%02d", TimeUnit.MILLISECONDS.toHours(t), TimeUnit.MILLISECONDS.toMinutes(t) - TimeUnit.HOURS.toMinutes(TimeUnit.MILLISECONDS.toHours(t)),
-                    TimeUnit.MILLISECONDS.toSeconds(t) - TimeUnit.MINUTES.toSeconds(TimeUnit.MILLISECONDS.toMinutes(t))) + "\n";
 
             for (int i = 0; i < (min(3, compositions.size())); i++)
                 r = r + compositionToColourString(compositions.get(i)) + "; " + compositions.get(i).getUrAgents().size() + "; " + compositions.get(i).getP() + "\n";
@@ -185,11 +185,63 @@ public class UprightInvertedTextModel {
         return r;
     }
 
+    public String generate(String text, int attentionSize) throws IOException {
+        List<Integer> in = (textIndex.getEncoder().encode(text));
 
+
+        String r = "";
+        long t = System.currentTimeMillis();
+
+        System.out.println(in.size()+" tokens in text");
+
+        generator.setBatchSize(100000000);
+
+        List<UrAgent> alf = new LinkedList<>();// = makeAgentList(in, textIndex.getIdx(textIndex.getTextField()));
+
+        for (int k = 0; k < 10; k++) {
+
+            t = System.currentTimeMillis();
+
+            if (alf.isEmpty()) {
+                alf.addAll(makeAgentList(in, textIndex.getIdx(textIndex.getTextField())));
+                alf = generator.newAgents(alf, in.size(), 0, new int[]{});//, in.size()+1, in.size()+2});//, in.size()+3, in.size()+4});//,in.size()+5, in.size()+6});
+            } else
+                alf = generator.newAgents(alf, attentionSize, 30, new int[]{in.size()+k-1});//, in.size()+1, in.size()+2});//, in.size()+3, in.size()+4});//,in.size()+5, in.size()+6});
+
+            System.out.println(alf.size() + " agents found");
+            if (alf.isEmpty()) break;
+
+            t = (System.currentTimeMillis() - t);
+            r = r + String.format("Generator working time %02d:%02d:%02d", TimeUnit.MILLISECONDS.toHours(t), TimeUnit.MILLISECONDS.toMinutes(t) - TimeUnit.HOURS.toMinutes(TimeUnit.MILLISECONDS.toHours(t)),
+                    TimeUnit.MILLISECONDS.toSeconds(t) - TimeUnit.MINUTES.toSeconds(TimeUnit.MILLISECONDS.toMinutes(t))) + "\n";
+
+            UprightTextComposer composer = new UprightTextComposer(alf.size(), in.size() + 10);
+
+            t = System.currentTimeMillis();
+
+            List<UrComposition> compositions = composer.composeToSortedList(alf);
+
+            t = (System.currentTimeMillis() - t);
+            r = r + String.format("Composer working time %02d:%02d:%02d", TimeUnit.MILLISECONDS.toHours(t), TimeUnit.MILLISECONDS.toMinutes(t) - TimeUnit.HOURS.toMinutes(TimeUnit.MILLISECONDS.toHours(t)),
+                    TimeUnit.MILLISECONDS.toSeconds(t) - TimeUnit.MINUTES.toSeconds(TimeUnit.MILLISECONDS.toMinutes(t))) + "\n";
+
+            for (int i = 0; i < (min(3, compositions.size())); i++) {
+                String s = compositionToColourString(compositions.get(i)) + "; " + compositions.get(i).getUrAgents().size() + "; " + compositions.get(i).getP() + "\n";
+                System.out.println(s);
+                r = r + s;
+            }
+
+            //alf = alf.stream().filter(a->a.getMr()>=0).collect(Collectors.toList());
+
+            alf = compositions.get(0).getUrAgents();
+            attentionSize = attentionSize+attentionSize;
+        }
+        return r;
+    }
 
     public String compositionToColourString(UrComposition composition){
         String cs = "";
-        int length = composition.getUrAgents().stream().mapToInt(a-> a.getPoints().getLast().getPosition()).max().getAsInt()+1;
+        int length = composition.getUrAgents().stream().mapToInt(a-> a.getPointList().stream().mapToInt(p->((UrPoint)p).getPosition()).max().getAsInt()).max().getAsInt()+1;
 
         String[] agentColors = new String[composition.getUrAgents().size()];
         for (int i = 0; i < agentColors.length; i++) {
@@ -209,8 +261,9 @@ public class UprightInvertedTextModel {
         int i = 0;
         List<Integer> ll = new LinkedList<>();
         for (UrAgent a: composition.getUrAgents()){
-            for (UrPoint p: a.getPoints()) {
+            for (UrPoint p: a.getPointList()) {
                 if (p.getToken() instanceof UrAgent)
+                    //ll.addAll(((UrAgent) p.getToken()).getPointList().stream().map(pt -> (Integer)pt.getToken()).collect(Collectors.toList()));
                     ll.add((int)((UrAgent)p.getToken()).getPoints().getFirst().getToken());
                 else
                     ll.add((int)p.getToken());
