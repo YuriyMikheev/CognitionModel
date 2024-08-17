@@ -138,7 +138,7 @@ public class UrDecomposer {
                                 if (!agents.containsKey(a.getAgentHash()))
                                     agents.put(a.getAgentHash(), a);
                                 else
-                                    incAgentF(agents.get(a.getAgentHash()), 1, a.getStartpos());
+                                    incAgentF(agents.get(a.getAgentHash()), 1, as.getStartpos()-as.getFirstPos() + a.getFirstPos());
                     }
 
                     if (n % batchSize == 0) {

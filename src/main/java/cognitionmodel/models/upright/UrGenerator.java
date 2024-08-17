@@ -2,6 +2,7 @@ package cognitionmodel.models.upright;
 
 import cognitionmodel.models.inverted.index.BatchedIterator;
 import cognitionmodel.models.inverted.index.TextIndex;
+import org.roaringbitmap.RoaringBatchIterator;
 import org.roaringbitmap.RoaringBitmap;
 
 import java.io.IOException;
@@ -220,7 +221,7 @@ public class UrGenerator {
                                 if (!agents.containsKey(a.getAgentHash()))
                                     agents.put(a.getAgentHash(), a);
                                 else
-                                    incAgentF(agents.get(a.getAgentHash()), 1, as.getStartpos());
+                                    incAgentF(agents.get(a.getAgentHash()), 1, as.getStartpos() - as.getFirstPos() + a.getFirstPos());//as.getStartPos?? а если не сначала as начинается агент a?
 
                                 for(NewAgentData nad: ptl)
                                  //   if (a.getFirstPos() - attentionSize < nad.getStartPoint() && a.getPoints().getLast().getPosition() + attentionSize > nad.getStartPoint())
@@ -325,6 +326,113 @@ public class UrGenerator {
 
         return al;
     }
+
+
+    public List<UrAgent> newAgents1(List<UrAgent> inAgents, int attentionSize, int variants, int[] newPointsPositions){
+
+        if (inAgents.isEmpty()) return new ArrayList<>();
+
+        ConcurrentHashMap<String, UrAgent> agents = new ConcurrentHashMap<>();
+        ConcurrentHashMap<String, Long> tagents = new ConcurrentHashMap<>();
+        int step = attentionSize*2/3;
+        long dataSetSize = dataSet.getTextTokens().size();
+        LinkedList<CompletableFuture<Integer>> cfl = new LinkedList<>();
+        final long[] nn = {0};
+        //int minpoint =  Arrays.stream(newPointsPositions).min().getAsInt(), maxpoint = Arrays.stream(newPointsPositions).max().getAsInt();
+
+        BitSet atp = new BitSet();
+
+
+        List<UrAgent> in = inAgents.stream()
+                //.filter(a-> !a.getFields().intersects(atp)) // filter points are to be generated
+                .sorted(Comparator.comparing(UrAgent::getFirstPos)) // sort by agent beginning point
+                //.filter(a-> a.getPoints().getLast().getPosition() + 3*attentionSize > maxpoint && a.getFirstPos() - 3*attentionSize  < minpoint) //filter agents that can't influence generating
+                .collect(Collectors.toList());
+
+        LinkedList<UrAgent> oin = new LinkedList<>();
+
+
+        if (newPointsPositions.length > 0) {
+            for (int attentionPoint : newPointsPositions) {
+                atp.set(attentionPoint);
+            }
+
+            LinkedList<UrAgent> nin = new LinkedList<>();
+
+            for (Iterator<UrAgent> iterator = in.listIterator(); iterator.hasNext(); ) {
+                UrAgent agent = iterator.next();
+                if (atp.stream().anyMatch(p -> p < agent.getLastPos() + attentionSize && p > agent.getFirstPos() - attentionSize))
+                    nin.add(agent);
+                else
+                    oin.add(agent);
+            }
+            in = nin;
+        }
+
+        RoaringBitmap genidx =  RoaringBitmap.or(in.stream().filter(agent -> agent.getPoints().size() > 1).map(UrAgent::getIdx).collect(Collectors.toList()).listIterator());
+
+
+        for (BatchedIterator gIterator = new BatchedIterator(genidx); gIterator.hasNext(); ) {
+            long idx = gIterator.next();
+            cfl.add(CompletableFuture.supplyAsync(() -> {
+
+                ListIterator<Integer> range = getRangeByPoints(idx, newPointsPositions).listIterator();
+                BatchedIterator gnIterator = new BatchedIterator(genidx);
+                long idx1 = gnIterator.nextAfter(idx);
+                while (idx1 != -1){
+                    ListIterator<Integer> range1 = getRangeByPoints(idx1, newPointsPositions).listIterator();
+
+                    LinkedList<UrPoint> tokens = new LinkedList<>();
+                    int i = 0, t = 0;
+                    while (range.hasNext() && range1.hasNext()) {
+                        if ((t = range.next()) == range1.next()) tokens.add(new UrPoint(i, t));
+                        i++;
+                    }
+
+                    if (tokens.size() > 1){
+                        UrAgent as = new UrAgent(tokens, 1, dataSetSize, idx);
+                        for (UrRelation relation: relations) {
+                            for (UrAgent a : relation.applyDecomposition(as.getPoints())) {
+                                if (!agents.containsKey(a.getAgentHash()))
+                                    agents.put(a.getAgentHash(), a);
+                                else
+                                    incAgentF(agents.get(a.getAgentHash()), 1, as.getStartpos() - as.getFirstPos() + a.getFirstPos());
+                            }
+                        }
+                    }
+
+                    idx1 = gnIterator.next();
+                }
+
+                if (cfl.size() > threadsCount){
+                    cfl.forEach(CompletableFuture::join);
+                    cfl.clear();
+                }
+
+                nn[0] += 1;
+                return null;
+            }));
+        }
+        cfl.forEach(CompletableFuture::join);
+
+
+        List<UrAgent> al = new LinkedList<>(agents.values());
+        al.addAll(oin);
+
+
+        System.out.println(nn[0] + " tokens analyzed");
+
+        return al;
+    }
+
+
+    private List<Integer> getRangeByPoints(long idx, int[] points){
+        LinkedList<Integer> r = new LinkedList<>();
+        for (int i: points)
+            r.add(dataSet.getTextTokens().get(i));
+        return r;
+    }
+
 
     private void incAgentF(UrAgent agent, long f, long index){
         if (agent.getPoints().size() > 0)
