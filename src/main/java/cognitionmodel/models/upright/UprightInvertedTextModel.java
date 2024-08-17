@@ -44,7 +44,7 @@ public class UprightInvertedTextModel {
     }
 
 
-    public String generate0(String text, int attentionSize) throws IOException {
+    public String generate1(String text, int attentionSize) throws IOException {
         List<Integer> in = (textIndex.getEncoder().encode(text));
 
 
@@ -138,14 +138,18 @@ public class UprightInvertedTextModel {
 
        // UrGenerator generator1 = new UrGenerator(textIndex, generator.getDataSet(), new int[]{UrRelation.RELATION_ORDER});
 
-        generator.setBatchSize(100000);
+      //  generator.setBatchSize(100000000);
+        UrDecomposer decomposer = new UrDecomposer(0.1, 1000000, round(textIndex.getDataSetSize()), new int[]{UrRelation.RELATION_POINTED});
 
-        for (int k = 0; k < 10; k++) {
+        for (int k = 0; k < 1; k++) {
 
 
             t = System.currentTimeMillis();
 
-            List<UrAgent> alf = generator.newAgents(makeAgentList(in, textIndex.getIdx(textIndex.getTextField())), attentionSize, 10, new int[]{in.size()});//, in.size()+1, in.size()+2});//, in.size()+3, in.size()+4});//,in.size()+5, in.size()+6});
+          //  List<UrAgent> alf = generator.newAgents(makeAgentList(in, textIndex.getIdx(textIndex.getTextField())), attentionSize, 10, new int[]{in.size()});//, in.size()+1, in.size()+2});//, in.size()+3, in.size()+4});//,in.size()+5, in.size()+6});
+
+            LinkedList<UrAgent> alf = new LinkedList<>(decomposer.decompose(in, attentionSize, textIndex.getIdx(textIndex.getTextField())));
+
             System.out.println(alf.size() + " agents found");
 
 /*
@@ -163,6 +167,8 @@ public class UprightInvertedTextModel {
 
             UprightTextComposer composer = new UprightTextComposer(alf.size(), in.size() + 10);
 
+            System.out.println(orAmount(alf)+" all points");
+
             t = System.currentTimeMillis();
 
             List<UrComposition> compositions = composer.composeToSortedList(alf);
@@ -176,6 +182,8 @@ public class UprightInvertedTextModel {
             } catch (NoSuchElementException e){
 
             }
+
+            System.out.println(orAmount(alf)+" all points");
 
             for (int i = 0; i < (min(3, compositions.size())); i++)
                 r = r + compositionToColourString(compositions.get(i)) + "; " + compositions.get(i).getUrAgents().size() + "; " + compositions.get(i).getP() + "\n";
@@ -237,6 +245,12 @@ public class UprightInvertedTextModel {
             attentionSize = attentionSize+attentionSize;
         }
         return r;
+    }
+
+    private long orAmount(List<UrAgent> agents){
+
+        return RoaringBitmap.or(agents.stream().filter(agent -> agent.getPoints().size() > 1).map(UrAgent::getIdx).collect(Collectors.toList()).listIterator()).getLongCardinality();
+
     }
 
     public String compositionToColourString(UrComposition composition){
