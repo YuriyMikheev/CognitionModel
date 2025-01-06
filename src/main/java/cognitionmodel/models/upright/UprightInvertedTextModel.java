@@ -1,5 +1,6 @@
 package cognitionmodel.models.upright;
 
+import cognitionmodel.models.inverted.composers.Composition;
 import cognitionmodel.models.inverted.index.BatchedIterator;
 import cognitionmodel.models.inverted.index.TextIndex;
 import org.fusesource.jansi.Ansi;
@@ -202,26 +203,36 @@ public class UprightInvertedTextModel {
 
         System.out.println(in.size()+" tokens in text");
 
-        generator.setBatchSize(100000000);
+        generator.setBatchSize(10000000);
+        UrDecomposer decomposer = new UrDecomposer(0.1, 1000000000, round(textIndex.getDataSetSize()), new int[]{UrRelation.RELATION_POINTED});
 
         List<UrAgent> alf = new LinkedList<>();// = makeAgentList(in, textIndex.getIdx(textIndex.getTextField()));
 
-        for (int k = 0; k < 10; k++) {
+        int[] pas = new int[10];
+        for (int k = 0; k < 10; k++)
+            pas[k] = in.size()+k;
+
+        for (int k = 0; k < 2; k++) {
 
             t = System.currentTimeMillis();
 
             if (alf.isEmpty()) {
                 alf.addAll(makeAgentList(in, textIndex.getIdx(textIndex.getTextField())));
-                alf = generator.newAgents(alf, in.size(), 0, new int[]{});//, in.size()+1, in.size()+2});//, in.size()+3, in.size()+4});//,in.size()+5, in.size()+6});
-            } else
-                alf = generator.newAgents(alf, attentionSize, 30, new int[]{in.size()+k-1});//, in.size()+1, in.size()+2});//, in.size()+3, in.size()+4});//,in.size()+5, in.size()+6});
+                alf = decomposer.decompose(alf, attentionSize);//generator.newAgents(alf, attentionSize, 0, new int[]{});
+                t = (System.currentTimeMillis() - t);
+                System.out.println(alf.size() + " agents found");
+                r = r + String.format("Decomposer working time %02d:%02d:%02d", TimeUnit.MILLISECONDS.toHours(t), TimeUnit.MILLISECONDS.toMinutes(t) - TimeUnit.HOURS.toMinutes(TimeUnit.MILLISECONDS.toHours(t)),
+                        TimeUnit.MILLISECONDS.toSeconds(t) - TimeUnit.MINUTES.toSeconds(TimeUnit.MILLISECONDS.toMinutes(t))) + "\n";
+            } else {
+                alf = generator.newAgents(alf, attentionSize, 3, pas);
+                t = (System.currentTimeMillis() - t);
+                System.out.println(alf.size() + " agents generated");
+                r = r + String.format("Generator working time %02d:%02d:%02d", TimeUnit.MILLISECONDS.toHours(t), TimeUnit.MILLISECONDS.toMinutes(t) - TimeUnit.HOURS.toMinutes(TimeUnit.MILLISECONDS.toHours(t)),
+                        TimeUnit.MILLISECONDS.toSeconds(t) - TimeUnit.MINUTES.toSeconds(TimeUnit.MILLISECONDS.toMinutes(t))) + "\n";
+            }
 
-            System.out.println(alf.size() + " agents found");
+
             if (alf.isEmpty()) break;
-
-            t = (System.currentTimeMillis() - t);
-            r = r + String.format("Generator working time %02d:%02d:%02d", TimeUnit.MILLISECONDS.toHours(t), TimeUnit.MILLISECONDS.toMinutes(t) - TimeUnit.HOURS.toMinutes(TimeUnit.MILLISECONDS.toHours(t)),
-                    TimeUnit.MILLISECONDS.toSeconds(t) - TimeUnit.MINUTES.toSeconds(TimeUnit.MILLISECONDS.toMinutes(t))) + "\n";
 
             UprightTextComposer composer = new UprightTextComposer(alf.size(), in.size() + 10);
 
@@ -235,13 +246,13 @@ public class UprightInvertedTextModel {
 
             for (int i = 0; i < (min(3, compositions.size())); i++) {
                 String s = compositionToColourString(compositions.get(i)) + "; " + compositions.get(i).getUrAgents().size() + "; " + compositions.get(i).getP() + "\n";
-                System.out.println(s);
+                //System.out.println(s);
                 r = r + s;
             }
 
-            //alf = alf.stream().filter(a->a.getMr()>=0).collect(Collectors.toList());
+            //alf = alf.stream().filter(a->a.getMr()>0).collect(Collectors.toList());
 
-            alf = compositions.get(0).getUrAgents();
+            alf = new ArrayList<>(new HashSet<>(compositions.stream().limit(15).flatMap(c -> c.getUrAgents().stream()).collect(Collectors.toSet())));
             attentionSize = attentionSize+attentionSize;
         }
         return r;

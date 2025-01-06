@@ -55,7 +55,7 @@ public class UrComposition implements Cloneable{
     }
 
     public boolean add(UrComposition composition){
-        if (!fields.intersects(composition.getFields()))
+        //if (!fields.intersects(composition.getFields()))
         //if (!RoaringBitmap.intersects(indexes, composition.indexes))
         {
             urAgents.addAll(composition.urAgents);
@@ -70,7 +70,7 @@ public class UrComposition implements Cloneable{
             indexes.and(composition.indexes);
             return true;
         }
-        return false;
+        //return false;
     }
 
     public BitSet getFields() {

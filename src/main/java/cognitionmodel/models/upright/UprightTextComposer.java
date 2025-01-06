@@ -111,14 +111,12 @@ public class UprightTextComposer  {
     public List<UrComposition> composeToSortedList(Collection<UrAgent> urAgents){
         PriorityQueue<UrComposition> bestUrCompositions = new PriorityQueue<>(Comparator.comparing(UrComposition::getMr).reversed());
         UrCompositionIndex urCompositionIndex = new UrCompositionIndex(length);
-        LinkedList<UrComposition> oneAgenComps = new LinkedList<>();
 
         for (UrAgent urAgent : urAgents)
             if (urAgent != null) {
                 UrComposition urComposition = new UrComposition(urAgent);
                 bestUrCompositions.add(urComposition);
                 urCompositionIndex.add(urComposition);
-                oneAgenComps.add(urComposition);
             } else
                 System.err.println("Composer: null agent found");
 
