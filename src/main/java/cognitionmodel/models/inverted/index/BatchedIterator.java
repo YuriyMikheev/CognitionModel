@@ -25,10 +25,10 @@ public class BatchedIterator implements Iterator<Long> {
     }
 
     @Override
-    public Long next() {
+    public synchronized Long next() {
 
         if (pointer == batchsize) {
-            if (!batchIterator.hasNext()) return null;
+            if (!batchIterator.hasNext()) return -1l;
             batchsize = batchIterator.nextBatch(buf); pointer = 0;
         }
 
@@ -39,7 +39,7 @@ public class BatchedIterator implements Iterator<Long> {
         return Integer.toUnsignedLong(buf[pointer]);
     }
 
-    public Long nextAfter(long x){
+    public synchronized Long nextAfter(long x){
         if (getX() > x) return getX();
         if (last < x) return -1l;
 

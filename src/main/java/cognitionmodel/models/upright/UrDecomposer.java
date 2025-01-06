@@ -84,7 +84,7 @@ public class UrDecomposer {
         return decompose(makeAgentList(in, index), attentionSize);
     }
 
-    public List<UrAgent> decompose(LinkedList<UrAgent> in, int attentionSize){
+    public List<UrAgent> decompose(List<UrAgent> in, int attentionSize){
         if (in.isEmpty()) return new ArrayList<>();
         ConcurrentHashMap<String, UrAgent> agents = new ConcurrentHashMap<>();
 
@@ -134,7 +134,7 @@ public class UrDecomposer {
                     while (!nlist.isEmpty() && ti - nlist.getFirst().getStartpos() >= attentionSize) {
                         UrAgent as = nlist.poll();
                         for (UrRelation relation: relations)
-                            for (UrAgent a: relation.applyDecomposition(as.getPoints()))
+                            for (UrAgent a: relation.applyDecomposition(as))
                                 if (!agents.containsKey(a.getAgentHash()))
                                     agents.put(a.getAgentHash(), a);
                                 else
@@ -171,13 +171,14 @@ public class UrDecomposer {
                 }
             i++;
         }*/
-        System.out.println(nn[0] + " tokens analyzed");
+        //System.out.println(nn[0] + " tokens analyzed");
 
         return al;
     }
 
     private void incAgentF(UrAgent agent, long f, long index){
         if (agent.getPoints().size() > 0)
+            if (!agent.getIdx().contains(index, index+1))
         {
             agent.incF(f);
             agent.addIndex(index);

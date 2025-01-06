@@ -12,6 +12,11 @@ import java.util.stream.Collectors;
 import static java.lang.Double.NaN;
 import static java.lang.Math.log;
 
+/**
+ * Represents an agent in a system that interacts with UrPoint instances. Each agent has a list
+ * of UrPoints, a frequency, a data size, a starting position, and an index represented by
+ * a RoaringBitmap. The agent also maintains calculation of certain metrics.
+ */
 public class UrAgent{
     private String agentHash = "";
     private LinkedList<UrPoint> points = new LinkedList<>();

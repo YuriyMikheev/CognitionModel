@@ -111,13 +111,13 @@ public class UrGenerator {
         this.minF = minF;
     }
 
-    public List<UrAgent> newAgents(List<UrAgent> inAgents, int attentionSize, int variants, int[] newPointsPositions){
+   /* public List<UrAgent> newAgents_old(List<UrAgent> inAgents, int attentionSize, int variants, int[] newPointsPositions){
 
         if (inAgents.isEmpty()) return new ArrayList<>();
 
         ConcurrentHashMap<String, UrAgent> agents = new ConcurrentHashMap<>();
         ConcurrentHashMap<String, Long> tagents = new ConcurrentHashMap<>();
-        int step = attentionSize*2/3;
+        int step = attentionSize;//*2/3;
         long dataSetSize = dataSet.getTextTokens().size();
         LinkedList<CompletableFuture<Integer>> cfl = new LinkedList<>();
         final long[] nn = {0};
@@ -217,11 +217,11 @@ public class UrGenerator {
                         }
 
                         for (UrRelation relation: relations) {
-                            for (UrAgent a : relation.applyDecomposition(as.getPoints())) {
+                            for (UrAgent a : relation.applyDecomposition(as)) {
                                 if (!agents.containsKey(a.getAgentHash()))
                                     agents.put(a.getAgentHash(), a);
                                 else
-                                    incAgentF(agents.get(a.getAgentHash()), 1, as.getStartpos() - as.getFirstPos() + a.getFirstPos());//as.getStartPos?? а если не сначала as начинается агент a?
+                                    incAgentF(agents.get(a.getAgentHash()),  as.getStartpos() - as.getFirstPos() + a.getFirstPos());//as.getStartPos?? а если не сначала as начинается агент a?
 
                                 for(NewAgentData nad: ptl)
                                  //   if (a.getFirstPos() - attentionSize < nad.getStartPoint() && a.getPoints().getLast().getPosition() + attentionSize > nad.getStartPoint())
@@ -246,7 +246,7 @@ public class UrGenerator {
 
         ConcurrentHashMap<String, Double> mrt = new ConcurrentHashMap<>();
         ConcurrentHashMap<String, ConcurrentHashMap<String, Double>> t4a = new ConcurrentHashMap<>();
-        System.out.println(tagents.size()+" agents generated");
+        //System.out.println(tagents.size()+" agents generated");
 
         tagents.forEach(threadsCount, (key, val) -> {
             if (val > minF) {
@@ -319,16 +319,28 @@ public class UrGenerator {
         al.addAll(nal);
         al.addAll(oin);
 
-        System.out.println(nal.size()+" new agents amount");
+        //System.out.println(nal.size()+" new agents amount");
         //  al.sort((a1,a2) -> a1.getPoints().size() == a2.getPoints().size()? 0: a1.getPoints().size() > a2.getPoints().size()? 1:-1);
 
-        System.out.println(nn[0] + " tokens analyzed");
+        //System.out.println(nn[0] + " tokens analyzed");
+        System.out.println(al.size() + " agents found");
 
         return al;
-    }
+    }*/
 
 
-    public List<UrAgent> newAgents1(List<UrAgent> inAgents, int attentionSize, int variants, int[] newPointsPositions){
+    /**
+     * Generates a new list of UrAgent instances, potentially creating new agents based on
+     * the given inputs and specified parameters. This method processes the provided list
+     * of agents, identifying relationships and generating new points based on their interactions.
+     *
+     * @param inAgents the initial list of UrAgent instances to be processed
+     * @param attentionSize the size of the attention window during processing
+     * @param variants the number of variants to be considered
+     * @param newPointsPositions an array of positions for the new points to be considered
+     * @return a list of new or modified UrAgent instances after processing
+     */
+    public List<UrAgent> newAgents(List<UrAgent> inAgents, int attentionSize, int variants, int[] newPointsPositions){
 
         if (inAgents.isEmpty()) return new ArrayList<>();
 
@@ -371,73 +383,87 @@ public class UrGenerator {
 
         RoaringBitmap genidx =  RoaringBitmap.or(in.stream().filter(agent -> agent.getPoints().size() > 1).map(UrAgent::getIdx).collect(Collectors.toList()).listIterator());
 
+        HashSet<String> ftokens = new HashSet<>();
 
-        for (BatchedIterator gIterator = new BatchedIterator(genidx); gIterator.hasNext(); ) {
-            long idx = gIterator.next();
+        long threadSize = genidx.last()/threadsCount;
+
+        if (genidx.getCardinality() > 0)
+         for (BatchedIterator gIterator = new BatchedIterator(genidx); gIterator.hasNext(); ) {
+            //long idx = gIterator.next();
             cfl.add(CompletableFuture.supplyAsync(() -> {
+                int ni = 0;
+                while (gIterator.hasNext() && ni++ < threadSize){
+                    long idx = gIterator.next();
+                    List<Integer> lr = getRangeByPoints(idx, newPointsPositions);
+                    BatchedIterator gnIterator = new BatchedIterator(genidx);
+                    HashSet<String> fctokens = new HashSet<>();
 
-                ListIterator<Integer> range = getRangeByPoints(idx, newPointsPositions).listIterator();
-                BatchedIterator gnIterator = new BatchedIterator(genidx);
-                long idx1 = gnIterator.nextAfter(idx);
-                while (idx1 != -1){
-                    ListIterator<Integer> range1 = getRangeByPoints(idx1, newPointsPositions).listIterator();
+                    Long idx1 = gnIterator.nextAfter(idx + 1);
+                    while (idx1 != -1) {
+                        ListIterator<Integer> range = lr.listIterator();
+                        ListIterator<Integer> range1 = getRangeByPoints(idx1, newPointsPositions).listIterator();
 
-                    LinkedList<UrPoint> tokens = new LinkedList<>();
-                    int i = 0, t = 0;
-                    while (range.hasNext() && range1.hasNext()) {
-                        if ((t = range.next()) == range1.next()) tokens.add(new UrPoint(i, t));
-                        i++;
-                    }
+                        LinkedList<UrPoint> tokens = new LinkedList<>();
+                        int i = 0, t = 0;
+                        while (range.hasNext() && range1.hasNext()) {
+                            if ((t = range.next()) == range1.next())
+                                tokens.add(new UrPoint(newPointsPositions[i], new UrAgent(new UrPoint(newPointsPositions[i], t, idx1 + newPointsPositions[i]), 1, dataSetSize), idx1 + newPointsPositions[i]));
+                            i++;
+                        }
 
-                    if (tokens.size() > 1){
-                        UrAgent as = new UrAgent(tokens, 1, dataSetSize, idx);
-                        for (UrRelation relation: relations) {
-                            for (UrAgent a : relation.applyDecomposition(as.getPoints())) {
-                                if (!agents.containsKey(a.getAgentHash()))
-                                    agents.put(a.getAgentHash(), a);
-                                else
-                                    incAgentF(agents.get(a.getAgentHash()), 1, as.getStartpos() - as.getFirstPos() + a.getFirstPos());
+                        if (tokens.size() > 1 && !ftokens.contains(tokens.toString())) {
+                            UrAgent as = new UrAgent(tokens, 1, dataSetSize, idx);
+                            fctokens.add(tokens.toString());
+                            for (UrRelation relation : relations) {
+                                for (UrAgent a : relation.applyDecomposition(as)) {
+                                    if (!agents.containsKey(a.getAgentHash())) {
+                                        agents.put(a.getAgentHash(), a);
+                                        a.addIndex(idx1 + a.getFirstPos() - as.getFirstPos());
+                                        a.addIndex(idx + a.getFirstPos() - as.getFirstPos());
+                                        a.incF(2);
+                                    } else
+                                        incAgentF(agents.get(a.getAgentHash()), idx1 - as.getFirstPos() + a.getFirstPos());
+                                }
                             }
                         }
+
+                        idx1 = gnIterator.next();
                     }
 
-                    idx1 = gnIterator.next();
-                }
+                    ftokens.addAll(fctokens);
 
-                if (cfl.size() > threadsCount){
-                    cfl.forEach(CompletableFuture::join);
-                    cfl.clear();
+                    nn[0] += 1;
                 }
-
-                nn[0] += 1;
                 return null;
+
             }));
         }
         cfl.forEach(CompletableFuture::join);
 
+        double maxMR = agents.size()>0 ? agents.values().stream().max(Comparator.comparing(UrAgent::getMr)).get().getMr() : 0;
 
-        List<UrAgent> al = new LinkedList<>(agents.values());
+        List<UrAgent> al = new LinkedList<>(agents.values().stream()/*.filter(a -> a.getMr()/a.getPointList().size() > maxMR * 0.8/a.getPointList().size())*/.sorted(Comparator.comparing(UrAgent::getMr).reversed()).toList());
+
         al.addAll(oin);
-
-
-        System.out.println(nn[0] + " tokens analyzed");
+        al.addAll(in);
 
         return al;
     }
 
 
-    private List<Integer> getRangeByPoints(long idx, int[] points){
+    private  List<Integer> getRangeByPoints(long idx, int[] points){
         LinkedList<Integer> r = new LinkedList<>();
         for (int i: points)
-            r.add(dataSet.getTextTokens().get(i));
+            r.add(dataSet.getTextTokens().get(idx + i));
         return r;
     }
 
 
-    private void incAgentF(UrAgent agent, long f, long index){
+    private void incAgentF(UrAgent agent, long index){
         if (agent.getPoints().size() > 0)
+            if (!agent.getIdx().contains(index, index+1))
         {
-           agent.incF(f);
+           agent.incF(1);
            agent.addIndex(index);
         }
     }

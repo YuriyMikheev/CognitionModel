@@ -10,7 +10,7 @@ import java.util.stream.Collectors;
 public class UrRelation {
 
 
-    private Function<List<UrPoint>, List<UrAgent>> decompositionFunction;
+    private Function<UrAgent, List<UrAgent>> decompositionFunction;
     private BiFunction<Integer, UrAgent, List<Integer>> compositionFunction;
 
     public  static final int RELATION_UNDEFINED = 0;
@@ -22,7 +22,7 @@ public class UrRelation {
     private List<UrAgent>in;
 
 
-    public UrRelation(Function<List<UrPoint>, List<UrAgent>> decompositionFunction,  BiFunction<Integer, UrAgent, List<Integer>> compositionFunction, long datasetsize) {
+    public UrRelation(Function<UrAgent, List<UrAgent>> decompositionFunction,  BiFunction<Integer, UrAgent, List<Integer>> compositionFunction, long datasetsize) {
         this.decompositionFunction = decompositionFunction;
         this.compositionFunction = compositionFunction;
         this.datasetsize = datasetsize;
@@ -32,15 +32,16 @@ public class UrRelation {
         this(null, null, datasetsize);
 
         if (relationType == RELATION_POINTED) {
-            this.decompositionFunction = points -> {
+            this.decompositionFunction = pointsAgent -> {
 
                 HashMap<String, UrAgent> result = new HashMap<>();
+                List<UrPoint> points = pointsAgent.getPoints();
 
                 while (!points.isEmpty()) {
                     Iterator<UrPoint> pointIterator = points.listIterator();
                     UrPoint p1 = pointIterator.next();
                     pointIterator.remove();
-                    UrAgent na = new UrAgent(p1, 1, datasetsize);
+                    UrAgent na = new UrAgent(p1, 1, datasetsize, pointsAgent.getStartpos()+p1.getPosition());
                     na.setRelation(relationType);
                     while (pointIterator.hasNext()) {
                         UrPoint p2 = pointIterator.next();
@@ -63,18 +64,17 @@ public class UrRelation {
         }
 
         if (relationType == RELATION_ORDER_FULL) {
-            this.decompositionFunction = new Function<List<UrPoint>, List<UrAgent>>() {
-                @Override
-                public List<UrAgent> apply(List<UrPoint> points) {
+            this.decompositionFunction = pointsAgent -> {
+
 
                     HashMap<String, UrAgent> result = new HashMap<>();
-                    points = new LinkedList<>(points);
+                    List<UrPoint> points = pointsAgent.getPoints();
 
                     while (!points.isEmpty()) {
                         Iterator<UrPoint> pointIterator = points.listIterator();
                         UrPoint p1 = pointIterator.next();
                         pointIterator.remove();
-                        UrAgent na = new UrAgent(p1, 1, datasetsize);
+                        UrAgent na = new UrAgent(p1, 1, datasetsize, pointsAgent.getStartpos()+p1.getPosition());
                         na.setRelation(relationType);
                         while (pointIterator.hasNext()) {
                             UrPoint p2 = pointIterator.next();
@@ -87,7 +87,7 @@ public class UrRelation {
                     }
 
                     return result.values().stream().toList();
-                }
+
             };
 
 /*            this.compositionFunction = (i, agent) -> {
@@ -98,18 +98,18 @@ public class UrRelation {
         }
 
         if (relationType == RELATION_SIMILARITY) {
-            this.decompositionFunction = new Function<List<UrPoint>, List<UrAgent>>() {
-                @Override
-                public List<UrAgent> apply(List<UrPoint> points) {
+            this.decompositionFunction = pointsAgent -> {
 
-                    HashMap<String, UrAgent> result = new HashMap<>();
-                    UrAgent na = new UrAgent(points, 1, datasetsize);
-                    na.setRelation(relationType);
-                    na.setAgentHash(points.stream().map(p -> ((UrAgent) p.getToken()).getTokens().toString()).sorted().collect(Collectors.toList()).toString());
-                    result.compute(na.getAgentHash(), (k, v) -> v == null ? na : addAgent(v, na));
+                List<UrPoint> points = pointsAgent.getPoints();
 
-                    return result.values().stream().toList();
-                }
+                HashMap<String, UrAgent> result = new HashMap<>();
+                UrAgent na = new UrAgent(points, 1, datasetsize, pointsAgent.getStartpos());
+                na.setRelation(relationType);
+                na.setAgentHash(points.stream().map(p -> ((UrAgent) p.getToken()).getTokens().toString()).sorted().collect(Collectors.toList()).toString());
+                result.compute(na.getAgentHash(), (k, v) -> v == null ? na : addAgent(v, na));
+
+                return result.values().stream().toList();
+
             };
 
             this.compositionFunction = (i, agent) -> {
@@ -123,18 +123,17 @@ public class UrRelation {
         }
 
         if (relationType == RELATION_ORDER)
-            this.decompositionFunction = new Function<List<UrPoint>, List<UrAgent>>() {
-                @Override
-                public List<UrAgent> apply(List<UrPoint> points) {
+            this.decompositionFunction = pointsAgent -> {
+                List<UrPoint> points = pointsAgent.getPoints();
 
-                    HashMap<String, UrAgent> result = new HashMap<>();
-                    UrAgent na = new UrAgent(points, 1, datasetsize); na.setRelation(relationType);
-                    na.setAgentHash(points.stream().map(p -> ((UrAgent)p.getToken()).getTokens().toString()).collect(Collectors.toList()).toString());
-                    result.compute(na.getAgentHash(), (k, v) -> v == null? na: addAgent(v, na));
+                HashMap<String, UrAgent> result = new HashMap<>();
+                UrAgent na = new UrAgent(points, 1, datasetsize, pointsAgent.getStartpos());
+                na.setRelation(relationType);
+                na.setAgentHash(points.stream().map(p -> ((UrAgent)p.getToken()).getTokens().toString()).collect(Collectors.toList()).toString());
+                result.compute(na.getAgentHash(), (k, v) -> v == null? na: addAgent(v, na));
 
-                    return result.values().stream().toList();
-                }
-            };
+                return result.values().stream().toList();
+                            };
     }
 
     private UrAgent addAgent(UrAgent agent1, UrAgent agent2){
@@ -144,13 +143,13 @@ public class UrRelation {
     }
 
 
-    public Function<List<UrPoint>, List<UrAgent>> getDecompositionFunction() {
+    public Function<UrAgent, List<UrAgent>> getDecompositionFunction() {
         return decompositionFunction;
     }
 
-    public List<UrAgent> applyDecomposition(List<UrPoint> points){
+    public List<UrAgent> applyDecomposition(UrAgent pointsAgent){
         if (decompositionFunction != null)
-            return decompositionFunction.apply(points);
+            return decompositionFunction.apply(pointsAgent);
         return null;
     }
 
