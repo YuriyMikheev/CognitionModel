@@ -6,9 +6,7 @@ import org.junit.Test;
 import org.roaringbitmap.RoaringBitmap;
 
 import java.io.IOException;
-import java.util.LinkedList;
-import java.util.Map;
-import java.util.TreeMap;
+import java.util.*;
 
 import static org.junit.Assert.*;
 
@@ -173,5 +171,31 @@ public class UprightInvertedTextModelTest {
         System.out.println("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
     }
 
+    @Test
+    public void freqs() throws IOException, ClassNotFoundException {
+        UprightInvertedTextModel textModel = new UprightInvertedTextModel("E:\\Idx\\2.txtidx");
+        TreeMap<Object, RoaringBitmap> idx = textModel.getTextIndex().getIdx(textModel.getTextIndex().getTextField());
 
+        ArrayList<Object> lmaps = new ArrayList<>(idx.keySet());
+        lmaps.sort((t1,t2) -> {
+            long f1 = idx.get(t1).getCardinality();
+            long f2 = idx.get(t2).getCardinality();
+
+            return f1 > f2? 1: f1 < f2? -1: 0;
+        });
+
+        LinkedList<Integer> tokenList = new LinkedList<>();
+        int i = 0;
+
+        for (Object t: lmaps){
+            tokenList.add((Integer) t);
+
+            System.out.println(textModel.getTextIndex().getEncoder().decode(tokenList)+"\t"+idx.get(t).getCardinality());
+            if (i++ > 100) break;
+            tokenList.clear();
+        }
+
+
+
+    }
 }

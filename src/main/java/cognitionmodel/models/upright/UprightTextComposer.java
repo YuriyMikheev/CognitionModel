@@ -1,6 +1,9 @@
 package cognitionmodel.models.upright;
 
 
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -12,74 +15,6 @@ public class UprightTextComposer  {
 
     private int length;
 
-
- 
-    private class UrCompositionIndex {
-        ArrayList<UrComposition> urCompositions = new ArrayList<>();
-        BitSet[] index ;
-
-        private boolean changed = true;
-
-        public UrCompositionIndex(int length) {
-            index = new BitSet[length];
-            reindex();
-        }
-
-        private void reindex() {
-            if (!changed) return;
-            index = new BitSet[index.length];
-
-            for (int i = 0; i < index.length; i++)
-                index[i] = new BitSet();
-
-            urCompositions.sort(Comparator.comparing(UrComposition::getMr).reversed());
-
-            int idx = 0;
-            for (UrComposition urComposition : urCompositions) {
-                for (int i : urComposition.getFields().stream().toArray())
-                    index[i].set(idx);
-                idx++;
-            }
-
-            changed = false;
-        }
-
-        public void add(UrComposition urComposition) {
-            urCompositions.add(urComposition);
-            changed = true;
-        }
-
-        public List<UrComposition> get(BitSet fields) {
-            reindex();
-            LinkedList<UrComposition> result = new LinkedList<>();
-
-            BitSet rset = new BitSet();
-            rset.set(0, urCompositions.size());
-
-            for (int nextbit = fields.nextSetBit(0); nextbit >= 0 & nextbit < index.length; nextbit = fields.nextSetBit(nextbit + 1))
-                rset.andNot(index[nextbit]);
-
-            for (int nextbit = rset.nextSetBit(0); nextbit >= 0 & nextbit < urCompositions.size(); nextbit = rset.nextSetBit(nextbit + 1))
-                result.add(urCompositions.get(nextbit));
-
-            return result;
-        }
-
-        public UrComposition getMax(BitSet fields) {
-            reindex();
-
-            BitSet rset = new BitSet();
-            rset.set(0, urCompositions.size());
-
-            for (int nextbit = fields.nextSetBit(0); nextbit >= 0 & nextbit < index.length; nextbit = fields.nextSetBit(nextbit + 1))
-                rset.andNot(index[nextbit]);
-
-            int nextbit = rset.nextSetBit(0);
-            return nextbit < 0 ? null : urCompositions.get(nextbit);
-        }
-
-
-    }
 
     public UprightTextComposer(int maxN, int length) {
         this.maxN = maxN;
@@ -101,22 +36,22 @@ public class UprightTextComposer  {
         return c == null ? UrAgentList : c.getUrAgents();
     }
 
-    private UrComposition composeToBestUrComposition(LinkedList<UrAgent> UrAgentList, HashMap<String, UrAgent> zeroMap){
+    private @Nullable UrComposition composeToBestUrComposition(LinkedList<UrAgent> UrAgentList, HashMap<String, UrAgent> zeroMap){
         List<UrComposition> cl = composeToSortedList(UrAgentList);
         return cl.isEmpty() ? null: cl.get(0);
     }
 
   
 
-    public List<UrComposition> composeToSortedList(Collection<UrAgent> urAgents){
+    public List<UrComposition> composeToSortedList(@NotNull Collection<UrAgent> urAgents){
         PriorityQueue<UrComposition> bestUrCompositions = new PriorityQueue<>(Comparator.comparing(UrComposition::getMr).reversed());
-        UrCompositionIndex urCompositionIndex = new UrCompositionIndex(length);
+        UrCompositionIndexInterface compositionDirectIndex = new UrCompositionDirectIndex(length);
 
         for (UrAgent urAgent : urAgents)
             if (urAgent != null) {
                 UrComposition urComposition = new UrComposition(urAgent);
                 bestUrCompositions.add(urComposition);
-                urCompositionIndex.add(urComposition);
+                compositionDirectIndex.add(urComposition);
             } else
                 System.err.println("Composer: null agent found");
 
@@ -132,7 +67,7 @@ public class UprightTextComposer  {
                 if (UrComposition.getFields().cardinality() < length) {
 
                     boolean fl = false;
-                    List<UrComposition> UrCompositionL1 = urCompositionIndex.get(UrComposition.getFields());
+                    List<UrComposition> UrCompositionL1 = compositionDirectIndex.get(UrComposition.getFields());
                     if (!UrCompositionL1.isEmpty()) {
                         for (Iterator<UrComposition> ci = UrCompositionL1.iterator(); ci.hasNext(); ) {
                             UrComposition oc = UrComposition.clone();
@@ -162,7 +97,7 @@ public class UprightTextComposer  {
     }
 
 
-    private boolean addToQ(UrComposition UrComposition, PriorityQueue<UrComposition> q, HashMap<String, UrComposition> maxUrCompositions){
+    private boolean addToQ(@NotNull UrComposition UrComposition, PriorityQueue<UrComposition> q, @NotNull HashMap<String, UrComposition> maxUrCompositions){
 //        String cs = UrComposition.getUrAgents().stream().sorted((a1, a2) -> a1.getFields().nextSetBit(0) < a2.getFields().nextSetBit(0) ? -1:1).map(UrAgent::getPoints).collect(Collectors.toList()).toString();
         String cs = UrComposition.getFields().toString();
         if (maxUrCompositions.get(cs) == null) {

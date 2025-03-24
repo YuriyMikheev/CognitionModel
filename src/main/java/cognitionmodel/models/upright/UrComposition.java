@@ -1,6 +1,7 @@
 package cognitionmodel.models.upright;
 
 
+import org.jetbrains.annotations.NotNull;
 import org.roaringbitmap.RoaringBitmap;
 
 import java.util.BitSet;
@@ -28,7 +29,7 @@ public class UrComposition implements Cloneable{
         add(UrAgent);
     }
 
-    public UrComposition(List<UrAgent> UrAgents, int predictingIndex, HashMap<String, UrAgent> zeroMap){
+    public UrComposition(@NotNull List<UrAgent> UrAgents, int predictingIndex, HashMap<String, UrAgent> zeroMap){
         for (UrAgent UrAgent: UrAgents)
             add(UrAgent);
     }
@@ -36,7 +37,7 @@ public class UrComposition implements Cloneable{
     public UrComposition(){
     }
 
-    public boolean add(UrAgent agent){
+    public boolean add(@NotNull UrAgent agent){
         if (!fields.intersects(agent.getFields()))
       //  if (!RoaringBitmap.intersects(indexes, agent.getIdx()))
         {
@@ -54,7 +55,7 @@ public class UrComposition implements Cloneable{
         return false;
     }
 
-    public boolean add(UrComposition composition){
+    public boolean add(@NotNull UrComposition composition){
         //if (!fields.intersects(composition.getFields()))
         //if (!RoaringBitmap.intersects(indexes, composition.indexes))
         {
@@ -81,7 +82,7 @@ public class UrComposition implements Cloneable{
         return urAgents;
     }
 
-    private void recalculate(UrAgent urAgent){
+    private void recalculate(@NotNull UrAgent urAgent){
         mr = mr + urAgent.getMr();
         s = s - urAgent.getP()*log(urAgent.getP());
         p = p * urAgent.getP();
@@ -145,7 +146,7 @@ public class UrComposition implements Cloneable{
      * @param c2
      * @return - true in case of they can be composed
      */
-    public static boolean check(UrComposition c1, UrComposition c2, int fieldsLength){
+    public static boolean check(@NotNull UrComposition c1, @NotNull UrComposition c2, int fieldsLength){
         if (c1.length + c2.length >= fieldsLength) return false;
         return !c1.getFields().intersects(c2.fields);
     }

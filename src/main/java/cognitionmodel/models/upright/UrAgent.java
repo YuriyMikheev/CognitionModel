@@ -1,6 +1,7 @@
 package cognitionmodel.models.upright;
 
 import cognitionmodel.models.inverted.index.Point;
+import org.jetbrains.annotations.NotNull;
 import org.roaringbitmap.RoaringBitmap;
 
 import java.util.BitSet;
@@ -56,7 +57,7 @@ public class UrAgent{
         this(point, f, datasize, 0);
     }
 
-    public UrAgent(UrPoint point, RoaringBitmap idx, long datasize) {
+    public UrAgent(UrPoint point, @NotNull RoaringBitmap idx, long datasize) {
         this(point, idx.getLongCardinality(), datasize, 0);
         this.idx = idx;
     }
@@ -154,7 +155,7 @@ public class UrAgent{
         agentHash = "";
     }
 
-    private void setFields(UrPoint point){
+    private void setFields(@NotNull UrPoint point){
         if (point.getToken() instanceof UrAgent){
             fields.or(((UrAgent) point.getToken()).getFields());
         } else
@@ -185,6 +186,10 @@ public class UrAgent{
         }
 
         return mr;
+    }
+
+    public double getMrToLength(){
+        return getMr()/points.size();
     }
 
     public void setMr(double mr) {

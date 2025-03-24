@@ -6,7 +6,6 @@ import com.knuddels.jtokkit.Encodings;
 import com.knuddels.jtokkit.api.Encoding;
 import com.knuddels.jtokkit.api.EncodingRegistry;
 import com.knuddels.jtokkit.api.ModelType;
-import jnr.ffi.annotations.In;
 import org.apache.commons.math3.exception.OutOfRangeException;
 
 import java.io.*;
