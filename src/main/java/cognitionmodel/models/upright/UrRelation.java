@@ -1,6 +1,8 @@
 package cognitionmodel.models.upright;
 
 import cognitionmodel.models.relations.Relation;
+import org.jetbrains.annotations.Contract;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
 import java.util.function.BiFunction;
@@ -133,10 +135,11 @@ public class UrRelation {
                 result.compute(na.getAgentHash(), (k, v) -> v == null? na: addAgent(v, na));
 
                 return result.values().stream().toList();
-                            };
+            };
     }
 
-    private UrAgent addAgent(UrAgent agent1, UrAgent agent2){
+    @Contract("_, _ -> param1")
+    private @NotNull UrAgent addAgent(@NotNull UrAgent agent1, @NotNull UrAgent agent2){
         agent1.incF(agent2.getF());
         agent1.getIdx().or(agent2.getIdx());
         return agent1;
@@ -159,7 +162,8 @@ public class UrRelation {
         return null;
     }
 
-    public static UrRelation[] allRelations(long datasetsize){
+    @Contract(pure = true)
+    public static UrRelation @NotNull [] allRelations(long datasetsize){
         UrRelation[] relations = new UrRelation[4];
         for (int i = 0; i < 4; i++) {
             relations[i] = new UrRelation(i, datasetsize);

@@ -1,6 +1,7 @@
 package cognitionmodel.models.upright;
 
 import cognitionmodel.models.inverted.index.BatchedIterator;
+import org.jetbrains.annotations.NotNull;
 import org.roaringbitmap.RoaringBitmap;
 
 import java.util.*;
@@ -16,6 +17,7 @@ public class UrDecomposer {
 
 
     double minMrDelta = 0.1;
+    float overlap = 1;
     long batchSize = 1000000, dataSetSize = 0;
     private UrRelation relations[];
 
@@ -65,7 +67,7 @@ public class UrDecomposer {
     }
 
 
-    public LinkedList<UrAgent> makeAgentList(List<Integer> in, Map<Object, RoaringBitmap> index){
+    public LinkedList<UrAgent> makeAgentList(@NotNull List<Integer> in, Map<Object, RoaringBitmap> index){
         int i = 0;
         LinkedList<UrAgent> list = new LinkedList<>();
         for (int t: in){
@@ -84,13 +86,13 @@ public class UrDecomposer {
         return decompose(makeAgentList(in, index), attentionSize);
     }
 
-    public List<UrAgent> decompose(List<UrAgent> in, int attentionSize){
+    public List<UrAgent> decompose(@NotNull List<UrAgent> in, int attentionSize){
         if (in.isEmpty()) return new ArrayList<>();
         ConcurrentHashMap<String, UrAgent> agents = new ConcurrentHashMap<>();
 
         in.sort(Comparator.comparing(UrAgent::getFirstPos));
 
-        int step = attentionSize*2/3;
+        int step = round(attentionSize*overlap);
 
         LinkedList<CompletableFuture<Integer>> cfl = new LinkedList<>();
         final long[] nn = {0};
@@ -107,8 +109,11 @@ public class UrDecomposer {
                 }
 
                 LinkedList<UrAgent> nlist = new LinkedList<>();
-                HashSet<String> cset = new HashSet<>();
-                long  n = 0, sti = 0, ti = 0;
+                long  n = 0, ti = 0;
+
+
+                ConcurrentHashMap<String, UrAgent> tagents = new ConcurrentHashMap<>();
+
 
                 for (; !tokens.isEmpty(); ) {
                     IndexPoint indexPoint = tokens.poll();
@@ -133,12 +138,10 @@ public class UrDecomposer {
 
                     while (!nlist.isEmpty() && ti - nlist.getFirst().getStartpos() >= attentionSize) {
                         UrAgent as = nlist.poll();
-                        for (UrRelation relation: relations)
-                            for (UrAgent a: relation.applyDecomposition(as))
-                                if (!agents.containsKey(a.getAgentHash()))
-                                    agents.put(a.getAgentHash(), a);
-                                else
-                                    incAgentF(agents.get(a.getAgentHash()), 1, as.getStartpos()-as.getFirstPos() + a.getFirstPos());
+                        if (!tagents.containsKey(as.getAgentHash()))
+                            tagents.put(as.getAgentHash(), as);
+                        else
+                            incAgentF(tagents.get(as.getAgentHash()), 1, as.getStartpos());
                     }
 
                     if (n % batchSize == 0) {
@@ -149,6 +152,21 @@ public class UrDecomposer {
                     }
                 }
 
+                for (UrAgent as: tagents.values())
+                    for (UrRelation relation: relations)
+                        for (UrAgent a: relation.applyDecomposition(as))
+                            if (!agents.containsKey(a.getAgentHash())){
+                                agents.put(a.getAgentHash(), a);
+                                a.getIdx().or(as.getIdx());
+                                a.setF(a.getIdx().getCardinality());
+                            }
+                            else {
+                                UrAgent agent = agents.get(a.getAgentHash());
+                                a.getIdx().or(as.getIdx());
+                                agent.setF(agent.getIdx().getCardinality());
+
+                                //incAgentF(agents.get(a.getAgentHash()), as.getF(), as.getStartpos() - as.getFirstPos() + a.getFirstPos());
+                            }
                 nn[0] +=n;
                 return null;
             }));
@@ -159,24 +177,26 @@ public class UrDecomposer {
 
         al.sort((a1,a2) -> a1.getPoints().size() == a2.getPoints().size()? 0: a1.getPoints().size() > a2.getPoints().size()? 1:-1);
 
-/*        int i = 1;
+        int i = 1;
         for (UrAgent a1: al) {
             if (a1.getPoints().size() > 1)
                 for (Iterator<UrAgent> iterator = al.listIterator(i); iterator.hasNext(); ){
                     UrAgent a2 = iterator.next();
                     BitSet bs = BitSet.valueOf(a1.getFields().toLongArray());
                     bs.and(a2.getFields());
-                    if (a1.getFields().cardinality() == bs.cardinality())
+                    if (a1.getFields().cardinality() == bs.cardinality()) {
                         a1.incF(a2.getF());
+                        a1.getIdx().or(a2.getIdx());
+                    }
                 }
             i++;
-        }*/
+        }
         //System.out.println(nn[0] + " tokens analyzed");
 
         return al;
     }
 
-    private void incAgentF(UrAgent agent, long f, long index){
+    private void incAgentF(@NotNull UrAgent agent, long f, long index){
         if (agent.getPoints().size() > 0)
             if (!agent.getIdx().contains(index, index+1))
         {

@@ -7,6 +7,8 @@ import java.util.Arrays;
 import java.util.Spliterator;
 import java.util.function.Consumer;
 
+import static java.lang.Math.abs;
+
 /**
  * Set of patterns for table data processing consists from
  * a full set of all values combinations.
@@ -17,6 +19,8 @@ public class FullGridIterativePatterns extends PatternSet {
     /**
      * No arguments constructor creates empty set of patterns
      */
+
+    int maxRange = Integer.MAX_VALUE;
 
     public FullGridIterativePatterns(){
     }
@@ -59,6 +63,26 @@ public class FullGridIterativePatterns extends PatternSet {
     }
 
     /**
+     * Generates brute force pattern set that consists enumerating of all possible combinations values of all @param enabled variables.
+     * Length of the combination is restricted by @param maxDepth
+     *
+     *
+     * @param length - amount of values
+     * @param maxDepth - max number of variables in relation
+     * @param maxRange - max distance between points
+     */
+
+    public FullGridIterativePatterns(int length, int maxDepth, int maxRange){
+        int d = 0;
+        byte[] enabled = new byte[length];
+        Arrays.fill(enabled, (byte) 1);
+
+        this.maxRange = maxRange;
+
+        generate(length,  maxDepth, enabled);
+    }
+
+    /**
      * Generates brute force pattern set that consists enumerating of all possible combinations values of all enabled variables in the model.
      * Length of the combination is restricted by @param maxDepth
      *
@@ -93,6 +117,7 @@ public class FullGridIterativePatterns extends PatternSet {
         byte[][] res = new byte[resultlength(length, maxDepth)*100][];
         int[] nfilds = new int[res.length];
         int[] len = new int[res.length];
+        int[] start = new int[res.length];
 
         int finish  = 0;
 
@@ -104,20 +129,22 @@ public class FullGridIterativePatterns extends PatternSet {
                 res[finish] = nr;
                 nfilds[finish] = finish;
                 len[finish] = 1;
-
+                start[finish] = finish;
         }
 
         for (int i = 0; i < finish; i++) {
             if (len[i] >= maxDepth) break;
             byte[] nr = res[i];
-            if (nr != null)
+
+            if (nr != null  )
               for (int j = nfilds[i] + 1; j < length; j++)
-                if (enabled[j] == 1) {
+                if (enabled[j] == 1 && j - start[i] < maxRange) {
                     byte [] tr = Arrays.copyOf(nr, nr.length);
                     tr[j] = 1;
                     len[finish] = len[i]+1;
                     nfilds[finish] = j;
                     res[finish] = tr;
+                    start[finish] = start[i];
                     finish++;
             }
         }

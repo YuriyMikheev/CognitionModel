@@ -1,6 +1,7 @@
 package cognitionmodel.models.upright;
 
 import org.fusesource.jansi.Ansi;
+import org.jetbrains.annotations.NotNull;
 import org.roaringbitmap.RoaringBitmap;
 
 import java.io.IOException;
@@ -19,7 +20,7 @@ public class UprightTextModel {
         for (int i = 0; i < dataSet.getFreqs().length; i++)
             tokensFreq.put(i, Long.valueOf(dataSet.getFreqs()[i]));
     }
-    public UprightTextModel(UprightTextDataSet dataSet){
+    public UprightTextModel(@NotNull UprightTextDataSet dataSet){
         this.dataSet = dataSet;
         for (int i = 0; i < dataSet.getFreqs().length; i++)
             tokensFreq.put(i, Long.valueOf(dataSet.getFreqs()[i]));
@@ -48,7 +49,7 @@ public class UprightTextModel {
     }
 
 
-    public List<UrAgent> makeAgentsListWrong(List<Integer> in, int attentionSize){
+    public List<UrAgent> makeAgentsListWrong(@NotNull List<Integer> in, int attentionSize){
         HashMap<String, UrAgent>  agents = new HashMap<>();
 
         HashMap<Integer, RoaringBitmap> idx = new HashMap<>();
@@ -125,7 +126,7 @@ public class UprightTextModel {
     }
 
 
-    public List<UrAgent> makeAgentsList(List<Integer> in, int attentionSize){
+    public List<UrAgent> makeAgentsList(@NotNull List<Integer> in, int attentionSize){
         HashMap<String, UrAgent>  agents = new HashMap<>();
 
         HashMap<Integer, RoaringBitmap> idx = new HashMap<>();
@@ -199,11 +200,11 @@ public class UprightTextModel {
     }
 
 
-    private void incAgentF(UrAgent agent, long f){
+    private void incAgentF(@NotNull UrAgent agent, long f){
         if (agent.getPoints().size() > 1) agent.incF(f);
     }
 
-    public String compositionToColourString(UrComposition composition, int length){
+    public String compositionToColourString(@NotNull UrComposition composition, int length){
         String cs = "";
 
         String[] agentColors = new String[composition.getUrAgents().size()];
