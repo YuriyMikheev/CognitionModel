@@ -27,7 +27,7 @@ public class UprightInvertedTextModel {
         textIndex = new TextIndex(null, "text", null, "");//textModel.getTextIndex();
         this.indexFile = indexFile;
         textIndex.load(new FileInputStream(indexFile));
-        generator = new UrGeneratorByPattern(textIndex, indexFile.substring(0, indexFile.length() - 3)+"tkz", new int[]{UrRelation.RELATION_ORDER});
+        generator = new UrGeneratorByAgentsIndexAndPattern(textIndex, indexFile.substring(0, indexFile.length() - 3)+"tkz", new int[]{UrRelation.RELATION_POINTED});
     }
 
     public String getIndexFile() {
@@ -202,13 +202,13 @@ public class UprightInvertedTextModel {
         System.out.println(in.size()+" tokens in text");
 
         generator.setBatchSize(1000000000);
-        UrDecomposer decomposer = new UrDecomposer(0.1, 1000000000, round(textIndex.getDataSetSize()), new int[]{UrRelation.RELATION_ORDER});
+        UrDecomposer decomposer = new UrDecomposer(0.1, 1000000000, round(textIndex.getDataSetSize()), new int[]{UrRelation.RELATION_POINTED});
 
         List<UrAgent> alf = new LinkedList<>();// = makeAgentList(in, textIndex.getIdx(textIndex.getTextField()));
 
 
 
-        for (int k = 0; k < 5; k++) {
+        for (int k = 0; k < 3; k++) {
 
             t = System.currentTimeMillis();
 

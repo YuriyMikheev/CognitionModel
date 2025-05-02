@@ -36,5 +36,9 @@
       </library>
     </orderEntry>
     <orderEntry type="library" name="aparapi" level="project" />
+    <orderEntry type="library" name="lwjgl-3.3.6" level="project" />
+    <orderEntry type="library" name="lwjgl" level="project" />
+    <orderEntry type="library" name="lwjgl-opencl" level="project" />
+    <orderEntry type="library" name="lwjgl-natives-windows" level="project" />
   </component>
 </module>

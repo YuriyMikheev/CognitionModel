@@ -140,9 +140,6 @@ public class UrAgent{
         mr = NaN;
     }
 
-
-
-
     public void addPoint(UrPoint point){
         int lp = points.getLast().getPosition();
         points.add(point);
@@ -196,6 +193,11 @@ public class UrAgent{
         this.mr = mr;
     }
 
+    public void forceRecalcMr(){
+        this.mr = NaN;
+    }
+
+
     @Override
     public String toString(){
         return points +"\t"+ points.size() + "\t"+getF() + "\t"+getMr();
@@ -244,5 +246,9 @@ public class UrAgent{
 
     public void setRelation(int relation) {
         this.relation = relation;
+    }
+
+    public void addIdx(RoaringBitmap idx2add, long offset){
+        idx.or(RoaringBitmap.addOffset(idx2add, offset));
     }
 }

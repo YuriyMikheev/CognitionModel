@@ -31,7 +31,7 @@ public class UrDecomposer {
                 new UrRelation(UrRelation.RELATION_ORDER, dataSetSize),
                 new UrRelation(UrRelation.RELATION_POINTED, dataSetSize)});
     }
-    public UrDecomposer(double minMrDelta, long batchSize, long dataSetSize, int[] relationTypes) {
+    public UrDecomposer(double minMrDelta, long batchSize, long dataSetSize, int ... relationTypes) {
         this.minMrDelta = minMrDelta;
         this.batchSize = batchSize;
         this.dataSetSize = dataSetSize;
@@ -41,7 +41,7 @@ public class UrDecomposer {
 
 
 
-    public UrDecomposer(double minMrDelta, long batchSize, long dataSetSize, UrRelation[] relations) {
+    public UrDecomposer(double minMrDelta, long batchSize, long dataSetSize, UrRelation ... relations) {
         this.minMrDelta = minMrDelta;
         this.batchSize = batchSize;
         this.dataSetSize = dataSetSize;
@@ -111,9 +111,7 @@ public class UrDecomposer {
                 LinkedList<UrAgent> nlist = new LinkedList<>();
                 long  n = 0, ti = 0;
 
-
                 ConcurrentHashMap<String, UrAgent> tagents = new ConcurrentHashMap<>();
-
 
                 for (; !tokens.isEmpty(); ) {
                     IndexPoint indexPoint = tokens.poll();
@@ -122,7 +120,6 @@ public class UrDecomposer {
                     if (ti != -1) tokens.add(indexPoint);
                         else
                             continue;
-
                     n++;
 
                     boolean dontAddNew = false;
@@ -141,7 +138,7 @@ public class UrDecomposer {
                         if (!tagents.containsKey(as.getAgentHash()))
                             tagents.put(as.getAgentHash(), as);
                         else
-                            incAgentF(tagents.get(as.getAgentHash()), 1, as.getStartpos());
+                            incAgentF(tagents.get(as.getAgentHash()), as.getStartpos());
                     }
 
                     if (n % batchSize == 0) {
@@ -157,12 +154,14 @@ public class UrDecomposer {
                         for (UrAgent a: relation.applyDecomposition(as))
                             if (!agents.containsKey(a.getAgentHash())){
                                 agents.put(a.getAgentHash(), a);
-                                a.getIdx().or(as.getIdx());
+                                //a.getIdx().or(as.getIdx());// must shift index to agent start from as start
+                                a.addIdx(as.getIdx(), a.getStartpos() - as.getStartpos());
                                 a.setF(a.getIdx().getCardinality());
                             }
                             else {
                                 UrAgent agent = agents.get(a.getAgentHash());
-                                a.getIdx().or(as.getIdx());
+                                //a.getIdx().or(as.getIdx());// must shift index to agent start from as start
+                                a.addIdx(as.getIdx(), a.getStartpos() - as.getStartpos());
                                 agent.setF(agent.getIdx().getCardinality());
 
                                 //incAgentF(agents.get(a.getAgentHash()), as.getF(), as.getStartpos() - as.getFirstPos() + a.getFirstPos());
@@ -191,16 +190,14 @@ public class UrDecomposer {
                 }
             i++;
         }
-        //System.out.println(nn[0] + " tokens analyzed");
-
         return al;
     }
 
-    private void incAgentF(@NotNull UrAgent agent, long f, long index){
+    private void incAgentF(@NotNull UrAgent agent, long index){
         if (agent.getPoints().size() > 0)
             if (!agent.getIdx().contains(index, index+1))
         {
-            agent.incF(f);
+            agent.incF(1);
             agent.addIndex(index);
         }
     }

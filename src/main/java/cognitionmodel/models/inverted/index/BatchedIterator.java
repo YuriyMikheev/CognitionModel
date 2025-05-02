@@ -12,6 +12,8 @@ public class BatchedIterator implements Iterator<Long> {
     private int pointer = 0, batchsize = 0;
     private int[] buf = new int[256];
     private long last;
+
+
     public BatchedIterator(RoaringBitmap roaringBitmap){
         this.roaringBitmap = roaringBitmap;
         batchIterator = roaringBitmap.getBatchIterator();

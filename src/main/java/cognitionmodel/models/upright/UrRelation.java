@@ -1,11 +1,9 @@
 package cognitionmodel.models.upright;
 
-import cognitionmodel.models.relations.Relation;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
-import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -13,7 +11,7 @@ public class UrRelation {
 
 
     private Function<UrAgent, List<UrAgent>> decompositionFunction;
-    private BiFunction<Integer, UrAgent, List<Integer>> compositionFunction;
+    private Function<UrAgent, List<String>> generationFunction;
 
     public  static final int RELATION_UNDEFINED = 0;
     public  static final int RELATION_POINTED = 1;
@@ -22,16 +20,16 @@ public class UrRelation {
     public  static final int RELATION_ORDER_FULL = 4;
     private long datasetsize;
     private List<UrAgent>in;
+    private int relationType;
+    private String relationTypeStr;
 
-
-    public UrRelation(Function<UrAgent, List<UrAgent>> decompositionFunction,  BiFunction<Integer, UrAgent, List<Integer>> compositionFunction, long datasetsize) {
-        this.decompositionFunction = decompositionFunction;
-        this.compositionFunction = compositionFunction;
-        this.datasetsize = datasetsize;
-    }
 
     public UrRelation(int relationType, long datasetsize) {
-        this(null, null, datasetsize);
+        this.decompositionFunction = decompositionFunction;
+        this.generationFunction = generationFunction;
+        this.datasetsize = datasetsize;
+        this.relationType = relationType;
+        relationTypeStr = relationType+"";
 
         if (relationType == RELATION_POINTED) {
             this.decompositionFunction = pointsAgent -> {
@@ -58,10 +56,8 @@ public class UrRelation {
                 return result.values().stream().toList();
             };
 
-            this.compositionFunction = (i, agent) -> {
-                LinkedList<Integer> list = new LinkedList<>();
-                list.add(i - agent.getFirstPos());
-                return list;
+            this.generationFunction = (agent) -> {
+                return agent.getPoints().stream().map(o->((UrPoint)o).toString()).toList();
             };
         }
 
@@ -114,28 +110,28 @@ public class UrRelation {
 
             };
 
-            this.compositionFunction = (i, agent) -> {
-                LinkedList<Integer> list = new LinkedList<>();
-                int l = agent.getPoints().getLast().getPosition() - agent.getFirstPos();
-                for (int j = agent.getFirstPos(); j < agent.getPoints().getLast().getPosition(); j++) {
-                    list.add(i + j - l/2);
-                }
-                return list;
+            this.generationFunction = (agent) -> {
+                return agent.getPoints().stream().map(o->((UrPoint)o).getToken().toString()).sorted().toList();
             };
         }
 
-        if (relationType == RELATION_ORDER)
+        if (relationType == RELATION_ORDER) {
             this.decompositionFunction = pointsAgent -> {
                 List<UrPoint> points = pointsAgent.getPoints();
 
                 HashMap<String, UrAgent> result = new HashMap<>();
                 UrAgent na = new UrAgent(points, 1, datasetsize, pointsAgent.getStartpos());
                 na.setRelation(relationType);
-                na.setAgentHash(points.stream().map(p -> ((UrAgent)p.getToken()).getTokens().toString()).collect(Collectors.toList()).toString());
-                result.compute(na.getAgentHash(), (k, v) -> v == null? na: addAgent(v, na));
+                na.setAgentHash(points.stream().map(p -> ((UrAgent) p.getToken()).getTokens().toString()).collect(Collectors.toList()).toString());
+                result.compute(na.getAgentHash(), (k, v) -> v == null ? na : addAgent(v, na));
 
                 return result.values().stream().toList();
             };
+
+            this.generationFunction = (agent) -> {
+                return agent.getPoints().stream().map(o->((UrPoint)o).getToken().toString()).toList();
+            };
+        }
     }
 
     @Contract("_, _ -> param1")
@@ -156,9 +152,9 @@ public class UrRelation {
         return null;
     }
 
-    public List<Integer> applyComposition(int i, UrAgent agent){
-        if (compositionFunction != null)
-            return compositionFunction.apply(i, agent);
+    public List<String> applyGeneration(UrAgent agent){
+        if (generationFunction != null)
+            return generationFunction.apply(agent);
         return null;
     }
 
@@ -169,6 +165,10 @@ public class UrRelation {
             relations[i] = new UrRelation(i, datasetsize);
         }
         return relations;
+    }
+
+    public String toString(){
+        return relationTypeStr;
     }
 
 }

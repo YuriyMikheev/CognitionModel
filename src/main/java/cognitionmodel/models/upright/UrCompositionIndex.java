@@ -11,10 +11,6 @@ class UrCompositionIndex implements UrCompositionIndexInterface {
     private boolean changed = true;
 
     public UrCompositionIndex(int length) {
-
-
-
-
         index = new BitSet[length];
         reindex();
     }

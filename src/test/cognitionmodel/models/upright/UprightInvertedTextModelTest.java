@@ -25,7 +25,7 @@ public class UprightInvertedTextModelTest {
     public void generate1() throws IOException, ClassNotFoundException {
         UprightInvertedTextModel textModel = new UprightInvertedTextModel("E:\\Idx\\S.txtidx");
         System.out.println("Dataset is loaded");
-        int a = 7;
+        int a = 20;
         System.out.println(textModel.generate("The framework that has been laid out by negotiators", a));
         System.out.println(textModel.generate("The framework that has been laid out by negotiators says that during a first six-week pause in the fighting", a));
         System.out.println(textModel.generate("The framework that has been laid out by negotiators says that during a first six-week pause in the fighting, Hamas should release 40 of the remaining hostages, including all the women as well as sick and elderly men. In exchange, hundreds of Palestinian prisoners would be released from Israeli prisons.", a));

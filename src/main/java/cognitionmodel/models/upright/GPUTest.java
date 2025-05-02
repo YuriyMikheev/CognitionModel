@@ -1,263 +1,371 @@
 package cognitionmodel.models.upright;
-
-
-import com.aparapi.Kernel;
-import com.aparapi.*;
-
-import javax.swing.*;
-import java.awt.*;
-import java.awt.event.*;
-import java.awt.image.*;
-import java.util.List;
-
-/**
- * An example Aparapi application which demonstrates Conways 'Game Of Life'.
- *
- * Original code from Witold Bolt's site https://github.com/houp/aparapi/tree/master/samples/gameoflife.
- *
- * Converted to use int buffer and some performance tweaks by Gary Frost
- *
- * @author Wiltold Bolt
- * @author Gary Frost
- * @version $Id: $Id
+/*
+ * Copyright LWJGL. All rights reserved.
+ * License terms: https://www.lwjgl.org/license
  */
-public class GPUTest{
 
-    /**
-     * LifeKernel represents the data parallel algorithm describing by Conway's game of life.
-     *
-     * http://en.wikipedia.org/wiki/Conway's_Game_of_Life
-     *
-     * We examine the state of each pixel and its 8 neighbors and apply the following rules.
-     *
-     * if pixel is dead (off) and number of neighbors == 3 {
-     *       pixel is turned on
-     * } else if pixel is alive (on) and number of neighbors is neither 2 or 3
-     *       pixel is turned off
-     * }
-     *
-     * We use an image buffer which is 2*width*height the size of screen and we use fromBase and toBase to track which half of the buffer is being mutated for each pass. We basically
-     * copy from getGlobalId()+fromBase to getGlobalId()+toBase;
-     *
-     *
-     * Prior to each pass the values of fromBase and toBase are swapped.
-     *
-     */
+import org.lwjgl.*;
+import org.lwjgl.opencl.*;
+import org.lwjgl.system.*;
 
-    public static class LifeKernel extends Kernel{
+import java.nio.*;
+import java.util.concurrent.*;
 
-        private static final int ALIVE = 0xffffff;
+import static org.lwjgl.opencl.CL11.*;
+import static org.lwjgl.opencl.KHRICD.*;
+import static org.lwjgl.system.MemoryStack.*;
+import static org.lwjgl.system.MemoryUtil.*;
 
-        private static final int DEAD = 0;
+public final class GPUTest {
 
-        private final int[] imageData;
-
-        private final int width;
-
-        private final int height;
-
-        private final Range range;
-
-        private int fromBase;
-
-        private int toBase;
-
-        public LifeKernel(int _width, int _height, BufferedImage _image) {
-            imageData = ((DataBufferInt) _image.getRaster().getDataBuffer()).getData();
-            width = _width;
-            height = _height;
-
-            final String executionMode = System.getProperty("com.aparapi.executionMode");
-            if ((executionMode != null) && executionMode.equals("JTP")) {
-                range = Range.create(width * height, 4);
-            } else {
-                range = Range.create(width * height);
-            }
-
-            System.out.println("range = " + range);
-            fromBase = height * width;
-            toBase = 0;
-            setExplicit(true); // This gives us a performance boost
-
-            /** draw a line across the image **/
-/*            for (int i = *//*(width * (height / 2)) + *//*(width / 2); i < ((width * ((height ))) - (width / 10)); i += width) {
-                imageData[i] = LifeKernel.ALIVE;
-            }*/
-            for (int i = 0; i < 500; i++)
-                for (int j = 0; j < 20; j++) {
-                imageData[(width / 2) + (width * (height / 2)) + i] = LifeKernel.ALIVE;
-                imageData[(width / 2) + (width * (height / 2)) - i] = LifeKernel.ALIVE;
-                imageData[(width / 2) + (width * (height / 2))] = LifeKernel.ALIVE;
-                imageData[(width / 2) + (width * (height / 2 + j)) + i] = LifeKernel.ALIVE;
-                imageData[(width / 2) + (width * (height / 2 + j)) - i] = LifeKernel.ALIVE;
-                imageData[(width / 2) + (width * (height / 2 + j))] = LifeKernel.ALIVE;
-                imageData[(width / 2) + (width * (height / 2 - j)) + i] = LifeKernel.ALIVE;
-                imageData[(width / 2) + (width * (height / 2 - j)) - i] = LifeKernel.ALIVE;
-                imageData[(width / 2) + (width * (height / 2 - j))] = LifeKernel.ALIVE;
-            }
-
-            put(imageData); // Because we are using explicit buffer management we must put the imageData array
-        }
-
-        public void processPixel(int gid) {
-            final int to = gid + toBase;
-            final int from = gid + fromBase;
-            final int x = gid % width;
-            final int y = gid / width;
-
-            if (((x == 0) || (x == (width - 1)) || (y == 0) || (y == (height - 1)))) {
-                // This pixel is on the border of the view, just keep existing value
-                imageData[to] = imageData[from];
-            } else {
-                // Count the number of neighbors.  We use (value&1x) to turn pixel value into either 0 or 1
-                final int neighbors = (imageData[from - 1] & 1) + // EAST
-                        (imageData[from + 1] & 1) + // WEST
-                        (imageData[from - width - 1] & 1) + // NORTHEAST
-                        (imageData[from - width] & 1) + // NORTH
-                        (imageData[(from - width) + 1] & 1) + // NORTHWEST
-                        (imageData[(from + width) - 1] & 1) + // SOUTHEAST
-                        (imageData[from + width] & 1) + // SOUTH
-                        (imageData[from + width + 1] & 1); // SOUTHWEST
-
-                // The game of life logic
-                if ((neighbors == 3) || ((neighbors == 2) && (imageData[from] == ALIVE))) {
-                    imageData[to] = ALIVE;
-                } else {
-                    imageData[to] = DEAD;
-                }
-
-            }
-        }
-
-        @Override public void run() {
-            final int gid = getGlobalId();
-            processPixel(gid);
-        }
-
-        boolean sequential = Boolean.getBoolean("sequential");
-
-        public void nextGeneration() {
-            // swap fromBase and toBase
-            final int swap = fromBase;
-            fromBase = toBase;
-            toBase = swap;
-            if (sequential) {
-                for (int gid = 0; gid < (width * height); gid++) {
-                    processPixel(gid);
-                }
-
-            } else {
-                execute(range);
-            }
-
-        }
-
+    private GPUTest() {
     }
 
-    static boolean running = false;
+    public static void main(String[] args) {
+        try (MemoryStack stack = stackPush()) {
+            demo(stack);
+        }
+    }
 
-    /**
-     * <p>main.</p>
-     *
-     * @param _args an array of {@link java.lang.String} objects.
-     */
-    public static void main(String[] _args) {
+    private static void demo(MemoryStack stack) {
+        IntBuffer pi = stack.mallocInt(1);
+        checkCLError(clGetPlatformIDs(null, pi));
+        if (pi.get(0) == 0) {
+            throw new RuntimeException("No OpenCL platforms found.");
+        }
 
+        PointerBuffer platforms = stack.mallocPointer(pi.get(0));
+        checkCLError(clGetPlatformIDs(platforms, (IntBuffer)null));
 
-        Kernel kernel = new Kernel(){
-            @Override public void run(){
+        PointerBuffer ctxProps = stack.mallocPointer(3);
+        ctxProps
+                .put(0, CL_CONTEXT_PLATFORM)
+                .put(2, 0);
+
+        IntBuffer errcode_ret = stack.callocInt(1);
+        for (int p = 0; p < platforms.capacity(); p++) {
+            long platform = platforms.get(p);
+            ctxProps.put(1, platform);
+
+            System.out.println("\n-------------------------");
+            System.out.printf("NEW PLATFORM: [0x%X]\n", platform);
+
+            CLCapabilities platformCaps = CL.createPlatformCapabilities(platform);
+
+            printPlatformInfo(platform, "CL_PLATFORM_PROFILE", CL_PLATFORM_PROFILE);
+            printPlatformInfo(platform, "CL_PLATFORM_VERSION", CL_PLATFORM_VERSION);
+            printPlatformInfo(platform, "CL_PLATFORM_NAME", CL_PLATFORM_NAME);
+            printPlatformInfo(platform, "CL_PLATFORM_VENDOR", CL_PLATFORM_VENDOR);
+            printPlatformInfo(platform, "CL_PLATFORM_EXTENSIONS", CL_PLATFORM_EXTENSIONS);
+            if (platformCaps.cl_khr_icd) {
+                printPlatformInfo(platform, "CL_PLATFORM_ICD_SUFFIX_KHR", CL_PLATFORM_ICD_SUFFIX_KHR);
             }
-        };
+            System.out.println("");
 
-        kernel.execute(1024);
-        System.out.println("Execution mode = " +kernel.getExecutionMode());
-        kernel.setExecutionModeWithoutFallback(Kernel.EXECUTION_MODE.GPU);
+            checkCLError(clGetDeviceIDs(platform, CL_DEVICE_TYPE_ALL, null, pi));
 
+            PointerBuffer devices = stack.mallocPointer(pi.get(0));
+            checkCLError(clGetDeviceIDs(platform, CL_DEVICE_TYPE_ALL, devices, (IntBuffer)null));
 
-        final JFrame frame = new JFrame("Game of Life");
-        final int width = Integer.getInteger("width", 1024 + 512 + 256 + 128);
+            for (int d = 0; d < devices.capacity(); d++) {
+                long device = devices.get(d);
 
-        final int height = Integer.getInteger("height", 768 + 256);
+                CLCapabilities caps = CL.createDeviceCapabilities(device, platformCaps);
 
-        // Buffer is twice the size as the screen.  We will alternate between mutating data from top to bottom
-        // and bottom to top in alternate generation passses. The LifeKernel will track which pass is which
-        final BufferedImage image = new BufferedImage(width, height * 2, BufferedImage.TYPE_INT_RGB);
+                System.out.printf("\n\t** NEW DEVICE: [0x%X]\n", device);
 
-        final LifeKernel lifeKernel = new LifeKernel(width, height, image);
+                System.out.println("\tCL_DEVICE_TYPE = " + getDeviceInfoLong(device, CL_DEVICE_TYPE));
+                System.out.println("\tCL_DEVICE_VENDOR_ID = " + getDeviceInfoInt(device, CL_DEVICE_VENDOR_ID));
+                System.out.println("\tCL_DEVICE_MAX_COMPUTE_UNITS = " + getDeviceInfoInt(device, CL_DEVICE_MAX_COMPUTE_UNITS));
+                System.out
+                        .println("\tCL_DEVICE_MAX_WORK_ITEM_DIMENSIONS = " + getDeviceInfoInt(device, CL_DEVICE_MAX_WORK_ITEM_DIMENSIONS));
+                System.out.println("\tCL_DEVICE_MAX_WORK_GROUP_SIZE = " + getDeviceInfoPointer(device, CL_DEVICE_MAX_WORK_GROUP_SIZE));
+                System.out.println("\tCL_DEVICE_MAX_CLOCK_FREQUENCY = " + getDeviceInfoInt(device, CL_DEVICE_MAX_CLOCK_FREQUENCY));
+                System.out.println("\tCL_DEVICE_ADDRESS_BITS = " + getDeviceInfoInt(device, CL_DEVICE_ADDRESS_BITS));
+                System.out.println("\tCL_DEVICE_AVAILABLE = " + (getDeviceInfoInt(device, CL_DEVICE_AVAILABLE) != 0));
+                System.out.println("\tCL_DEVICE_COMPILER_AVAILABLE = " + (getDeviceInfoInt(device, CL_DEVICE_COMPILER_AVAILABLE) != 0));
 
-        // Create a component for viewing the offsecreen image
-        @SuppressWarnings("serial") final JComponent viewer = new JComponent(){
-            @Override public void paintComponent(Graphics g) {
-                if (lifeKernel.isExplicit()) {
-                    lifeKernel.get(lifeKernel.imageData); // We only pull the imageData when we intend to use it.
-                    final List<ProfileInfo> profileInfo = lifeKernel.getProfileInfo();
-                    if (profileInfo != null) {
-                        for (final ProfileInfo p : profileInfo) {
-                            System.out.print(" " + p.getType() + " " + p.getLabel() + " " + (p.getStart() / 1000) + " .. "
-                                    + (p.getEnd() / 1000) + " " + ((p.getEnd() - p.getStart()) / 1000) + "us");
-                        }
+                printDeviceInfo(device, "CL_DEVICE_NAME", CL_DEVICE_NAME);
+                printDeviceInfo(device, "CL_DEVICE_VENDOR", CL_DEVICE_VENDOR);
+                printDeviceInfo(device, "CL_DRIVER_VERSION", CL_DRIVER_VERSION);
+                printDeviceInfo(device, "CL_DEVICE_PROFILE", CL_DEVICE_PROFILE);
+                printDeviceInfo(device, "CL_DEVICE_VERSION", CL_DEVICE_VERSION);
+                printDeviceInfo(device, "CL_DEVICE_EXTENSIONS", CL_DEVICE_EXTENSIONS);
+                if (caps.OpenCL11) {
+                    printDeviceInfo(device, "CL_DEVICE_OPENCL_C_VERSION", CL_DEVICE_OPENCL_C_VERSION);
+                }
+
+                CLContextCallback contextCB;
+                long context = clCreateContext(ctxProps, device, contextCB = CLContextCallback.create((errinfo, private_info, cb, user_data) -> {
+                    System.err.println("[LWJGL] cl_context_callback");
+                    System.err.println("\tInfo: " + memUTF8(errinfo));
+                }), NULL, errcode_ret);
+                checkCLError(errcode_ret);
+
+                long buffer = clCreateBuffer(context, CL_MEM_READ_ONLY, 128, errcode_ret);
+                checkCLError(errcode_ret);
+
+                CLMemObjectDestructorCallback bufferCB1 = null;
+                CLMemObjectDestructorCallback bufferCB2 = null;
+
+                long subbuffer = NULL;
+
+                CLMemObjectDestructorCallback subbufferCB = null;
+
+                int errcode;
+
+                CountDownLatch destructorLatch;
+
+                if (caps.OpenCL11) {
+                    destructorLatch = new CountDownLatch(3);
+
+                    errcode = clSetMemObjectDestructorCallback(buffer, bufferCB1 = CLMemObjectDestructorCallback.create((memobj, user_data) -> {
+                        System.out.println("\t\tBuffer destructed (1): " + memobj);
+                        destructorLatch.countDown();
+                    }), NULL);
+                    checkCLError(errcode);
+
+                    errcode = clSetMemObjectDestructorCallback(buffer, bufferCB2 = CLMemObjectDestructorCallback.create((memobj, user_data) -> {
+                        System.out.println("\t\tBuffer destructed (2): " + memobj);
+                        destructorLatch.countDown();
+                    }), NULL);
+                    checkCLError(errcode);
+
+                    try (CLBufferRegion buffer_region = CLBufferRegion.malloc()) {
+                        buffer_region.origin(0);
+                        buffer_region.size(64);
+
+                        subbuffer = nclCreateSubBuffer(buffer,
+                                CL_MEM_READ_ONLY,
+                                CL_BUFFER_CREATE_TYPE_REGION,
+                                buffer_region.address(),
+                                memAddress(errcode_ret));
+                        checkCLError(errcode_ret);
                     }
-                }
-                // We copy one half of the offscreen buffer to the viewer, we copy the half that we just mutated.
-                if (lifeKernel.fromBase == 0) {
-                    g.drawImage(image, 0, 0, width, height, 0, 0, width, height, this);
+
+                    errcode = clSetMemObjectDestructorCallback(subbuffer, subbufferCB = CLMemObjectDestructorCallback.create((memobj, user_data) -> {
+                        System.out.println("\t\tSub Buffer destructed: " + memobj);
+                        destructorLatch.countDown();
+                    }), NULL);
+                    checkCLError(errcode);
                 } else {
-                    g.drawImage(image, 0, 0, width, height, 0, height, width, 2 * height, this);
+                    destructorLatch = null;
                 }
-            }
-        };
 
-        final JPanel controlPanel = new JPanel(new FlowLayout());
-        frame.getContentPane().add(controlPanel, BorderLayout.SOUTH);
+                long exec_caps = getDeviceInfoLong(device, CL_DEVICE_EXECUTION_CAPABILITIES);
+                if ((exec_caps & CL_EXEC_NATIVE_KERNEL) == CL_EXEC_NATIVE_KERNEL) {
+                    System.out.println("\t\t-TRYING TO EXEC NATIVE KERNEL-");
+                    long queue = clCreateCommandQueue(context, device, NULL, errcode_ret);
 
-        final JButton startButton = new JButton("Start");
+                    PointerBuffer ev = BufferUtils.createPointerBuffer(1);
 
-        startButton.addActionListener(new ActionListener(){
-            @Override public void actionPerformed(ActionEvent e) {
-                running = true;
-                startButton.setEnabled(false);
-            }
-        });
-        controlPanel.add(startButton);
-        controlPanel.add(new JLabel(lifeKernel.getTargetDevice().getShortDescription()));
+                    ByteBuffer kernelArgs = BufferUtils.createByteBuffer(4);
+                    kernelArgs.putInt(0, 1337);
 
-        controlPanel.add(new JLabel("  Generations/Second="));
-        final JLabel generationsPerSecond = new JLabel("0.00");
-        controlPanel.add(generationsPerSecond);
+                    CLNativeKernel kernel;
+                    errcode = clEnqueueNativeKernel(queue, kernel = CLNativeKernel.create(
+                            args -> System.out.println("\t\tKERNEL EXEC argument: " + memByteBuffer(args, 4).getInt(0) + ", should be 1337")
+                    ), kernelArgs, null, null, null, ev);
+                    checkCLError(errcode);
 
-        // Set the default size and add to the frames content pane
-        viewer.setPreferredSize(new Dimension(width, height));
-        frame.getContentPane().add(viewer);
+                    long e = ev.get(0);
 
-        // Swing housekeeping
-        frame.pack();
-        frame.setVisible(true);
-        frame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
+                    CountDownLatch latch = new CountDownLatch(1);
 
-        long start = System.currentTimeMillis();
-        long generations = 0;
-        while (!running) {
-            try {
-                Thread.sleep(10);
-                viewer.repaint();
-            } catch (final InterruptedException e1) {
-                // TODO Auto-generated catch block
-                e1.printStackTrace();
+                    CLEventCallback eventCB;
+                    errcode = clSetEventCallback(e, CL_COMPLETE, eventCB = CLEventCallback.create((event, event_command_exec_status, user_data) -> {
+                        System.out.println("\t\tEvent callback status: " + getEventStatusName(event_command_exec_status));
+                        latch.countDown();
+                    }), NULL);
+                    checkCLError(errcode);
+
+                    try {
+                        boolean expired = !latch.await(500, TimeUnit.MILLISECONDS);
+                        if (expired) {
+                            System.out.println("\t\tKERNEL EXEC FAILED!");
+                        }
+                    } catch (InterruptedException exc) {
+                        exc.printStackTrace();
+                    }
+                    eventCB.free();
+
+                    errcode = clReleaseEvent(e);
+                    checkCLError(errcode);
+                    kernel.free();
+
+                    kernelArgs = BufferUtils.createByteBuffer(POINTER_SIZE * 2);
+
+                    kernel = CLNativeKernel.create(args -> {
+                    });
+
+                    long time   = System.nanoTime();
+                    int  REPEAT = 1000;
+                    for (int i = 0; i < REPEAT; i++) {
+                        clEnqueueNativeKernel(queue, kernel, kernelArgs, null, null, null, null);
+                    }
+                    clFinish(queue);
+                    time = System.nanoTime() - time;
+
+                    System.out.printf("\n\t\tEMPTY NATIVE KERNEL AVG EXEC TIME: %.4fus\n", (double)time / (REPEAT * 1000));
+
+                    errcode = clReleaseCommandQueue(queue);
+                    checkCLError(errcode);
+                    kernel.free();
+                }
+
+                System.out.println();
+
+                if (subbuffer != NULL) {
+                    errcode = clReleaseMemObject(subbuffer);
+                    checkCLError(errcode);
+                }
+
+                errcode = clReleaseMemObject(buffer);
+                checkCLError(errcode);
+
+                if (destructorLatch != null) {
+                    // mem object destructor callbacks are called asynchronously on Nvidia
+
+                    try {
+                        destructorLatch.await();
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+
+                    subbufferCB.free();
+
+                    bufferCB2.free();
+                    bufferCB1.free();
+                }
+
+                errcode = clReleaseContext(context);
+                checkCLError(errcode);
+
+                contextCB.free();
             }
         }
-        while (true) {
-
-            lifeKernel.nextGeneration(); // Work is performed here
-            viewer.repaint(); // Request a repaint of the viewer (causes paintComponent(Graphics) to be called later not synchronous
-            generations++;
-            final long now = System.currentTimeMillis();
-            if ((now - start) > 1000) {
-                generationsPerSecond.setText(String.format("%5.2f", (generations * 1000.0) / (now - start)));
-                start = now;
-                generations = 0;
-            }
-        }
-
     }
-}
 
+    public static void get(FunctionProviderLocal provider, long platform, String name) {
+        System.out.println(name + ": " + provider.getFunctionAddress(platform, name));
+    }
+
+    private static void printPlatformInfo(long platform, String param_name, int param) {
+        System.out.println("\t" + param_name + " = " + getPlatformInfoStringUTF8(platform, param));
+    }
+
+    private static void printDeviceInfo(long device, String param_name, int param) {
+        System.out.println("\t" + param_name + " = " + getDeviceInfoStringUTF8(device, param));
+    }
+
+    private static String getEventStatusName(int status) {
+        switch (status) {
+            case CL_QUEUED:
+                return "CL_QUEUED";
+            case CL_SUBMITTED:
+                return "CL_SUBMITTED";
+            case CL_RUNNING:
+                return "CL_RUNNING";
+            case CL_COMPLETE:
+                return "CL_COMPLETE";
+            default:
+                throw new IllegalArgumentException(String.format("Unsupported event status: 0x%X", status));
+        }
+    }
+
+
+    static String getPlatformInfoStringASCII(long cl_platform_id, int param_name) {
+        try (MemoryStack stack = stackPush()) {
+            PointerBuffer pp = stack.mallocPointer(1);
+            checkCLError(clGetPlatformInfo(cl_platform_id, param_name, (ByteBuffer)null, pp));
+            int bytes = (int)pp.get(0);
+
+            ByteBuffer buffer = stack.malloc(bytes);
+            checkCLError(clGetPlatformInfo(cl_platform_id, param_name, buffer, null));
+
+            return memASCII(buffer, bytes - 1);
+        }
+    }
+
+    static String getPlatformInfoStringUTF8(long cl_platform_id, int param_name) {
+        try (MemoryStack stack = stackPush()) {
+            PointerBuffer pp = stack.mallocPointer(1);
+            checkCLError(clGetPlatformInfo(cl_platform_id, param_name, (ByteBuffer)null, pp));
+            int bytes = (int)pp.get(0);
+
+            ByteBuffer buffer = stack.malloc(bytes);
+            checkCLError(clGetPlatformInfo(cl_platform_id, param_name, buffer, null));
+
+            return memUTF8(buffer, bytes - 1);
+        }
+    }
+
+    static int getDeviceInfoInt(long cl_device_id, int param_name) {
+        try (MemoryStack stack = stackPush()) {
+            IntBuffer pl = stack.mallocInt(1);
+            checkCLError(clGetDeviceInfo(cl_device_id, param_name, pl, null));
+            return pl.get(0);
+        }
+    }
+
+    static long getDeviceInfoLong(long cl_device_id, int param_name) {
+        try (MemoryStack stack = stackPush()) {
+            LongBuffer pl = stack.mallocLong(1);
+            checkCLError(clGetDeviceInfo(cl_device_id, param_name, pl, null));
+            return pl.get(0);
+        }
+    }
+
+    static long getDeviceInfoPointer(long cl_device_id, int param_name) {
+        try (MemoryStack stack = stackPush()) {
+            PointerBuffer pp = stack.mallocPointer(1);
+            checkCLError(clGetDeviceInfo(cl_device_id, param_name, pp, null));
+            return pp.get(0);
+        }
+    }
+
+    static String getDeviceInfoStringUTF8(long cl_device_id, int param_name) {
+        try (MemoryStack stack = stackPush()) {
+            PointerBuffer pp = stack.mallocPointer(1);
+            checkCLError(clGetDeviceInfo(cl_device_id, param_name, (ByteBuffer)null, pp));
+            int bytes = (int)pp.get(0);
+
+            ByteBuffer buffer = stack.malloc(bytes);
+            checkCLError(clGetDeviceInfo(cl_device_id, param_name, buffer, null));
+
+            return memUTF8(buffer, bytes - 1);
+        }
+    }
+
+    static int getProgramBuildInfoInt(long cl_program_id, long cl_device_id, int param_name) {
+        try (MemoryStack stack = stackPush()) {
+            IntBuffer pl = stack.mallocInt(1);
+            checkCLError(clGetProgramBuildInfo(cl_program_id, cl_device_id, param_name, pl, null));
+            return pl.get(0);
+        }
+    }
+
+    static String getProgramBuildInfoStringASCII(long cl_program_id, long cl_device_id, int param_name) {
+        try (MemoryStack stack = stackPush()) {
+            PointerBuffer pp = stack.mallocPointer(1);
+            checkCLError(clGetProgramBuildInfo(cl_program_id, cl_device_id, param_name, (ByteBuffer)null, pp));
+            int bytes = (int)pp.get(0);
+
+            ByteBuffer buffer = stack.malloc(bytes);
+            checkCLError(clGetProgramBuildInfo(cl_program_id, cl_device_id, param_name, buffer, null));
+
+            return memASCII(buffer, bytes - 1);
+        }
+    }
+
+    static void checkCLError(IntBuffer errcode) {
+        checkCLError(errcode.get(errcode.position()));
+    }
+
+    static void checkCLError(int errcode) {
+        if (errcode != CL_SUCCESS) {
+            throw new RuntimeException(String.format("OpenCL error [%d]", errcode));
+        }
+    }
+
+}
