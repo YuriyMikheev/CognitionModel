@@ -1,0 +1,13 @@
+<component name="libraryTable">
+  <library name="net.openhft.chronicle.core" type="repository">
+    <properties maven-id="net.openhft:chronicle-core:2.20.126" />
+    <CLASSES>
+      <root url="jar://$MAVEN_REPOSITORY$/net/openhft/chronicle-core/2.20.126/chronicle-core-2.20.126.jar!/" />
+      <root url="jar://$MAVEN_REPOSITORY$/net/openhft/chronicle-analytics/2.20.2/chronicle-analytics-2.20.2.jar!/" />
+      <root url="jar://$MAVEN_REPOSITORY$/org/slf4j/slf4j-api/1.7.30/slf4j-api-1.7.30.jar!/" />
+      <root url="jar://$MAVEN_REPOSITORY$/org/jetbrains/annotations/19.0.0/annotations-19.0.0.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>

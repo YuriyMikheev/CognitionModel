@@ -1,7 +1,6 @@
 package cognitionmodel.models.upright;
 
-import cognitionmodel.models.inverted.index.BatchedIterator;
-import jnr.ffi.annotations.In;
+
 import org.jetbrains.annotations.NotNull;
 import org.roaringbitmap.RoaringBitmap;
 
