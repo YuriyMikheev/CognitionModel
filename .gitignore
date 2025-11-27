@@ -1,3 +1,11 @@
 
 *.zip
 lib/*.zip
+
+lib/*.zip
+*.zip
+out/test/CognitionModel/resources/*.jsonl
+
+lib/*.zip
+*.zip
+out/test/CognitionModel/resources/*.jsonl
