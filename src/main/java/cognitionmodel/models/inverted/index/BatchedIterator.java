@@ -3,9 +3,10 @@ package cognitionmodel.models.inverted.index;
 import org.roaringbitmap.RoaringBatchIterator;
 import org.roaringbitmap.RoaringBitmap;
 
+import java.util.Arrays;
 import java.util.Iterator;
 
-public class BatchedIterator implements Iterator<Long> {
+public class BatchedIterator implements Iterator<Long>, Cloneable {
 
     private RoaringBitmap roaringBitmap;
     private RoaringBatchIterator batchIterator;
@@ -56,6 +57,17 @@ public class BatchedIterator implements Iterator<Long> {
         if (getX() < x) pointer++;
 
         return getX();
+    }
+
+    @Override
+    public BatchedIterator clone(){
+        BatchedIterator nitr = new BatchedIterator(roaringBitmap);
+        nitr.batchIterator = (RoaringBatchIterator) batchIterator.clone();
+        nitr.pointer = pointer;
+        nitr.batchsize = batchsize;
+        nitr.last = last;
+        nitr.buf = Arrays.copyOf(buf, buf.length);
+        return nitr;
     }
 
 }

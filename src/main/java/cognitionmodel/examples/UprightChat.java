@@ -1,16 +1,12 @@
 package cognitionmodel.examples;
 
-import cognitionmodel.datasets.TableDataSet;
-import cognitionmodel.models.inverted.InvertedTextModel;
-import cognitionmodel.models.upright.UprightInvertedTextModel;
-import cognitionmodel.models.upright.UprightTextModel;
+import cognitionmodel.models.upright.UrTextModel;
 
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Scanner;
-import java.util.concurrent.TimeUnit;
 
 public class UprightChat {
 
@@ -18,7 +14,7 @@ public class UprightChat {
     public static void main(String[] args) throws IOException, ClassNotFoundException {
 
         Scanner scanner = new Scanner(System.in);
-        UprightTextModel textModel = new UprightTextModel("E:\\Idx\\2.txttkz");
+        UrTextModel textModel = new UrTextModel("E:\\Idx\\2.txttkz");
 
         long size = textModel.getDataSet().getTextTokens().size();
 

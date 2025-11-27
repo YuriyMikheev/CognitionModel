@@ -2,7 +2,7 @@ package cognitionmodel.models.inverted.index;
 
 import cognitionmodel.datasets.TextDataSet;
 import cognitionmodel.models.inverted.InvertedTextModel;
-import cognitionmodel.models.upright.UprightInvertedTextModel;
+import cognitionmodel.models.upright.UrInvertedTextModel;
 import org.junit.Test;
 import org.roaringbitmap.RoaringBitmap;
 
@@ -142,7 +142,7 @@ public class TextIndexTest {
         textModel.getTextIndex().save(new FileOutputStream(destinationFile));
         System.out.println(sourceFolder + " index completed");
 
-        UprightInvertedTextModel textModel1 = new UprightInvertedTextModel(destinationFile);
+        UrInvertedTextModel textModel1 = new UrInvertedTextModel(destinationFile);
         System.out.println("Dataset is loaded");
     }
 

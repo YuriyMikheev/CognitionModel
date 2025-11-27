@@ -1,0 +1,223 @@
+package cognitionmodel.models.upright.decomposers;
+
+import cognitionmodel.models.inverted.index.BatchedIterator;
+import cognitionmodel.models.upright.agent.UrAgent;
+import cognitionmodel.models.upright.agent.UrPoint;
+import cognitionmodel.models.upright.index.IndexPoint;
+import cognitionmodel.models.upright.relations.UrRelation;
+import cognitionmodel.models.upright.relations.UrRelationInterface;
+import org.jetbrains.annotations.NotNull;
+import org.roaringbitmap.RoaringBitmap;
+
+import java.util.*;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
+
+import static java.lang.Math.min;
+import static java.lang.Math.round;
+
+public class UrDecomposer {
+
+
+
+    double minMrDelta = 0.1;
+    float overlap = 1;
+    long batchSize = 1000000, dataSetSize = 0;
+    private UrRelationInterface relations[];
+
+    public UrDecomposer(double accuracy, long dataSetSize){
+        this(accuracy*100, 10000000, dataSetSize);
+        batchSize = round(dataSetSize * accuracy);
+    }
+
+    public UrDecomposer(double minMrDelta, long batchSize, long dataSetSize) {
+        this(minMrDelta, batchSize, dataSetSize, new UrRelationInterface[]{  new UrRelation(UrRelationInterface.RELATION_SIMILARITY, dataSetSize),
+                new UrRelation(UrRelationInterface.RELATION_ORDER, dataSetSize),
+                new UrRelation(UrRelationInterface.RELATION_POINTED, dataSetSize)});
+    }
+    public UrDecomposer(double minMrDelta, long batchSize, long dataSetSize, int ... relationTypes) {
+        this.minMrDelta = minMrDelta;
+        this.batchSize = batchSize;
+        this.dataSetSize = dataSetSize;
+
+        relations = Arrays.stream(relationTypes).mapToObj(t-> new UrRelation(t, dataSetSize)).collect(Collectors.toList()).toArray(new UrRelationInterface[0]);
+    }
+
+
+
+    public UrDecomposer(double minMrDelta, long batchSize, long dataSetSize, UrRelationInterface... relations) {
+        this.minMrDelta = minMrDelta;
+        this.batchSize = batchSize;
+        this.dataSetSize = dataSetSize;
+
+        this.relations = relations;
+    }
+
+
+    public double getMinMrDelta() {
+        return minMrDelta;
+    }
+
+    public void setMinMrDelta(double minMrDelta) {
+        this.minMrDelta = minMrDelta;
+    }
+
+    public long getBatchSize() {
+        return batchSize;
+    }
+
+    public void setBatchSize(long batchSize) {
+        this.batchSize = batchSize;
+    }
+
+
+    public LinkedList<UrAgent> makeAgentList(@NotNull List<Integer> in, Map<Object, RoaringBitmap> index){
+        int i = 0;
+        LinkedList<UrAgent> list = new LinkedList<>();
+        for (int t: in){
+            if (index.containsKey(t))
+                list.add(new UrAgent(new UrPoint(i, t), index.get(t), dataSetSize));
+            else
+                System.err.println(in.get(i) + " token unknown");
+            i++;
+        }
+
+        return list;
+    }
+
+
+    public List<UrAgent> decompose(List<Integer> in, int attentionSize, Map<Object, RoaringBitmap> index){
+        return decompose(makeAgentList(in, index), attentionSize);
+    }
+
+    public List<UrAgent> decompose(@NotNull List<UrAgent> in, int attentionSize){
+        if (in.isEmpty()) return new ArrayList<>();
+        ConcurrentHashMap<String, UrAgent> agents = new ConcurrentHashMap<>();
+
+        in.sort(Comparator.comparing(UrAgent::getFirstPos));
+
+        int step = round(attentionSize*overlap);
+
+        LinkedList<CompletableFuture<Integer>> cfl = new LinkedList<>();
+        final long[] nn = {0};
+
+        for (int k = 0; k < in.size(); k += step) {
+            int finalK = k;
+            cfl.add(CompletableFuture.supplyAsync(() -> {
+                final double[] dmr = {0};
+
+                PriorityQueue<IndexPoint> tokens = new PriorityQueue<>(Comparator.comparing(IndexPoint::getIdx));
+
+                for (int i = finalK; i < min(finalK + attentionSize, in.size()); i++) {
+                    tokens.add(new IndexPoint(in.get(i).getPoints().getFirst().getPosition(), in.get(i), new BatchedIterator(in.get(i).getIdx())));
+                }
+
+                LinkedList<UrAgent> nlist = new LinkedList<>();
+                long  n = 0, ti = 0;
+
+                ConcurrentHashMap<String, UrAgent> tagents = new ConcurrentHashMap<>();
+
+                for (; !tokens.isEmpty(); ) {
+                    IndexPoint indexPoint = tokens.poll();
+                    ti = indexPoint.getIdx();
+                    indexPoint.nextIdx();
+                    if (ti != -1) tokens.add(indexPoint);
+                        else
+                            continue;
+                    n++;
+
+                    boolean dontAddNew = false;
+                    for (UrAgent agent : nlist)
+                        if (ti - agent.getStartPos() < attentionSize)
+                            if (indexPoint.getPosition() - agent.getFirstPos() < attentionSize && indexPoint.getPosition() > agent.getPoints().getLast().getPosition()) {
+                                agent.addPoint(new UrPoint(indexPoint.getPosition(), indexPoint.getToken(), ti));
+                                dontAddNew = true;
+                            }
+
+                    if (!dontAddNew)
+                        nlist.add(new UrAgent(new UrPoint(indexPoint.getPosition(), indexPoint.getToken(), ti), 1, dataSetSize, ti));
+
+                    while (!nlist.isEmpty() && ti - nlist.getFirst().getStartPos() >= attentionSize) {
+                        UrAgent as = nlist.poll();
+                        if (!tagents.containsKey(as.getAgentHash()))
+                            tagents.put(as.getAgentHash(), as);
+                        else
+                            incAgentF(tagents.get(as.getAgentHash()), as.getStartPos());
+                    }
+
+                    if (n % batchSize == 0) {
+                        double ldmr = agents.values().stream().mapToDouble(a->a.getMr()>0? a.getMr():0).sum();
+                        if (ldmr - dmr[0] < minMrDelta)
+                            break;//куда он длелает выход???
+                        dmr[0] = ldmr;
+                    }
+                }
+
+                for (UrAgent as: tagents.values())
+                    for (UrRelationInterface relation: relations)
+                        for (UrAgent a: relation.makeDecomposition(as))
+                            if (!agents.containsKey(a.getAgentHash())){
+                                agents.put(a.getAgentHash(), a);
+                                a.addIdx(as.getIdx(), a.getStartPos() - as.getStartPos());
+                                a.setF(a.getIdx().getCardinality());
+                            }
+                            else {
+                                UrAgent agent = agents.get(a.getAgentHash());
+                                a.addIdx(as.getIdx(), a.getStartPos() - as.getStartPos());
+                                agent.setF(agent.getIdx().getCardinality());
+                            }
+                nn[0] +=n;
+                return null;
+            }));
+        }
+        cfl.forEach(CompletableFuture::join);
+
+        List<UrAgent> al = new ArrayList<>(agents.values());
+
+        al.sort((a1,a2) -> a1.getPoints().size() == a2.getPoints().size()? 0: a1.getPoints().size() > a2.getPoints().size()? 1:-1);
+
+        // увеличиваем частоту и индекс более коротких агентов за счет более длинных включающих в себя короткие
+        int i = 1;
+        for (UrAgent a1: al) {
+            if (a1.getPoints().size() > 1)
+                for (Iterator<UrAgent> iterator = al.listIterator(i); iterator.hasNext(); ){
+                    UrAgent a2 = iterator.next();
+                    if (a1.getRelation() == a2.getRelation()) {
+                        BitSet bs = BitSet.valueOf(a1.getFields().toLongArray());
+                        bs.and(a2.getFields());
+                        if (a1.getFields().cardinality() == bs.cardinality()) {
+                            a1.getIdx().or(a2.getIdx());
+                            a1.setF(a1.getIdx().getCardinality());
+                        }
+                    }
+                }
+            i++;
+        }
+
+        List<UrRelationInterface> rels = Arrays.stream(relations).filter(r-> r.getRelationType() != UrRelationInterface.RELATION_POINTED).toList();
+
+        for (UrAgent a1: al)
+         if (a1.getPoints().size() > 1 && a1.getRelation() == UrRelationInterface.RELATION_POINTED){
+             for (UrRelationInterface relation: rels) {
+                 UrAgent a2 = agents.get(relation.makeHash(a1.getPoints()));
+                 if (a2 != null) a1.addMr(a2.getMr());
+             }
+         }
+
+        return al.stream().filter(a->a.getRelation() == UrRelationInterface.RELATION_POINTED).toList();
+    }
+
+    private void incAgentF(@NotNull UrAgent agent, long index){
+        if (agent.getPoints().size() > 0)
+            if (!agent.getIdx().contains(index, index+1))
+        {
+            if (!agent.getIdx().contains(index, index+1))
+                agent.incF(1);
+            agent.addIndex(index);
+        }
+    }
+
+
+
+}

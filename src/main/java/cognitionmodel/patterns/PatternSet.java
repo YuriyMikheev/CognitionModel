@@ -2,6 +2,7 @@ package cognitionmodel.patterns;
 
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.function.Predicate;
 
 public abstract class PatternSet implements Iterable<Pattern>{
     protected ArrayList<Pattern> patterns = new ArrayList<Pattern>();
@@ -37,8 +38,15 @@ public abstract class PatternSet implements Iterable<Pattern>{
     public void singleClean(){
         Iterator<Pattern> iterator = patterns.iterator();
 
+
         while (iterator.hasNext()){
             if (iterator.next().getSetAmount() == 1) iterator.remove();
         }
     }
+
+    public PatternSet filter(Predicate<Pattern> predicate){
+        patterns = new ArrayList<>(patterns.stream().filter(predicate).toList());
+        return this;
+    };
+
 }

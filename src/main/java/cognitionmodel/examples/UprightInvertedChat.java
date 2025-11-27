@@ -1,6 +1,6 @@
 package cognitionmodel.examples;
 
-import cognitionmodel.models.upright.UprightInvertedTextModel;
+import cognitionmodel.models.upright.UrInvertedTextModel;
 
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -14,7 +14,7 @@ public class UprightInvertedChat {
     public static void main(String[] args) throws IOException, ClassNotFoundException {
 
         Scanner scanner = new Scanner(System.in);
-        UprightInvertedTextModel textModel = new UprightInvertedTextModel("E:\\Idx\\2.txtidx");
+        UrInvertedTextModel textModel = new UrInvertedTextModel("E:\\Idx\\2.txtidx");
 
         System.out.println("Dataset loaded. Allocated  "+ textModel.getTextIndex().size() + " bytes. Go on!");
         int attention = 7;

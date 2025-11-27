@@ -13,6 +13,7 @@ import java.io.*;
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
 import java.nio.charset.StandardCharsets;
+import java.rmi.ServerError;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
@@ -42,7 +43,7 @@ public class TextIndex extends BitInvertedIndex {
     int maxShortOffset = -1;
     int maxLongOffset = -1;
 
-    Encoding encoder;
+    static Encoding encoder;
 
     public TextIndex(InvertedTextModel model, String textField) {
         this.model = model;
@@ -312,7 +313,7 @@ public class TextIndex extends BitInvertedIndex {
         return invertedIndex.get(field);
     }
 
-    public Encoding getEncoder() {
+    public static Encoding getEncoder() {
         return encoder;
     }
 
@@ -441,52 +442,57 @@ public class TextIndex extends BitInvertedIndex {
 
     public void load(InputStream inputStream) throws IOException, ClassNotFoundException {
 
-        ObjectInputStream reader = new ObjectInputStream(inputStream);
+        try (
+            BufferedInputStream bis = new BufferedInputStream(inputStream, 65536*1024); // Размер буфера можно поменять
+            ObjectInputStream reader = new ObjectInputStream(bis);
+        ) {
+            modelType = ModelType.fromName(reader.readUTF()).get();
 
-        modelType = ModelType.fromName(reader.readUTF()).get();
+            textField = reader.readUTF();
+            maxIndex = reader.readLong();
+            maxShortOffset = reader.readInt();
+            maxLongOffset = reader.readInt();
+            int fs = reader.readInt();
 
-        textField = reader.readUTF();
-        maxIndex = reader.readLong();
-        maxShortOffset = reader.readInt();
-        maxLongOffset = reader.readInt();
-        int fs = reader.readInt();
 
-        for (int i = 0; i < fs; i++)
-            textData[i] = reader.readUTF();
+            for (int i = 0; i < fs; i++)
+                textData[i] = reader.readUTF();
 
-        List<String> ff = Arrays.stream(textData).collect(Collectors.toList());
-        ff.add(textField+"0");
+            List<String> ff = new ArrayList<>(fs + 1);
+            Collections.addAll(ff, textData);
+            ff.add(textField + "0");
 
-        for (String fi: ff) {
-            TreeMap<Object, RoaringBitmap> tm = getIdx(fi);
-            int n = reader.readInt();
-            for (int i = 0; i < n; i++) {
-                RoaringBitmap rb = new RoaringBitmap();
-                Object k = reader.readObject();
-                byte[] array = new byte[reader.readInt()];
-                int totalRead = 0;
-                while (totalRead < array.length) {
-                    int read = reader.read(array, totalRead, array.length - totalRead);
-                    if (read == -1) {
-                        throw new EOFException("Unexpected EOF stream");
+            for (String fi : ff) {
+                TreeMap<Object, RoaringBitmap> tm = getIdx(fi);
+                int n = reader.readInt();
+                for (int i = 0; i < n; i++) {
+                    RoaringBitmap rb = new RoaringBitmap();
+                    Object k = reader.readObject();
+                    byte[] array = new byte[reader.readInt()];
+                    int totalRead = 0;
+                    while (totalRead < array.length) {
+                        int read = reader.read(array, totalRead, array.length - totalRead);
+                        if (read == -1) {
+                            throw new EOFException("Unexpected EOF stream");
+                        }
+                        totalRead += read;
                     }
-                    totalRead += read;
+                    rb.deserialize(ByteBuffer.wrap(array));
+                    tm.put(k, rb);
                 }
-                rb.deserialize(ByteBuffer.wrap(array));
-                tm.put(k, rb);
             }
-        }
 
-        EncodingRegistry registry = Encodings.newDefaultEncodingRegistry();
-        encoder = registry.getEncodingForModel(modelType);//registry.getEncoding(EncodingType.CL100K_BASE);
+            EncodingRegistry registry = Encodings.newDefaultEncodingRegistry();
+            encoder = registry.getEncodingForModel(modelType);//registry.getEncoding(EncodingType.CL100K_BASE);
 
 /*        if (maxShortOffset != -1 & maxLongOffset != -1)
             makeShiftedIndexes(maxShortOffset, maxLongOffset);
         else*/
             makeFields();
-
-        reader.close();
-        inputStream.close();
+        }
+       // bis.close();
+       // reader.close();
+        //inputStream.close();
     }
 
     public double size(){

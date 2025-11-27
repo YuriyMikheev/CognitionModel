@@ -1,9 +1,7 @@
 package cognitionmodel.models.upright;
 
+import cognitionmodel.models.upright.generators.UrGenerator;
 import org.junit.Test;
-
-import java.util.Arrays;
-import java.util.stream.Collectors;
 
 import static org.junit.Assert.*;
 
